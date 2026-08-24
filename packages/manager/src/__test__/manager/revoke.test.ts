@@ -291,4 +291,205 @@ describe('useRevoke', () => {
     expect(revoke.undoList.value).toHaveLength(0);
     expect(revoke.currentRecord.value).toBeNull();
   });
+
+  it('应使用快照+差异存储历史记录', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    // 第一条记录是基线快照
+    revoke.push('初始化');
+    vi.advanceTimersByTime(200);
+    expect(revoke.currentRecord.value?.snapshot).toBeDefined();
+    expect(revoke.currentRecord.value?.diff).toBeUndefined();
+
+    // 后续记录保存差异
+    pageSchema.schemas.push({ id: '1', type: 'input' });
+    revoke.push('添加组件');
+    vi.advanceTimersByTime(200);
+    expect(revoke.recordList.value[0].snapshot).toBeDefined();
+    expect(revoke.currentRecord.value?.diff).toBeDefined();
+    expect(revoke.currentRecord.value?.snapshot).toBeUndefined();
+  });
+
+  it('撤销与重做应正确还原页面状态', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    revoke.push('初始化');
+    vi.advanceTimersByTime(200);
+
+    pageSchema.schemas.push({ id: '1', type: 'input', props: { value: 'a' } });
+    revoke.push('添加组件');
+    vi.advanceTimersByTime(200);
+
+    pageSchema.schemas[0].props.value = 'b';
+    revoke.push('修改属性');
+    vi.advanceTimersByTime(200);
+    expect(pageSchema.schemas[0].props.value).toBe('b');
+
+    // 撤销两次，逐步还原
+    revoke.undo();
+    expect(pageSchema.schemas[0].props.value).toBe('a');
+    revoke.undo();
+    expect(pageSchema.schemas).toHaveLength(0);
+
+    // 重做两次，逐步恢复
+    revoke.redo();
+    expect(pageSchema.schemas).toHaveLength(1);
+    expect(pageSchema.schemas[0].props.value).toBe('a');
+    revoke.redo();
+    expect(pageSchema.schemas[0].props.value).toBe('b');
+  });
+
+  it('记录数超过上限时链首应重编码为基线快照', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    revoke.push('初始记录');
+    for (let i = 0; i < 61; i++) {
+      vi.advanceTimersByTime(200);
+      pageSchema.schemas.push({ id: `id_${i}`, type: 'input' });
+      revoke.push(`记录${i}`);
+    }
+    vi.advanceTimersByTime(200);
+
+    expect(revoke.recordList.value).toHaveLength(60);
+    // 链首必须是基线快照
+    expect(revoke.recordList.value[0].snapshot).toBeDefined();
+    expect(revoke.recordList.value[0].diff).toBeUndefined();
+
+    // 重编码后撤销仍能正确还原状态
+    revoke.undo();
+    expect(pageSchema.schemas).toHaveLength(60);
+  });
+
+  it('导入旧版本全量快照历史数据应兼容', () => {
+    const pageSchema: any = { schemas: [{ id: '1', type: 'input' }] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    // 旧格式记录：pageSchema 全量快照
+    const oldRecord: any = {
+      pageSchema: JSON.stringify({ schemas: [{ id: '9', type: 'button' }] }),
+      timestamp: Date.now(),
+      type: '旧记录',
+    };
+    // 新格式记录：差异
+    const newRecord: any = {
+      diff: JSON.stringify([
+        {
+          op: 'add',
+          path: '/schemas/1',
+          value: { id: '2', type: 'input' },
+        },
+      ]),
+      timestamp: Date.now(),
+      type: '差异记录',
+    };
+
+    revoke.importHistory({
+      currentRecord: newRecord,
+      recordList: [oldRecord],
+      undoList: [],
+    });
+
+    // 旧格式被转换为 snapshot，页面状态同步为链尾状态
+    expect(revoke.recordList.value[0].snapshot).toBeDefined();
+    expect(pageSchema.schemas).toHaveLength(2);
+    expect(pageSchema.schemas[1].id).toBe('2');
+
+    // 撤销应回到旧记录的状态
+    revoke.undo();
+    expect(pageSchema.schemas).toHaveLength(1);
+    expect(pageSchema.schemas[0].id).toBe('9');
+  });
+
+  it('previewHistory 应能正确预览撤销列表中的记录（多次撤销后）', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    revoke.push('初始化');
+    vi.advanceTimersByTime(200);
+
+    pageSchema.schemas.push({ id: '1', type: 'input', v: 'a' });
+    revoke.push('记录1');
+    vi.advanceTimersByTime(200);
+
+    pageSchema.schemas.push({ id: '2', type: 'input', v: 'b' });
+    revoke.push('记录2');
+    vi.advanceTimersByTime(200);
+
+    pageSchema.schemas[1].v = 'c';
+    revoke.push('记录3');
+    vi.advanceTimersByTime(200);
+
+    // 撤销两次：当前状态为记录1（1 个组件）
+    revoke.undo();
+    revoke.undo();
+    expect(pageSchema.schemas).toHaveLength(1);
+
+    // 预览 undoList 中的记录2（应恢复到 2 个组件，v='b'）
+    const record2 = revoke.undoList.value[1];
+    const restore = revoke.previewHistory(record2);
+    expect(pageSchema.schemas).toHaveLength(2);
+    expect(pageSchema.schemas[1].v).toBe('b');
+
+    // 恢复预览前的状态
+    restore();
+    expect(pageSchema.schemas).toHaveLength(1);
+  });
+
+  it('撤销后提交新记录应清空重做列表并保持链一致', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    revoke.push('初始化');
+    vi.advanceTimersByTime(200);
+    pageSchema.schemas.push({ id: '1', type: 'input' });
+    revoke.push('记录1');
+    vi.advanceTimersByTime(200);
+    pageSchema.schemas.push({ id: '2', type: 'input' });
+    revoke.push('记录2');
+    vi.advanceTimersByTime(200);
+
+    // 撤销后提交新分支
+    revoke.undo();
+    expect(revoke.getRedoCount()).toBe(1);
+    pageSchema.schemas.push({ id: '3', type: 'input' });
+    revoke.push('记录3');
+    vi.advanceTimersByTime(200);
+
+    // 新提交应清空重做列表
+    expect(revoke.getRedoCount()).toBe(0);
+    expect(revoke.recordList.value).toHaveLength(2);
+
+    // 新分支撤销/重做链应一致
+    revoke.undo();
+    expect(pageSchema.schemas).toHaveLength(1);
+    expect(pageSchema.schemas[0].id).toBe('1');
+    revoke.redo();
+    expect(pageSchema.schemas).toHaveLength(2);
+    expect(pageSchema.schemas[1].id).toBe('3');
+  });
+
+  it('previewHistory 应能正确预览 recordList 中的记录', () => {
+    const pageSchema: any = { schemas: [] };
+    const revoke = useRevoke(pageSchema, mockState, mockSetSelectedNode);
+
+    revoke.push('初始化');
+    vi.advanceTimersByTime(200);
+    pageSchema.schemas.push({ id: '1', type: 'input' });
+    revoke.push('记录1');
+    vi.advanceTimersByTime(200);
+    pageSchema.schemas.push({ id: '2', type: 'input' });
+    revoke.push('记录2');
+    vi.advanceTimersByTime(200);
+
+    // 预览 recordList 中的记录1（1 个组件；recordList[0] 是"初始化"空状态）
+    const record1 = revoke.recordList.value[1];
+    const restore = revoke.previewHistory(record1);
+    expect(pageSchema.schemas).toHaveLength(1);
+    restore();
+    expect(pageSchema.schemas).toHaveLength(2);
+  });
+
 });

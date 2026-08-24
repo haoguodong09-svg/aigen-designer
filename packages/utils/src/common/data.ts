@@ -31,8 +31,13 @@ export function deepClone<T extends object>(
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone
   if (useStructuredClone && typeof window.structuredClone === 'function') {
     const rawObj = deepToRaw(obj);
-    const cloned = structuredClone(rawObj);
-    return cloned;
+    try {
+      const cloned = structuredClone(rawObj);
+      return cloned;
+    } catch {
+      // structuredClone 对函数等不可克隆值抛 DataCloneError（如 schema 的 show 函数属性），
+      // 回退到下方手动克隆路径（手动克隆对函数安全，按引用保留）
+    }
   }
 
   // 处理数组
