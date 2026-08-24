@@ -6,12 +6,12 @@ import { computed, inject, onMounted, ref } from 'vue';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { findSchemaById } from '@aigen-designer/utils';
 
-import EpicEditScreenContainer from './editScreenContainer.vue';
+import AigenEditScreenContainer from './editScreenContainer.vue';
 import EpNodeItem from './nodeItem.vue';
 import EpPreviewWidgets from './previewWidgets.vue';
 
-const epicEditRangeRef = ref<HTMLDivElement | null>(null);
-const epicPreviewWidgetsRef = ref<null | typeof EpPreviewWidgets>(null);
+const aigenEditRangeRef = ref<HTMLDivElement | null>(null);
+const aigenPreviewWidgetsRef = ref<null | typeof EpPreviewWidgets>(null);
 
 const { pageSchema, props, setSelectedNode } = useDesignerContext();
 const contextMenu = inject('contextMenu', {
@@ -34,25 +34,25 @@ const getEditRangestyle = computed(() => {
   };
 });
 
-function setSelectedNodeById(epicId) {
-  const schema = findSchemaById(pageSchema.schemas, epicId);
+function setSelectedNodeById(aigenId) {
+  const schema = findSchemaById(pageSchema.schemas, aigenId);
   setSelectedNode(schema);
   contextMenu.close();
 }
 
 onMounted(() => {
-  epicPreviewWidgetsRef.value?.handleInit(epicEditRangeRef.value);
+  aigenPreviewWidgetsRef.value?.handleInit(aigenEditRangeRef.value);
 
-  // 监听 epicEditRangeRef 点击事件
-  epicEditRangeRef.value?.addEventListener('click', (event: any) => {
+  // 监听 aigenEditRangeRef 点击事件
+  aigenEditRangeRef.value?.addEventListener('click', (event: any) => {
     event.stopPropagation();
-    let epicId = event.target.dataset?.epicId;
-    if (!epicId) {
-      // 查询其父级的 epicId
+    let aigenId = event.target.dataset?.aigenId;
+    if (!aigenId) {
+      // 查询其父级的 aigenId
       let parent = event.target.parentElement;
       while (parent) {
-        if (parent.dataset?.epicId) {
-          epicId = parent.dataset.epicId;
+        if (parent.dataset?.aigenId) {
+          aigenId = parent.dataset.aigenId;
           break;
         }
         parent = parent.parentElement;
@@ -63,21 +63,21 @@ onMounted(() => {
         }
       }
     }
-    setSelectedNodeById(epicId);
+    setSelectedNodeById(aigenId);
   });
 });
 </script>
 <template>
   <section class="ep-edit-canvas">
-    <EpicEditScreenContainer>
+    <AigenEditScreenContainer>
       <div
-        ref="epicEditRangeRef"
+        ref="aigenEditRangeRef"
         class="ep-edit-range relative overflow-auto rounded-md"
         :style="getEditRangestyle"
       >
         <EpNodeItem :schema="rootSchema" />
-        <EpPreviewWidgets ref="epicPreviewWidgetsRef" />
+        <EpPreviewWidgets ref="aigenPreviewWidgetsRef" />
       </div>
-    </EpicEditScreenContainer>
+    </AigenEditScreenContainer>
   </section>
 </template>

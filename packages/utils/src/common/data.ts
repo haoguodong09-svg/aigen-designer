@@ -775,7 +775,7 @@ export function convertKFormData(data: any) {
           {
             label: '表单',
             type: 'form',
-            icon: 'epic-icon-daibanshixiang',
+            icon: 'aigen-icon-daibanshixiang',
             labelWidth: data.config.labelWidth || 100,
             name: 'default',
             props: {
@@ -981,7 +981,7 @@ export function migrateComponentProps(
   });
   if (hasWarned && shouldWarn) {
     console.warn(
-      '[Epic] PageSchema中的componentProps属性已迁移到props，请使用新版本设计器更新数据',
+      '[Aigen] PageSchema中的componentProps属性已迁移到props，请使用新版本设计器更新数据',
     );
   }
 

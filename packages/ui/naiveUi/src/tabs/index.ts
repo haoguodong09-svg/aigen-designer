@@ -61,5 +61,5 @@ export default {
     childImmovable: true,
   },
   groupName: '布局',
-  icon: 'icon--epic--layout-tabs',
+  icon: 'icon--aigen--layout-tabs',
 } as ComponentConfigModel;

@@ -68,7 +68,7 @@ const pageSchema: PageSchema = {
       ],
     },
   ],
-  script: `const { defineExpose } = epic;
+  script: `const { defineExpose } = aigen;
 
 function validateCustomCheck(_rule, value, callback) {
   if (value === 'ok') {

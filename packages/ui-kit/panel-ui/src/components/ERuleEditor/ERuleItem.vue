@@ -158,7 +158,7 @@ function handleDelete() {
       class="rule-btn-delete text-md w-24px h-24px rounded-bl-2 color-white absolute right-0 top-0 flex cursor-pointer items-center justify-center transition-all"
       @click="handleDelete"
     >
-      <EpIcon name="icon--epic--delete-outline-rounded" />
+      <EpIcon name="icon--aigen--delete-outline-rounded" />
     </div>
   </div>
 </template>

@@ -145,6 +145,6 @@ export default {
     inline: true,
   },
   groupName: '表单',
-  icon: 'icon--epic--fit-screen-rounded',
+  icon: 'icon--aigen--fit-screen-rounded',
   sort: 1200,
 } as ComponentConfigModel;

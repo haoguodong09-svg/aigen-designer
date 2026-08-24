@@ -133,7 +133,7 @@ const pageSchema = {
           label: "输入框",
           type: "input",
           field: "input",
-          icon: "epic-icon-write",
+          icon: "aigen-icon-write",
           input: true,
           props: {
             defaultValue: "",

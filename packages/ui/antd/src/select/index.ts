@@ -216,6 +216,6 @@ export default {
     type: 'select',
   },
   groupName: '表单',
-  icon: 'icon--epic--select',
+  icon: 'icon--aigen--select',
   sort: 900,
 } as ComponentConfigModel;

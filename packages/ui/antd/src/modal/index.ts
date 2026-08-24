@@ -16,5 +16,5 @@ export default {
     type: 'modal',
     children: [],
   },
-  icon: 'epic-icon-xiala',
+  icon: 'aigen-icon-xiala',
 } as ComponentConfigModel;

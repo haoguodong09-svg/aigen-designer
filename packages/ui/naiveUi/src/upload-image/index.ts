@@ -70,11 +70,11 @@ export default {
     input: true,
     label: '上传图片',
     props: {
-      action: 'https://examples.epicjs.cn/epic-mock/common/upload',
+      action: '/api/common/upload',
     },
     type: 'upload-image',
   },
   groupName: '表单',
-  icon: 'icon--epic--imagesmode-outline-rounded',
+  icon: 'icon--aigen--imagesmode-outline-rounded',
   sort: 920,
 } as ComponentConfigModel;

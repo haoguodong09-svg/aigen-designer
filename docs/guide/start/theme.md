@@ -29,8 +29,6 @@ import "aigen-designer/dist/style.css";
 import './styles/common-vars.css'
 ```
 
- ![](https://examples.epicjs.cn/static/theme.jpg)
-
 ## UI组件主题定制
 
 > 参照上面方案，仅完成AigenDesigner 设计器主题定制，UI组件主题还需要参照UI官方文档完成主题

@@ -31,7 +31,7 @@ function handleSelect(schema: ComponentSchema) {
         <EpIcon
           v-if="index !== 0"
           class="m-1"
-          name="icon--epic--arrow-forward-ios-rounded"
+          name="icon--aigen--arrow-forward-ios-rounded"
         />
         <span
           class="node-item cursor-pointer"

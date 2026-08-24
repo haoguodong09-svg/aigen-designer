@@ -95,6 +95,6 @@ export default {
     type: 'checkbox',
   },
   groupName: '表单',
-  icon: 'icon--epic--dialogs-outline-rounded',
+  icon: 'icon--aigen--dialogs-outline-rounded',
   sort: 860,
 } as ComponentConfigModel;

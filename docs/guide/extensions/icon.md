@@ -104,7 +104,7 @@ icon: 'icon-xxx'
 
 ## ~~旧版本Icon~~
 
-> 该Icon库已在`v0.9.18`版本移除，如果需要继续使用该icon库，可以从[点击这里下载](https://gitee.com/kcz66/epic-designer/tree/develop/docs/public/icons)
+> 该Icon库已在`v0.9.18`版本移除，如果需要继续使用该icon库，可以从[点击这里下载](https://github.com/haoguodong09-svg/aigen-designer/tree/develop/docs/public/icons)
 
 <iframe width="730px" height="2160px" frameborder="0" src="/icons/demo_index.html">
 

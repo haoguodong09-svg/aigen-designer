@@ -59,6 +59,6 @@ export default {
     children: [],
   },
   groupName: '布局',
-  icon: 'icon--epic--wysiwyg-rounded',
+  icon: 'icon--aigen--wysiwyg-rounded',
   sort: 700,
 } as ComponentConfigModel;

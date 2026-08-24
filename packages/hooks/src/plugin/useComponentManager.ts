@@ -211,7 +211,7 @@ export function useComponentManager() {
    * @returns icon
    */
   function getIcon(type: string) {
-    return componentConfigs[type]?.icon ?? 'icon--epic--component';
+    return componentConfigs[type]?.icon ?? 'icon--aigen--component';
   }
 
   /**
@@ -345,7 +345,7 @@ export function useComponentManager() {
         componentConfig.defaultSchema.componentProps;
       delete componentConfig.defaultSchema.componentProps;
       console.warn(
-        `[Epic] 注册组件 ${componentConfig.defaultSchema.type} 的 componentProps 属性已被弃用，请使用 props 代替。`,
+        `[Aigen] 注册组件 ${componentConfig.defaultSchema.type} 的 componentProps 属性已被弃用，请使用 props 代替。`,
       );
     }
 

@@ -71,7 +71,7 @@ function handleRemove(index: number) {
         "
         class="option-item text-16px text-$ep-text-secondary mb-2 grid items-center gap-2"
       >
-        <EpIcon class="handle mr-2 cursor-move" name="icon--epic--drag" />
+        <EpIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
         <Input
           v-model="option.label"
           v-model:value="option.label"
@@ -85,12 +85,12 @@ function handleRemove(index: number) {
         <EpIcon
           v-if="tree"
           class="text-lg! cursor-pointer"
-          name="icon--epic--add-rounded"
+          name="icon--aigen--add-rounded"
           @click="handleAddChildren(option)"
         />
         <EpIcon
           class="hover:text-red cursor-pointer"
-          name="icon--epic--delete-outline-rounded"
+          name="icon--aigen--delete-outline-rounded"
           @click="handleRemove(index)"
         />
       </div>

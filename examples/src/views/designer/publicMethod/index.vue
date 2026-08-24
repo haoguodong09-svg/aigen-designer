@@ -112,7 +112,7 @@ const pageSchema: PageSchema = {
     },
   ],
   script:
-    "const { defineExpose, find } = epic;\n\nasync function test (){\n    const data = await epic.publicMethods.fetchData()\n    find('name','field').setValue(data.name)\n    find('age','field').setValue(data.age)\n    find('about','field').setValue(data.about)\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test\n})",
+    "const { defineExpose, find } = aigen;\n\nasync function test (){\n    const data = await aigen.publicMethods.fetchData()\n    find('name','field').setValue(data.name)\n    find('age','field').setValue(data.age)\n    find('about','field').setValue(data.about)\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test\n})",
 };
 
 onMounted(() => {

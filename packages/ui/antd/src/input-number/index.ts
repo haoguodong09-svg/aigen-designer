@@ -163,6 +163,6 @@ export default {
     type: 'number',
   },
   groupName: '表单',
-  icon: 'icon--epic--123-rounded',
+  icon: 'icon--aigen--123-rounded',
   sort: 710,
 } as ComponentConfigModel;

@@ -138,6 +138,6 @@ export default {
     children: [],
   },
   groupName: '表单',
-  icon: 'icon--epic--list-alt-outline-rounded',
+  icon: 'icon--aigen--list-alt-outline-rounded',
   sort: 600,
 } as ComponentConfigModel;

@@ -32,8 +32,6 @@ const { toggleDark } = useTheme()
 toggleDark()
 ```
 
-![](https://examples.epicjs.cn/static/dark.png)
-
 ## 修改暗黑主题
 
 同自定义主题一样，直接覆盖对应的 css 变量即可

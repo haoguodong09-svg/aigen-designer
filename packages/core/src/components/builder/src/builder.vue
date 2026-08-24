@@ -150,20 +150,20 @@ function handleReady() {
     (finished) => {
       if (finished) {
         if (unwatch) unwatch();
-        triggerEpicReady();
+        triggerAigenReady();
       }
     },
   );
 }
 
-function triggerEpicReady() {
+function triggerAigenReady() {
   ready.value = true;
   emit('ready', pageManager);
 
   // 执行绑定的ready事件
   findSchemas(pageManager.pageSchema.schemas, (schema) => {
-    if (schema.on?.epicReady) {
-      pageManager.doActions(schema.on.epicReady);
+    if (schema.on?.aigenReady) {
+      pageManager.doActions(schema.on.aigenReady);
     }
     return false;
   });

@@ -29,7 +29,7 @@ const selectorPosition = ref<'bottom' | 'center' | 'top'>('top');
 
 const { canvasScale, disabledZoom } = useStore();
 
-let epicEditRange: HTMLDivElement | null = null;
+let aigenEditRange: HTMLDivElement | null = null;
 
 /**
  * 判断组件是否可移动和可拖拽删除
@@ -150,9 +150,9 @@ let oldScrollLeft = 0;
  */
 function setSeletorStyle() {
   const element = getSelectComponentElement.value;
-  if (!element || !epicEditRange) return;
+  if (!element || !aigenEditRange) return;
 
-  const { left: offsetX, top: offsetY } = epicEditRange.getBoundingClientRect();
+  const { left: offsetX, top: offsetY } = aigenEditRange.getBoundingClientRect();
 
   let rect = element.getBoundingClientRect?.();
   if (!rect && element.nextElementSibling) {
@@ -163,9 +163,9 @@ function setSeletorStyle() {
 
   const scale = disabledZoom.value ? 1 : canvasScale.value;
   // 计算选择器部件位置
-  const selectorTop = top - offsetY + (epicEditRange?.scrollTop ?? 0) * scale;
+  const selectorTop = top - offsetY + (aigenEditRange?.scrollTop ?? 0) * scale;
   const selectorLeft =
-    left - offsetX + (epicEditRange?.scrollLeft ?? 0) * scale;
+    left - offsetX + (aigenEditRange?.scrollLeft ?? 0) * scale;
 
   const selectorRefHeight = height / scale;
 
@@ -210,9 +210,9 @@ function scrollIntoView(selectorTop: number, selectorLeft: number) {
   if (pageSchema.schemas[0].id === designer.state.selectedNode?.id) return;
   // 自动滚动到元素可视区域 start
   const element = getSelectComponentElement.value;
-  if (!epicEditRange || !element) return;
+  if (!aigenEditRange || !element) return;
   // 获取两个元素的边界框信息
-  const rect2 = epicEditRange.getBoundingClientRect();
+  const rect2 = aigenEditRange.getBoundingClientRect();
   const { height, width } = element.getBoundingClientRect();
 
   const scale = disabledZoom.value ? 1 : canvasScale.value;
@@ -241,10 +241,10 @@ function scrollIntoView(selectorTop: number, selectorLeft: number) {
   oldScrollTop = newScrollTop;
   oldScrollLeft = newScrollLeft;
   // 计算容器可视区域的绝对边界（相对于当前滚动位置）
-  const containerTop = epicEditRange.scrollTop;
-  const containerBottom = epicEditRange.scrollTop + rect2.height;
-  const containerLeft = epicEditRange.scrollLeft;
-  const containerRight = epicEditRange.scrollLeft + rect2.width;
+  const containerTop = aigenEditRange.scrollTop;
+  const containerBottom = aigenEditRange.scrollTop + rect2.height;
+  const containerLeft = aigenEditRange.scrollLeft;
+  const containerRight = aigenEditRange.scrollLeft + rect2.width;
 
   // 计算组件在容器坐标系中的实际位置
   const elementTop = selectorTop / scale;
@@ -262,8 +262,8 @@ function scrollIntoView(selectorTop: number, selectorLeft: number) {
 
   if (isVisible) return;
 
-  epicEditRange.scrollTop = newScrollTop;
-  epicEditRange.scrollLeft = newScrollLeft;
+  aigenEditRange.scrollTop = newScrollTop;
+  aigenEditRange.scrollLeft = newScrollLeft;
   // 自动滚动到元素可视区域 end
 }
 
@@ -273,8 +273,8 @@ function scrollIntoView(selectorTop: number, selectorLeft: number) {
 function setHoverStyle() {
   const element = getHoverComponentElement.value;
 
-  if (!element || !epicEditRange) return;
-  const { left: offsetX, top: offsetY } = epicEditRange.getBoundingClientRect();
+  if (!element || !aigenEditRange) return;
+  const { left: offsetX, top: offsetY } = aigenEditRange.getBoundingClientRect();
 
   let rect = element.getBoundingClientRect?.();
   if (!rect && element.nextElementSibling) {
@@ -285,8 +285,8 @@ function setHoverStyle() {
   const scale = disabledZoom.value ? 1 : canvasScale.value;
 
   // 计算选择器部件位置
-  const hoverTop = top - offsetY + (epicEditRange.scrollTop ?? 0) * scale;
-  const hoverLeft = left - offsetX + (epicEditRange.scrollLeft ?? 0) * scale;
+  const hoverTop = top - offsetY + (aigenEditRange.scrollTop ?? 0) * scale;
+  const hoverLeft = left - offsetX + (aigenEditRange.scrollLeft ?? 0) * scale;
 
   if (hoverWidgetRef.value) {
     hoverWidgetRef.value.style.width = `${width / scale}px`;
@@ -332,10 +332,10 @@ function handleSelectParentNode() {
   designer.setSelectedNode(parentSchema);
 }
 
-// 初始化函数，传入一个指向 Epic 编辑范围的引用
-function handleInit(epicEditRangeRef) {
-  epicEditRange = epicEditRangeRef;
-  epicEditRange?.addEventListener('scroll', () => {
+// 初始化函数，传入一个指向 Aigen 编辑范围的引用
+function handleInit(aigenEditRangeRef) {
+  aigenEditRange = aigenEditRangeRef;
+  aigenEditRange?.addEventListener('scroll', () => {
     setSeletorStyle();
   });
 
@@ -376,21 +376,21 @@ defineExpose({
           class="ep-widget-action-item pointer-events-auto"
           @click="handleSelectParentNode"
         >
-          <EpIcon name="icon--epic--upward" />
+          <EpIcon name="icon--aigen--upward" />
         </div>
         <div
           title="复制"
           class="ep-widget-action-item pointer-events-auto"
           @click="designer.handleDuplicate"
         >
-          <EpIcon name="icon--epic--copy-all-outline-rounded" />
+          <EpIcon name="icon--aigen--copy-all-outline-rounded" />
         </div>
         <div
           title="删除"
           class="ep-widget-action-item pointer-events-auto"
           @click="designer.handleDelete"
         >
-          <EpIcon name="icon--epic--delete-outline-rounded" />
+          <EpIcon name="icon--aigen--delete-outline-rounded" />
         </div>
       </div>
       <!-- 操作按钮 end  -->

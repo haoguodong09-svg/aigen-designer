@@ -137,7 +137,7 @@ function handlePreview(e: UploadFile): void {
         v-if="(fileList?.length ?? 0) < props.maxCount"
       >
         <span
-          class="icon--epic icon--epic--cloud-upload-outlined text-lg"
+          class="icon--aigen icon--aigen--cloud-upload-outlined text-lg"
         ></span>
         <div class="ant-upload-text">上传文件</div>
       </Button>

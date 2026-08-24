@@ -169,8 +169,8 @@ defineExpose({
       <EpIcon
         :name="
           isFullScreen
-            ? `icon--epic--close-fullscreen`
-            : `icon--epic--open-fullscreen`
+            ? `icon--aigen--close-fullscreen`
+            : `icon--aigen--open-fullscreen`
         "
       />
     </div>

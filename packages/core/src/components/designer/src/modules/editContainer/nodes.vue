@@ -39,33 +39,33 @@ function getNodeSchema(target) {
   if (!target?.closest) return null;
 
   // 优先检查当前元素
-  if (target.dataset?.epicId) {
-    return getSchemaByEpicId(target.dataset.epicId);
+  if (target.dataset?.aigenId) {
+    return getSchemaByAigenId(target.dataset.aigenId);
   }
 
   // 检查直接子元素（只向下查询一级）
   if (!target.classList.contains('ep-draggable-range')) {
-    const directChild = target.querySelector(':scope > [data-epic-id]');
-    if (directChild?.dataset?.epicId) {
-      return getSchemaByEpicId(directChild.dataset.epicId);
+    const directChild = target.querySelector(':scope > [data-aigen-id]');
+    if (directChild?.dataset?.aigenId) {
+      return getSchemaByAigenId(directChild.dataset.aigenId);
     }
   }
 
   // 向父级查找
-  const parentElement = target.closest('[data-epic-id]');
-  if (parentElement?.dataset?.epicId) {
-    return getSchemaByEpicId(parentElement.dataset.epicId);
+  const parentElement = target.closest('[data-aigen-id]');
+  if (parentElement?.dataset?.aigenId) {
+    return getSchemaByAigenId(parentElement.dataset.aigenId);
   }
 
   return null;
 }
 
 /**
- * 根据epicId获取schema的辅助函数
- * @param {string} epicId
+ * 根据aigenId获取schema的辅助函数
+ * @param {string} aigenId
  */
-function getSchemaByEpicId(epicId) {
-  const instance = pageManager.findInstance(epicId);
+function getSchemaByAigenId(aigenId) {
+  const instance = pageManager.findInstance(aigenId);
   return instance?.exposed?.schema || null;
 }
 
@@ -125,7 +125,7 @@ function isInline(schema: ComponentSchema) {
       v-for="element in modelSchemas"
       :key="element.id"
       @contextmenu.stop="contextMenu.open($event, element)"
-      :data-epic-id="element.id"
+      :data-aigen-id="element.id"
     >
       <EpNodeItem :schema="element" />
     </div>

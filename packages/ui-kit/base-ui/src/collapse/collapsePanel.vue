@@ -123,7 +123,7 @@ onUnmounted(() => {
         :class="{ 'ep-collapse-panel__arrow--active': isActive }"
       >
         <slot name="arrow">
-          <EpIcon name="icon--epic--arrow-forward-ios-rounded" />
+          <EpIcon name="icon--aigen--arrow-forward-ios-rounded" />
         </slot>
       </div>
     </div>

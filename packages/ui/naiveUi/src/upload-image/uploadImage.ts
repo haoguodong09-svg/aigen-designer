@@ -101,7 +101,7 @@ export default defineComponent({
                       default: () => [
                         h('span', {
                           class:
-                            'icon--epic icon--epic--cloud-upload-outlined text-md mr-2px text-lg',
+                            'icon--aigen icon--aigen--cloud-upload-outlined text-md mr-2px text-lg',
                         }),
                         h(
                           'div',

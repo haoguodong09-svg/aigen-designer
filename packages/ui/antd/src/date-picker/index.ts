@@ -276,6 +276,6 @@ export default {
     type: 'date',
   },
   groupName: '表单',
-  icon: 'icon--epic--calendar-month-outline-rounded',
+  icon: 'icon--aigen--calendar-month-outline-rounded',
   sort: 910,
 } as ComponentConfigModel;

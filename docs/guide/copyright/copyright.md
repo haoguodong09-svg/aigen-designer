@@ -30,9 +30,4 @@ SOFTWARE.
 
 使用必须遵守国家法律法规，⛔不允许非法项目使用，后果自负❗
 
-## 软件著作权证书
-
-<img src="https://examples.epicjs.cn/static/certificate.jpg" width="320px">
-
-
 

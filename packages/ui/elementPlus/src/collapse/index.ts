@@ -38,5 +38,5 @@ export default {
       },
     ],
   },
-  icon: 'epic-icon-xiala',
+  icon: 'aigen-icon-xiala',
 } as ComponentConfigModel;

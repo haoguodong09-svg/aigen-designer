@@ -26,7 +26,7 @@ type EventGroup = {
 const LIFECYCLE_EVENTS: EventModel[] = [
   {
     description: '挂载完成（全部组件）',
-    type: 'epicReady',
+    type: 'aigenReady',
   },
   {
     description: '挂载完成（本组件）',

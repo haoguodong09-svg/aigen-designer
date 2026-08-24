@@ -91,7 +91,7 @@ export default defineComponent({
                     default: () => [
                       h('span', {
                         class:
-                          'icon--epic icon--epic--cloud-upload-outlined text-lg',
+                          'icon--aigen icon--aigen--cloud-upload-outlined text-lg',
                         style: { 'margin-right': '2px' },
                       }),
                       h('span', null, { default: () => '上传文件' }),

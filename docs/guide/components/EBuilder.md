@@ -31,7 +31,7 @@ const pageSchema = {
           label: "输入框",
           type: "input",
           field: "input",
-          icon: "epic-icon-write",
+          icon: "aigen-icon-write",
           input: true,
           props: {
             defaultValue: "",
@@ -80,7 +80,7 @@ const pageSchema = {
         {
           label: "表单",
           type: "form",
-          icon: "epic-icon-qiapian",
+          icon: "aigen-icon-qiapian",
           name: "default",
           props: {
             labelWidth: 100,
@@ -100,7 +100,7 @@ const pageSchema = {
               label: "输入框",
               type: "input",
               field: "input",
-              icon: "epic-icon-write",
+              icon: "aigen-icon-write",
               input: true,
               props: {
                 defaultValue: "",
@@ -113,7 +113,7 @@ const pageSchema = {
             {
               label: "数字输入框",
               type: "number",
-              icon: "epic-icon-number",
+              icon: "aigen-icon-number",
               field: "number",
               input: true,
               props: {
@@ -126,7 +126,7 @@ const pageSchema = {
             {
               label: "选择框",
               type: "select",
-              icon: "epic-icon-xiala",
+              icon: "aigen-icon-xiala",
               field: "select",
               input: true,
               props: {
@@ -150,7 +150,7 @@ const pageSchema = {
             {
               label: "单选框",
               type: "radio",
-              icon: "epic-icon-danxuan-cuxiantiao",
+              icon: "aigen-icon-danxuan-cuxiantiao",
               field: "radio",
               input: true,
               props: {
@@ -226,7 +226,7 @@ const pageSchema = ref<PageSchema>({
         {
           label: "表单",
           type: "form",
-          icon: "epic-icon-daibanshixiang",
+          icon: "aigen-icon-daibanshixiang",
           props: {
             name: "default",
             labelWidth: 100,
@@ -247,7 +247,7 @@ const pageSchema = ref<PageSchema>({
               label: "姓名",
               type: "input",
               field: "input_sb6jhfb8",
-              icon: "epic-icon-write",
+              icon: "aigen-icon-write",
               input: true,
               props: {
                 defaultValue: "",
@@ -298,7 +298,7 @@ const pageSchema = {
           label: "输入框",
           type: "input",
           field: "input",
-          icon: "epic-icon-write",
+          icon: "aigen-icon-write",
           input: true,
           props: {
             defaultValue: "",
@@ -322,7 +322,7 @@ const pageSchemaForm = {
         {
           label: "表单",
           type: "form",
-          icon: "epic-icon-qiapian",
+          icon: "aigen-icon-qiapian",
           name: "default",
           props: {
             labelWidth: 100,
@@ -342,7 +342,7 @@ const pageSchemaForm = {
               label: "输入框",
               type: "input",
               field: "input",
-              icon: "epic-icon-write",
+              icon: "aigen-icon-write",
               input: true,
               props: {
                 defaultValue: "",
@@ -355,7 +355,7 @@ const pageSchemaForm = {
             {
               label: "数字输入框",
               type: "number",
-              icon: "epic-icon-number",
+              icon: "aigen-icon-number",
               field: "number",
               input: true,
               props: {
@@ -368,7 +368,7 @@ const pageSchemaForm = {
             {
               label: "选择框",
               type: "select",
-              icon: "epic-icon-xiala",
+              icon: "aigen-icon-xiala",
               field: "select",
               input: true,
               props: {
@@ -392,7 +392,7 @@ const pageSchemaForm = {
             {
               label: "单选框",
               type: "radio",
-              icon: "epic-icon-danxuan-cuxiantiao",
+              icon: "aigen-icon-danxuan-cuxiantiao",
               field: "radio",
               input: true,
               props: {
@@ -440,7 +440,7 @@ const pageSchema2 = {
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "props": {
             "name": "default",
             "labelWidth": 100,
@@ -461,7 +461,7 @@ const pageSchema2 = {
               "label": "姓名",
               "type": "input",
               "field": "input_sb6jhfb8",
-              "icon": "epic-icon-write",
+              "icon": "aigen-icon-write",
               "input": true,
               "props": {
                 "defaultValue": "",

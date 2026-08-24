@@ -80,7 +80,7 @@ const customValidateComponent: ComponentConfigModel = {
     type: CUSTOM_VALIDATE_COMPONENT_TYPE,
   },
   groupName: '表单',
-  icon: 'icon--epic--shield-check-outline-rounded',
+  icon: 'icon--aigen--shield-check-outline-rounded',
   sort: 130,
 };
 

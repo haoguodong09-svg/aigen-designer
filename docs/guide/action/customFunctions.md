@@ -4,10 +4,10 @@
 `自定义函数` 是设计器中的一项关键功能，它赋予用户更灵活的操作和定制能力。通过自定义函数，用户可以在设计器中实现特定的逻辑和行为，满足其个性化的需求。
 :::
 
-在自定义函数内提供了一个 epic 对象，可以通过该对象对应的方法与页面及组件进行交互,如下面代码，解构获取defineExpose函数（暴露自定义函数给设计器使用）、find函数（通过id查询组件实例），更多方法可以查看下面 [Epic Methods](#epic-methods)
+在自定义函数内提供了一个 aigen 对象，可以通过该对象对应的方法与页面及组件进行交互,如下面代码，解构获取defineExpose函数（暴露自定义函数给设计器使用）、find函数（通过id查询组件实例），更多方法可以查看下面 [Aigen Methods](#aigen-methods)
 
 ```js
-const { defineExpose, find } = epic;
+const { defineExpose, find } = aigen;
 
 function test(e) {
   find("ho0tpt7i7tc00").setAttr("hidden", e);
@@ -33,7 +33,7 @@ defineExpose({
 ## 显示,禁用交互示例-渲染组件
 
 <EBuilder :pageSchema="pageSchema" />
-epic.json 数据
+aigen.json 数据
 ```json
 {
   "schemas": [
@@ -45,7 +45,7 @@ epic.json 数据
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "props": {
             "size": "default",
             "labelWidth": 100,
@@ -66,7 +66,7 @@ epic.json 数据
             {
               "label": "栅格布局",
               "type": "row",
-              "icon": "epic-icon-zhage",
+              "icon": "aigen-icon-zhage",
               "children": [
                 {
                   "type": "col",
@@ -74,7 +74,7 @@ epic.json 数据
                     {
                       "label": "禁用姓名",
                       "type": "switch",
-                      "icon": "epic-icon-kaiguan3",
+                      "icon": "aigen-icon-kaiguan3",
                       "field": "switch_vhzz40mc",
                       "input": true,
                       "props": {
@@ -103,7 +103,7 @@ epic.json 数据
                     {
                       "label": "隐藏姓名",
                       "type": "switch",
-                      "icon": "epic-icon-kaiguan3",
+                      "icon": "aigen-icon-kaiguan3",
                       "field": "switch_k561x18z",
                       "input": true,
                       "props": {},
@@ -130,7 +130,7 @@ epic.json 数据
             {
               "label": "姓名",
               "type": "input",
-              "icon": "epic-icon-write",
+              "icon": "aigen-icon-write",
               "field": "input_ho0tpt7i7tc00",
               "input": true,
               "props": {
@@ -164,7 +164,7 @@ epic.json 数据
 ## 表单自动求和-渲染组件
 
 <EBuilder :pageSchema="pageSchema2" />
-epic.json 数据
+aigen.json 数据
 ```json
 {
   "schemas": [
@@ -176,7 +176,7 @@ epic.json 数据
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "name": "default",
           "props": {
             "labelWidth": 100,
@@ -197,7 +197,7 @@ epic.json 数据
             {
               "label": "数值1",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_9m5zzib6",
               "input": true,
               "props": {
@@ -220,7 +220,7 @@ epic.json 数据
             {
               "label": "数值2",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_szitefkr",
               "input": true,
               "props": {
@@ -243,7 +243,7 @@ epic.json 数据
             {
               "label": "总值",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_bs7n1wpv",
               "input": true,
               "props": {
@@ -287,7 +287,7 @@ const pageSchema = {
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "props": {
             "size": "default",
             "labelWidth": 100,
@@ -309,7 +309,7 @@ const pageSchema = {
             {
               "label": "栅格布局",
               "type": "row",
-              "icon": "epic-icon-zhage",
+              "icon": "aigen-icon-zhage",
               "children": [
                 {
                   "type": "col",
@@ -317,7 +317,7 @@ const pageSchema = {
                     {
                       "label": "禁用姓名",
                       "type": "switch",
-                      "icon": "epic-icon-kaiguan3",
+                      "icon": "aigen-icon-kaiguan3",
                       "field": "switch_vhzz40mc",
                       "input": true,
                       "props": {
@@ -346,7 +346,7 @@ const pageSchema = {
                     {
                       "label": "隐藏姓名",
                       "type": "switch",
-                      "icon": "epic-icon-kaiguan3",
+                      "icon": "aigen-icon-kaiguan3",
                       "field": "switch_k561x18z",
                       "input": true,
                       "props": {},
@@ -373,7 +373,7 @@ const pageSchema = {
             {
               "label": "姓名",
               "type": "input",
-              "icon": "epic-icon-write",
+              "icon": "aigen-icon-write",
               "field": "input_ho0tpt7i7tc00",
               "input": true,
               "props": {
@@ -413,7 +413,7 @@ const pageSchema2 = {
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "name": "default",
           "props": {
             "labelWidth": 100,
@@ -432,7 +432,7 @@ const pageSchema2 = {
             {
               "label": "数值1",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_9m5zzib6",
               "input": true,
               "props": {
@@ -455,7 +455,7 @@ const pageSchema2 = {
             {
               "label": "数值2",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_szitefkr",
               "input": true,
               "props": {
@@ -478,7 +478,7 @@ const pageSchema2 = {
             {
               "label": "总值",
               "type": "number",
-              "icon": "epic-icon-number",
+              "icon": "aigen-icon-number",
               "field": "number_bs7n1wpv",
               "input": true,
               "props": {
@@ -517,7 +517,7 @@ background: white;
 }
 </style>
 
-## Epic Methods
+## Aigen Methods
 ### defineExpose
 
 类型：`(exposed: Record<string, any>) => void`

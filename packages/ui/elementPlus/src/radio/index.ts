@@ -117,6 +117,6 @@ export default {
     type: 'radio',
   },
   groupName: '表单',
-  icon: 'icon--epic--radio-button-checked-outline',
+  icon: 'icon--aigen--radio-button-checked-outline',
   sort: 850,
 } as ComponentConfigModel;

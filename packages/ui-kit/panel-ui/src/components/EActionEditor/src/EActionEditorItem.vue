@@ -92,14 +92,14 @@ function getNewEvents(type: string) {
 <template>
   <div v-for="item in itemEvents" :key="item.type" class="ep-event-item">
     <div class="ep-event-info">
-      <div class="epic-event-label" :title="item.describe ?? item.description">
+      <div class="aigen-event-label" :title="item.describe ?? item.description">
         {{ item.describe ?? item.description }}
       </div>
       <div
         class="ep-event-btn text-$ep-text-secondary flex items-center text-lg"
       >
         <EpIcon
-          name="icon--epic--add-rounded"
+          name="icon--aigen--add-rounded"
           @click="handleOpen(item.type)"
         />
       </div>
@@ -123,7 +123,7 @@ function getNewEvents(type: string) {
           <div class="w-36px flex items-center text-lg">
             <EpIcon
               class="handle text-$ep-text-helper mr-2 cursor-move text-lg"
-              name="icon--epic--drag"
+              name="icon--aigen--drag"
             />
           </div>
           <div class="flex-1">
@@ -139,10 +139,10 @@ function getNewEvents(type: string) {
               class="ep-edit-btn"
               @click="handleEdit(index, item.type, action)"
             >
-              <EpIcon name="icon--epic--page-info-outline-rounded" />
+              <EpIcon name="icon--aigen--page-info-outline-rounded" />
             </div>
             <div class="ep-del-btn" @click="handleDelete(index, item.type)">
-              <EpIcon name="icon--epic--delete-outline-rounded" />
+              <EpIcon name="icon--aigen--delete-outline-rounded" />
             </div>
           </div>
         </div>

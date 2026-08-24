@@ -102,7 +102,7 @@ export default {
     type: 'switch',
   },
   groupName: '表单',
-  icon: 'icon--epic--toggle-off-outline',
+  icon: 'icon--aigen--toggle-off-outline',
   sort: 930,
 } as ComponentConfigModel;
 

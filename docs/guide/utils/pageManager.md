@@ -31,7 +31,7 @@ const pageSchema = ref<PageSchema>({
         {
           "label": "表单",
           "type": "form",
-          "icon": "epic-icon-daibanshixiang",
+          "icon": "aigen-icon-daibanshixiang",
           "name": "default",
           "props": {
             "labelWidth": 100,
@@ -50,11 +50,11 @@ const pageSchema = ref<PageSchema>({
             {
               "label": "上传文件",
               "type": "upload-file",
-              "icon": "epic-icon-upload",
+              "icon": "aigen-icon-upload",
               "field": "upload",
               "input": true,
               "props": {
-                "action": "https://examples.epicjs.cn/epic-mock/common/upload",
+                "action": "/api/common/upload",
                 "name": "file",
                 "showFileList": true
               },
@@ -107,4 +107,3 @@ function handleReady(pageManager: PageManager) {
 ~~类型：`(queryValue: string, queryField = 'id') => ComponentPublicInstance | undefined `~~
 
 ~~说明：通过id获取组件实例，与find函数相同，推荐使用find函数~~
-

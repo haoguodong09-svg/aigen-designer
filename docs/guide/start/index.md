@@ -22,16 +22,6 @@
 
 📦github仓库：[https://github.com/haoguodong09-svg/aigen-designer](https://github.com/haoguodong09-svg/aigen-designer)
 
-📦gitee仓库：[https://gitee.com/kcz66/epic-designer](https://gitee.com/kcz66/epic-designer)
-
-📖文档地址：[https://docs.epicjs.cn](https://docs.epicjs.cn)
-
-💎项目预览地址：
-
-- ElementPlus：[https://examples.epicjs.cn/element-plus/designer/basic](https://examples.epicjs.cn/element-plus/designer/basic?maximize=1)
-- AntDesignVue：[https://examples.epicjs.cn/ant-designe-vue/designer/basic](https://examples.epicjs.cn/ant-designe-vue/designer/basic?maximize=1)
-- NaiveUi：[https://examples.epicjs.cn/naive-ui/designer/basic](https://examples.epicjs.cn/naive-ui/designer/basic?maximize=1)
-
 ## 特性
 
 - 可视化配置页面

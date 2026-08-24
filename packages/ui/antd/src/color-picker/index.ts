@@ -103,6 +103,6 @@ export default {
     type: 'color-picker',
   },
   groupName: '表单',
-  icon: 'icon--epic--palette-outline',
+  icon: 'icon--aigen--palette-outline',
   sort: 950,
 } as ComponentConfigModel;

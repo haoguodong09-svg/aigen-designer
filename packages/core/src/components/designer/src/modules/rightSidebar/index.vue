@@ -6,7 +6,7 @@ import { computed, ref, shallowRef } from 'vue';
 import { EpIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
-import EpicBreadcrumb from './breadcrumb.vue';
+import AigenBreadcrumb from './breadcrumb.vue';
 
 const hideRightMain = ref(false);
 
@@ -44,13 +44,13 @@ function handleClick(item: RightSidebarModel, index: number) {
       <EpIcon
         class="transition-all"
         :class="{ 'rotate-180': hideRightMain }"
-        name="icon--epic--arrow-forward-ios-rounded"
+        name="icon--aigen--arrow-forward-ios-rounded"
       />
     </div>
     <!-- 折叠按钮 end -->
 
     <div class="ep-right-sidebar w-308px" :class="{ hide: hideRightMain }">
-      <EpicBreadcrumb />
+      <AigenBreadcrumb />
       <ul class="ep-actions-container">
         <li
           v-for="(item, index) in rightSidebars"

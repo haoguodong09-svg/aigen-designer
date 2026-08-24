@@ -107,7 +107,7 @@ init();
         :class="{ expanded }"
         @click="handleExpanded"
       >
-        <EpIcon name="icon--epic--caret-right-outlined" />
+        <EpIcon name="icon--aigen--caret-right-outlined" />
       </span>
       <TreeNodeText />
     </a>

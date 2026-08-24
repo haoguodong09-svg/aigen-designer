@@ -170,6 +170,6 @@ export default {
     type: 'time',
   },
   groupName: '表单',
-  icon: 'icon--epic--time-line',
+  icon: 'icon--aigen--time-line',
   sort: 920,
 } as ComponentConfigModel;

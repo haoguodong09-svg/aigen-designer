@@ -23,7 +23,7 @@ const pageSchema = ref<PageSchema>({
         {
           label: '表单',
           type: 'form',
-          icon: 'epic-icon-daibanshixiang',
+          icon: 'aigen-icon-daibanshixiang',
           props: {
             hideRequiredMark: false,
             labelAlign: 'right',
@@ -44,7 +44,7 @@ const pageSchema = ref<PageSchema>({
               label: '输入框22',
               type: 'input',
               field: 'input_sb6jhfb8',
-              icon: 'epic-icon-write',
+              icon: 'aigen-icon-write',
               input: true,
               props: {
                 defaultValue: '',
@@ -59,7 +59,7 @@ const pageSchema = ref<PageSchema>({
               label: '按钮',
               type: 'button',
               field: 'button_ks9jbmym',
-              icon: 'epic-icon-button-remove',
+              icon: 'aigen-icon-button-remove',
               input: false,
               props: {
                 bordered: true,
@@ -84,7 +84,7 @@ const pageSchema = ref<PageSchema>({
     },
   ],
   script:
-    "const { defineExpose, find } = epic;\n\nfunction test (){\n    console.log('test')\n    find('input_sb6jhfb8').setAttr('disabled',!find('input_sb6jhfb8').getAttr('disabled'))\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test \n})",
+    "const { defineExpose, find } = aigen;\n\nfunction test (){\n    console.log('test')\n    find('input_sb6jhfb8').setAttr('disabled',!find('input_sb6jhfb8').getAttr('disabled'))\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test \n})",
 });
 
 function handleReady(pageManager: PageManager) {

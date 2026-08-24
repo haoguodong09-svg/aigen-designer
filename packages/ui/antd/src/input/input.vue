@@ -46,7 +46,7 @@ eventBus?.on('dataSelector:selected', (data) => {
       <span
         v-if="props.dataSelector"
         @click="handleDataSelector"
-        class="iconfont icon--epic icon--epic--search-rounded"
+        class="iconfont icon--aigen icon--aigen--search-rounded"
       ></span>
       <slot name="suffix"></slot>
     </template>

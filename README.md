@@ -1,5 +1,3 @@
-![](https://examples.epicjs.cn/static/logo.png#pic_center)
-
 <h3 align="center" style="background-image:-webkit-linear-gradient(left,#44c0fa,#c26cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AigenDesigner</h3>
 
 
@@ -20,23 +18,11 @@
 
 📦github仓库：[https://github.com/haoguodong09-svg/aigen-designer](https://github.com/haoguodong09-svg/aigen-designer)
 
-📦gitee仓库：[https://gitee.com/kcz66/epic-designer](https://gitee.com/kcz66/epic-designer)
-
-📖文档地址：[https://docs.epicjs.cn](https://docs.epicjs.cn)
-
-📖文档备用地址：[https://www.kcz66.com/aigen-designer/](https://www.kcz66.com/aigen-designer/)
-
-💎项目预览地址：
-
-- ElementPlus：[https://examples.epicjs.cn/element-plus/designer/basic](https://examples.epicjs.cn/element-plus/designer/basic?maximize=1)
-- AntDesignVue：[https://examples.epicjs.cn/ant-designe-vue/designer/basic](https://examples.epicjs.cn/ant-designe-vue/designer/basic?maximize=1)
-- NaiveUi：[https://examples.epicjs.cn/naive-ui/designer/basic](https://examples.epicjs.cn/naive-ui/designer/basic?maximize=1)
-
 > 使用必须遵守国家法律法规，⛔不允许非法项目使用，后果自负❗
 
 ## 简介
 
-可以简称`epic设计器`，是一个功能强大、开箱即用的拖拽式低代码设计器。它基于 Vue3 开发，兼容多套 UI 组件库，除了基础的页面设计功能，AigenDesigner 还提供了强大的扩展功能，可以让开发者根据自己的需求自由扩展和定制组件。此外，AigenDesigner使用 JSON 配置来生成页面，可帮助开发者快速生成页面，提高开发效率。它提供了两个重要组件：`e-designer` 设计器和 `e-builder` 生成器。
+可以简称`aigen设计器`，是一个功能强大、开箱即用的拖拽式低代码设计器。它基于 Vue3 开发，兼容多套 UI 组件库，除了基础的页面设计功能，AigenDesigner 还提供了强大的扩展功能，可以让开发者根据自己的需求自由扩展和定制组件。此外，AigenDesigner使用 JSON 配置来生成页面，可帮助开发者快速生成页面，提高开发效率。它提供了两个重要组件：`e-designer` 设计器和 `e-builder` 生成器。
 
 
 ## 最新版本
@@ -201,7 +187,7 @@ const pageSchema = {
           label: "输入框",
           type: "input",
           field: "input",
-          icon: "epic-icon-write",
+          icon: "aigen-icon-write",
           input: true,
           props: {
             defaultValue: "",

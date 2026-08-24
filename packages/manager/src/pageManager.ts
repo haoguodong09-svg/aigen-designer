@@ -143,7 +143,7 @@ export function createPageManager() {
    */
   function getComponent(queryValue: string, queryField = 'id') {
     console.warn(
-      '[Epic 自定义函数]: `getComponent`方法已废弃，后续版本可能移除该函数，请使用`find`方法',
+      '[Aigen 自定义函数]: `getComponent`方法已废弃，后续版本可能移除该函数，请使用`find`方法',
     );
     return find(queryValue, queryField);
   }
@@ -201,7 +201,7 @@ export function createPageManager() {
 
     try {
       // eslint-disable-next-line no-new-func
-      new Function(`const epic = this;${scriptStr}`).bind({
+      new Function(`const aigen = this;${scriptStr}`).bind({
         ...publicMethods,
         defineExpose,
         find,
@@ -218,7 +218,7 @@ export function createPageManager() {
       const err = error instanceof Error ? error : new Error(String(error));
       scriptError.value = err;
       if (outputError) {
-        console.error('[Epic：自定义函数]异常：', err);
+        console.error('[Aigen：自定义函数]异常：', err);
       }
     }
   }
@@ -316,7 +316,7 @@ export function createPageManager() {
       );
     } catch (error) {
       // 如果调用失败，打印错误信息
-      console.error(`[Epic：公共函数(${action.methodName})]执行异常:`, error);
+      console.error(`[Aigen：公共函数(${action.methodName})]执行异常:`, error);
     }
   }
 
@@ -331,7 +331,7 @@ export function createPageManager() {
       funcs.value[action.methodName]?.(...args);
     } catch (error) {
       // 如果调用失败，打印错误信息
-      console.error(`[Epic：自定义函数(${action.methodName})]执行异常:`, error);
+      console.error(`[Aigen：自定义函数(${action.methodName})]执行异常:`, error);
     }
   }
 
@@ -352,7 +352,7 @@ export function createPageManager() {
 
     // 如果未找到组件实例，发出警告并返回
     if (!component) {
-      console.warn(`[Epic：组件${action.componentId}]未找到`);
+      console.warn(`[Aigen：组件${action.componentId}]未找到`);
       return;
     }
 
@@ -362,7 +362,7 @@ export function createPageManager() {
     } catch (error) {
       // 如果调用失败，打印错误信息
       console.error(
-        `[Epic：组件${action.componentId}函数(${action.methodName})]执行异常:`,
+        `[Aigen：组件${action.componentId}函数(${action.methodName})]执行异常:`,
         error,
       );
     }

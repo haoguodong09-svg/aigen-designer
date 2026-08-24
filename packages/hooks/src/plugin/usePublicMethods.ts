@@ -23,19 +23,19 @@ export function usePublicMethods() {
   function addPublicMethod(publicMethod: PublicMethodModel): void {
     if (publicMethod.methodName) {
       console.warn(
-        `[Epic:公共函数]注册配置'methodName'属性已弃用,请使用'name'代替`,
+        `[Aigen:公共函数]注册配置'methodName'属性已弃用,请使用'name'代替`,
       );
     }
 
     if (publicMethod.method) {
       console.warn(
-        `[Epic:公共函数]注册配置'method'属性已弃用,请使用'handler'代替`,
+        `[Aigen:公共函数]注册配置'method'属性已弃用,请使用'handler'代替`,
       );
     }
 
     if (publicMethod.describe) {
       console.warn(
-        `[Epic:公共函数]注册配置'describe'属性已弃用,请使用'description'代替`,
+        `[Aigen:公共函数]注册配置'describe'属性已弃用,请使用'description'代替`,
       );
     }
 

@@ -33,7 +33,7 @@ function migrateCanvasMode(schema: PageSchema): PageSchema {
 // 内部默认页面数据
 const innerDefaultSchema: PageSchema = {
   schemas: [],
-  script: `const { defineExpose, find } = epic;
+  script: `const { defineExpose, find } = aigen;
   
   function test (){
       console.log('test')

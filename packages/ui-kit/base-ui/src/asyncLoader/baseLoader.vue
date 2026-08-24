@@ -5,6 +5,6 @@ import { EpIcon } from '../icon';
   <div
     class="text-$ep-primary text-10 flex min-h-40 items-center justify-center p-4"
   >
-    <EpIcon class="relative" name="icon--epic--bars-scale-fade" />
+    <EpIcon class="relative" name="icon--aigen--bars-scale-fade" />
   </div>
 </template>

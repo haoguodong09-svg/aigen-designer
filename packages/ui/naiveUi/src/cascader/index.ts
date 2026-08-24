@@ -216,6 +216,6 @@ export default {
     type: 'cascader',
   },
   groupName: '表单',
-  icon: 'icon--epic--full-coverage-outline',
+  icon: 'icon--aigen--full-coverage-outline',
   sort: 880,
 } as ComponentConfigModel;

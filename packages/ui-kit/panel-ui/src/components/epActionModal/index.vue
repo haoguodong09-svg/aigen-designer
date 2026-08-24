@@ -278,7 +278,7 @@ defineExpose({
                   <span class="max-w-full truncate">
                     <EpIcon
                       v-if="schema.props?.hidden"
-                      name="icon--epic--visibility-off-outline-rounded"
+                      name="icon--aigen--visibility-off-outline-rounded"
                       class="translate-y-2px"
                     />
                     {{
@@ -336,7 +336,7 @@ defineExpose({
           >
             <div class="flex flex-col gap-1">
               <div class="flex items-center">
-                <EpIcon name="icon--epic--info" class="mr-2" />
+                <EpIcon name="icon--aigen--info" class="mr-2" />
                 <span class="text-$ep-text-helper text-sm font-medium">
                   {{ componentSchema?.label }}
                   <span class="text-$ep-text-secondary">

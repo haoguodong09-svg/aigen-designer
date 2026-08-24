@@ -59,7 +59,7 @@ export class FormulaEngine {
       const ast = jsep(expression);
       return this._execute(ast, mergedContext);
     } catch (error) {
-      console.error('[Epic: 公式解析错误]', error);
+      console.error('[Aigen: 公式解析错误]', error);
       return null;
     }
   }

@@ -33,7 +33,7 @@ let innerDefaultSchema: PageSchema = {
       children: [],
     },
   ],
-  script: `const { defineExpose, find } = epic;
+  script: `const { defineExpose, find } = aigen;
 
 function test (){
     console.log('test')

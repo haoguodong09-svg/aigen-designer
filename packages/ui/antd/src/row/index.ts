@@ -110,6 +110,6 @@ export default {
     childImmovable: true,
   },
   groupName: '布局',
-  icon: 'icon--epic--width-normal-outline',
+  icon: 'icon--aigen--width-normal-outline',
   sort: 800,
 } as ComponentConfigModel;

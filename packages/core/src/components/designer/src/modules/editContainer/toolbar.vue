@@ -22,17 +22,17 @@ const previewJson = ref<InstanceType<typeof EpPreviewJson> | null>(null);
 
 const deviceOptions = [
   {
-    icon: 'icon--epic--computer-outline-rounded',
+    icon: 'icon--aigen--computer-outline-rounded',
     key: 'desktop',
     title: 'pc',
   },
   {
-    icon: 'icon--epic--tablet-android-outline-rounded',
+    icon: 'icon--aigen--tablet-android-outline-rounded',
     key: 'tablet',
     title: '平板',
   },
   {
-    icon: 'icon--epic--phone-iphone-outline-sharp',
+    icon: 'icon--aigen--phone-iphone-outline-sharp',
     key: 'mobile',
     title: '手机',
   },
@@ -41,42 +41,42 @@ const deviceOptions = [
 const actionOptions = computed(() => {
   return [
     {
-      icon: 'icon--epic--code',
+      icon: 'icon--aigen--code',
       on: handlePreviewJSON,
       title: '查看数据',
     },
     {
-      icon: 'icon--epic--exit-to-app-rounded',
+      icon: 'icon--aigen--exit-to-app-rounded',
       on: handleOpenFileSelector,
       title: '导入数据',
     },
     {
-      icon: 'icon--epic--trash',
+      icon: 'icon--aigen--trash',
       on: designer.reset,
       title: '清空',
     },
     {
       disabled: revoke.recordList.value.length === 0,
       divider: true,
-      icon: 'icon--epic--undo',
+      icon: 'icon--aigen--undo',
       on: handleUndo,
       title: '撤销',
     },
     {
       disabled: revoke.undoList.value.length === 0,
-      icon: 'icon--epic--redo',
+      icon: 'icon--aigen--redo',
       on: handleRedo,
       title: '重做',
     },
     {
       divider: true,
-      icon: 'icon--epic--eye',
+      icon: 'icon--aigen--eye',
       on: designer.preview,
       show: () => designer.props.hiddenHeader,
       title: '预览',
     },
     {
-      icon: 'icon--epic--save-outline-rounded',
+      icon: 'icon--aigen--save-outline-rounded',
       on: designer.save,
       show: () => designer.props.hiddenHeader,
       title: '保存',

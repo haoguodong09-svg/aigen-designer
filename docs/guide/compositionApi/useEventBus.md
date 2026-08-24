@@ -212,7 +212,7 @@ eventBus?.on('dataSelector:selected', (data) => {
       <span
         v-if="dataSelector"
         @click="handleDataSelector"
-        class="iconfont icon--epic icon--epic--search-rounded"
+        class="iconfont icon--aigen icon--aigen--search-rounded"
       ></span>
     </template>
   </Input>

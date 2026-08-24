@@ -21,7 +21,7 @@ export interface Global extends InitialGlobal {
 function createDefaultGlobal(initialGlobal?: InitialGlobal): Global {
   // 默认提示函数
   const defaultMessage = (text: string) => {
-    console.warn(`[Epic]全局提示函数未注册 提示信息：'${text}'`);
+    console.warn(`[Aigen]全局提示函数未注册 提示信息：'${text}'`);
   };
   return {
     $message: {

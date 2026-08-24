@@ -147,6 +147,6 @@ export default {
     type: 'textarea',
   },
   groupName: '表单',
-  icon: 'icon--epic--edit-square-outline-rounded',
+  icon: 'icon--aigen--edit-square-outline-rounded',
   sort: 705,
 } as ComponentConfigModel;

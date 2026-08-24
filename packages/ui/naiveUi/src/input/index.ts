@@ -204,6 +204,6 @@ export default {
     type: 'input',
   },
   groupName: '表单',
-  icon: 'icon--epic--border-color-outline-rounded',
+  icon: 'icon--aigen--border-color-outline-rounded',
   sort: 700,
 } as ComponentConfigModel;

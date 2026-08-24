@@ -126,8 +126,8 @@ function handleDelete(schema) {
               :class="{ active: schema.status?.lock }"
               :name="
                 schema.status?.lock
-                  ? 'icon--epic--lock-outline'
-                  : 'icon--epic--lock-open-outline'
+                  ? 'icon--aigen--lock-outline'
+                  : 'icon--aigen--lock-open-outline'
               "
               @click="handleLock(schema)"
             />
@@ -137,21 +137,21 @@ function handleDelete(schema) {
               :class="{ active: schema.props?.hidden }"
               :name="
                 schema.props?.hidden
-                  ? 'icon--epic--visibility-off-outline-rounded'
-                  : 'icon--epic--visibility-outline-rounded'
+                  ? 'icon--aigen--visibility-off-outline-rounded'
+                  : 'icon--aigen--visibility-outline-rounded'
               "
               @click="handleShow(schema)"
             />
             <EpIcon
               v-if="!schema.status?.lock && !schema.props?.hidden"
               class="mr-2"
-              name="icon--epic--copy-all-outline-rounded"
+              name="icon--aigen--copy-all-outline-rounded"
               @click="handleCopy(schema)"
             />
             <EpIcon
               v-if="!schema.status?.lock && !schema.props?.hidden"
               class="mr-2"
-              name="icon--epic--delete-outline-rounded"
+              name="icon--aigen--delete-outline-rounded"
               @click="handleDelete(schema)"
             />
           </div>

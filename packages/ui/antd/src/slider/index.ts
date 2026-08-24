@@ -130,6 +130,6 @@ export default {
     type: 'slider',
   },
   groupName: '表单',
-  icon: 'icon--epic--switches',
+  icon: 'icon--aigen--switches',
   sort: 930,
 } as ComponentConfigModel;

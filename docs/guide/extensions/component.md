@@ -4,7 +4,7 @@
 `pluginManager` 提供了register方法添加组件，使您可以轻松扩展设计器的组件库。
 :::
 
-参考demo仓库： [https://gitee.com/kcz66/epic-designer-demo](https://gitee.com/kcz66/epic-designer-demo)
+参考demo仓库： [https://github.com/haoguodong09-svg/aigen-designer/tree/develop/examples](https://github.com/haoguodong09-svg/aigen-designer/tree/develop/examples)
 
 ## 组件注册示例
 
@@ -78,7 +78,7 @@ import { type ComponentConfigModel } from 'aigen-designer'
 export default {
   component: async () => await import('./index.vue'),
   groupName: "自定义组件",
-  icon: "epic-icon-write",
+  icon: "aigen-icon-write",
   defaultSchema: {
     label: '测试扩展组件',
     type: 'test',
@@ -179,7 +179,7 @@ const Test = {
   // 分组名称，组件会显示在该分组下
   groupName: '自定义组件',
   // 组件图标
-  icon: 'epic-icon-write',
+  icon: 'aigen-icon-write',
   // 组件排序，值越小越靠前
   sort: 900,
   // 默认组件结构数据

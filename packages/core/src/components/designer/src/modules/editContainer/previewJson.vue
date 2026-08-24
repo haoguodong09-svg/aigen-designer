@@ -47,7 +47,7 @@ function handleOpen() {
 /**
  * 导出数据
  */
-function handleExportData(fileName = `epic-data.json`) {
+function handleExportData(fileName = `aigen-data.json`) {
   const content = JSON.stringify(pageSchema, null, 2);
   const encodedUri = `data:text/json;charset=utf-8,${encodeURIComponent(content)}`;
   const actions = document.createElement('a');

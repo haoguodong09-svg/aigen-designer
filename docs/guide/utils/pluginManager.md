@@ -370,7 +370,7 @@ import { pluginManager } from 'aigen-designer'
 pluginManager.panel.registerActivitybar({
   // 组件路径，根据实际文件路径修改
   component: () => import('./ComponentPanel.vue'),
-  icon: 'icon--epic--extension-outline',
+  icon: 'icon--aigen--extension-outline',
   // 活动栏唯一标识符，相同ID会覆盖之前的注册
   id: 'test_1',
   // 排序权重，数值越小显示越靠前（默认100）
@@ -426,7 +426,7 @@ pluginManager.panel.registerRightSidebar({
   // 侧边栏组件路径
   component: () => import('./PropertySidebar.vue'),
   // 侧边栏唯一标识符
-  id: 'icon--epic--extension-outline',
+  id: 'icon--aigen--extension-outline',
   // 侧边栏显示标题
   title: '属性面板',
   // 可选：排序权重

@@ -67,7 +67,7 @@ function handleDelete(index: number) {
         :key="index"
         class="ep-tab-pane-editor-item my-2 grid grid-cols-[auto_auto_16px] items-center gap-2"
       >
-        <EpIcon class="handle cursor-move text-lg" name="icon--epic--drag" />
+        <EpIcon class="handle cursor-move text-lg" name="icon--aigen--drag" />
         <Input v-model:value="item.label" v-model="item.label" />
         <div
           v-if="tabList.length > 1"
@@ -75,7 +75,7 @@ function handleDelete(index: number) {
         >
           <EpIcon
             class="hover:text-red cursor-pointer text-lg"
-            name="icon--epic--delete-outline-rounded"
+            name="icon--aigen--delete-outline-rounded"
             @click="handleDelete(index)"
           />
         </div>

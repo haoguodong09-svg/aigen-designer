@@ -33,7 +33,7 @@ function setSchemas(e: string) {
     oldVal = JSON.parse(e);
     deepCompareAndModify(designer.state.selectedNode, oldVal);
   } catch (error) {
-    console.warn('[Epic：源码]异常：', error);
+    console.warn('[Aigen：源码]异常：', error);
   }
 }
 </script>

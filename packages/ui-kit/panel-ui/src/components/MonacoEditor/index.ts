@@ -24,7 +24,7 @@ export default {
   },
   defaultSchema: {
     field: 'monacoEditor',
-    icon: 'epic-icon-write',
+    icon: 'aigen-icon-write',
     input: true,
     label: '代码编辑器',
     type: 'monacoEditor',

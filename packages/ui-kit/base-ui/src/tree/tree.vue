@@ -97,7 +97,7 @@ provide(TREE_CONTEXT_KEY, {
         allow-clear
       >
         <template #prefix>
-          <EpIcon name="icon--epic--search-rounded" />
+          <EpIcon name="icon--aigen--search-rounded" />
         </template>
       </Input>
     </div>

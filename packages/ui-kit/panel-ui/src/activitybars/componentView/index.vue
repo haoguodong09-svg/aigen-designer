@@ -74,7 +74,7 @@ function handleClick(schema: ComponentSchema) {
         <template #prefix>
           <EpIcon
             class="text-$ep-text-helper"
-            name="icon--epic--search-rounded"
+            name="icon--aigen--search-rounded"
           />
         </template>
       </Input>

@@ -75,13 +75,13 @@ export default {
     input: true,
     label: '上传文件',
     props: {
-      action: 'https://examples.epicjs.cn/epic-mock/common/upload',
+      action: '/api/common/upload',
       name: 'file',
       showFileList: true,
     },
     type: 'upload-file',
   },
   groupName: '表单',
-  icon: 'icon--epic--upload-rounded',
+  icon: 'icon--aigen--upload-rounded',
   sort: 920,
 } as ComponentConfigModel;

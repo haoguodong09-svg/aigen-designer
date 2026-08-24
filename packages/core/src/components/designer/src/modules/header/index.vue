@@ -52,7 +52,7 @@ function handleSave() {
         <div>
           <Button size="small" @click="handlePreview">
             <span class="flex! h-full items-center">
-              <EpIcon name="icon--epic--eye" class="mr-4px" />
+              <EpIcon name="icon--aigen--eye" class="mr-4px" />
               预览
             </span>
           </Button>
@@ -61,7 +61,7 @@ function handleSave() {
           <Button size="small" @click="handleSave">
             <span class="flex! h-full items-center">
               <EpIcon
-                name="icon--epic--save-outline-rounded"
+                name="icon--aigen--save-outline-rounded"
                 class="mr-4px"
               />
               保存

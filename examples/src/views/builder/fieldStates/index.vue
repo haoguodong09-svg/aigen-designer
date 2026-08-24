@@ -199,7 +199,7 @@ const pageSchema = ref<PageSchema>({
     },
   ],
   script:
-    "const { defineExpose, find } = epic;\n\nfunction test (){\n    console.log('test')\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test\n})",
+    "const { defineExpose, find } = aigen;\n\nfunction test (){\n    console.log('test')\n}\n\n// 通过defineExpose暴露的函数或者属性\ndefineExpose({\n test\n})",
 });
 
 onMounted(() => {

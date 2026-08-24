@@ -15,19 +15,19 @@ import 'element-plus/theme-chalk/dark/css-vars.css';
 import 'ant-design-vue/dist/reset.css';
 
 const { isDark } = useTheme();
-const epicDarkMode = useStorage<boolean>('ep-dark-mode', false);
-isDark.value = epicDarkMode.value;
+const aigenDarkMode = useStorage<boolean>('ep-dark-mode', false);
+isDark.value = aigenDarkMode.value;
 watch(
   () => isDark.value,
   () => {
-    epicDarkMode.value = isDark.value;
+    aigenDarkMode.value = isDark.value;
   },
 );
 
 const links = [
   {
     title: '文档',
-    url: 'https://docs.epicjs.cn',
+    url: 'https://github.com/haoguodong09-svg/aigen-designer',
   },
   {
     title: '更新日志',
@@ -97,7 +97,7 @@ switchUI(selectValue.value);
   <div class="ep-demo-header h-64px flex items-center justify-between px-6">
     <a
       class="decoration-none flex items-center"
-      href="https://docs.epicjs.cn"
+      href="https://github.com/haoguodong09-svg/aigen-designer"
       target="_blank"
     >
       <img src="@/assets/logo.png" class="w-22px h-22px" alt="" srcset="" />

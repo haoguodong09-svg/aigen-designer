@@ -9,7 +9,7 @@ import type { PluginManager } from '@aigen-designer/manager';
 export function setupActivitybar(pluginManager: PluginManager): void {
   pluginManager.panel.registerActivitybar({
     component: async () => await import('./componentView/index.vue'),
-    icon: 'icon--epic--extension-outline',
+    icon: 'icon--aigen--extension-outline',
     id: 'component_view',
     sort: 100,
     title: '组件',
@@ -17,7 +17,7 @@ export function setupActivitybar(pluginManager: PluginManager): void {
 
   pluginManager.panel.registerActivitybar({
     component: async () => await import('./sourceCode/index.vue'),
-    icon: 'icon--epic--sdk-outline-rounded',
+    icon: 'icon--aigen--sdk-outline-rounded',
     id: 'sound_code_view',
     sort: 200,
     title: '源码',
@@ -25,7 +25,7 @@ export function setupActivitybar(pluginManager: PluginManager): void {
 
   pluginManager.panel.registerActivitybar({
     component: async () => await import('./outline/outline.vue'),
-    icon: 'icon--epic--account-tree-outline-rounded',
+    icon: 'icon--aigen--account-tree-outline-rounded',
     id: 'outline_view',
     sort: 300,
     title: '大纲',
