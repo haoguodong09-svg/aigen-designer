@@ -17,7 +17,7 @@ hero:
       link: /guide/start/index
     - theme: alt
       text: AigenDesigner 源码
-      link: https://gitee.com/kcz66
+      link: https://github.com/haoguodong09-svg/aigen-designer
 
 features:
   - icon: 💡

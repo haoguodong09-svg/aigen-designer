@@ -46,4 +46,4 @@
 
 ## 浏览器支持
 
-开发和测试平台均在 Google 和最新版 EDGE 上完成，其它浏览器请自行测试。如果存在兼容问题可在 gitee 或 github 提交 Issue。
+开发和测试平台均在 Google 和最新版 EDGE 上完成，其它浏览器请自行测试。如果存在兼容问题可在 github 提交 Issue。
