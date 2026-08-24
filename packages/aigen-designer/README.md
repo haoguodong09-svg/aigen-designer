@@ -24,6 +24,8 @@
 
 可以简称`aigen设计器`，是一个功能强大、开箱即用的拖拽式低代码设计器。它基于 Vue3 开发，兼容多套 UI 组件库，除了基础的页面设计功能，AigenDesigner 还提供了强大的扩展功能，可以让开发者根据自己的需求自由扩展和定制组件。此外，AigenDesigner使用 JSON 配置来生成页面，可帮助开发者快速生成页面，提高开发效率。它提供了两个重要组件：`AigenDesigner` 设计器和 `AigenBuilder` 生成器。
 
+> 本项目基于开源项目 [epic-designer](https://github.com/Kchengz/epic-designer)（MIT License，作者 kchengz）进行二次开发（二开），感谢原作者的开源贡献与辛勤付出 🙏
+
 
 ## 最新版本
 
