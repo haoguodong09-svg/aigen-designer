@@ -65,7 +65,6 @@ function handleClick(schema: ComponentSchema) {
     <!-- 搜素框 start -->
     <div class="aigen-search-box px-10px py-2">
       <Input
-        v-model="keyword"
         v-model:value="keyword"
         placeholder="搜索组件"
         clearable

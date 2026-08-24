@@ -61,7 +61,6 @@ function handleUpdate() {
 </script>
 <template>
   <Input
-    v-model="size"
     v-model:value="size"
     class="aigen-input-size"
     type="number"
@@ -71,7 +70,6 @@ function handleUpdate() {
     <template #suffix>
       <Select
         v-model:value="unit"
-        v-model="unit"
         style="width: 60px"
         :options="unitArray"
       />

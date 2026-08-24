@@ -94,7 +94,6 @@ function handleDelete(index: number) {
     <div class="aigen-col-editor-radio">
       <div class="text-$aigen-text-helper text-sm">选择需要配置的属性：</div>
       <Radio
-        v-model="selectedAttr"
         v-model:value="selectedAttr"
         :options="attrOptions"
       />
@@ -119,7 +118,6 @@ function handleDelete(index: number) {
         <Number
           :key="selectedAttr"
           v-model:value="item.props[selectedAttr]"
-          v-model="item.props[selectedAttr]"
           style="width: 100%"
           :min="1"
           :max="24"

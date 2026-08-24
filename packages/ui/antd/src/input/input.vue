@@ -21,7 +21,6 @@ const props = withDefaults(
     placeholder: '请输入',
   },
 );
-const modelValue = defineModel<string>();
 const { formData } = useFormItem();
 const eventBus = useEventBus();
 
@@ -41,7 +40,7 @@ eventBus?.on('dataSelector:selected', (data) => {
 });
 </script>
 <template>
-  <Input v-model:value="modelValue" :placeholder="props.placeholder">
+  <Input :placeholder="props.placeholder">
     <template #suffix>
       <span
         v-if="props.dataSelector"

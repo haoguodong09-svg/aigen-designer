@@ -73,12 +73,10 @@ function handleRemove(index: number) {
       >
         <AigenIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
         <Input
-          v-model="option.label"
           v-model:value="option.label"
           placeholder="label"
         />
         <Input
-          v-model="option.value"
           v-model:value="option.value"
           placeholder="value"
         />

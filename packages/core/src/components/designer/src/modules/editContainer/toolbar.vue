@@ -307,7 +307,6 @@ function handleSetCanvas(type: string) {
         <div class="pr-8px w-82px cursor-pointer">
           <Select
             v-model:value="canvasScaleComuted"
-            v-model="canvasScaleComuted"
             :options="canvasScaleOptions"
             size="small"
           />

@@ -68,7 +68,7 @@ function handleDelete(index: number) {
         class="aigen-tab-pane-editor-item my-2 grid grid-cols-[auto_auto_16px] items-center gap-2"
       >
         <AigenIcon class="handle cursor-move text-lg" name="icon--aigen--drag" />
-        <Input v-model:value="item.label" v-model="item.label" />
+        <Input v-model:value="item.label" />
         <div
           v-if="tabList.length > 1"
           class="aigen-option-del-btn flex items-center"

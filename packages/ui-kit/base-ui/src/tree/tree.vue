@@ -90,7 +90,6 @@ provide(TREE_CONTEXT_KEY, {
     <!-- 搜素框 start -->
     <div class="aigen-search-box px-10px py-6px">
       <Input
-        v-model="keyword"
         v-model:value="keyword"
         placeholder="搜索节点"
         clearable

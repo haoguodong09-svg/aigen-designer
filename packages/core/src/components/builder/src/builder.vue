@@ -2,6 +2,7 @@
 import type { PageManager } from '@aigen-designer/manager';
 import type {
   AigenNodeInstance,
+  FieldStateMap,
   FieldStates,
   FormDataModel,
   PageSchema,
@@ -128,7 +129,7 @@ provideBuilderReadonly(computed(() => props.readonly));
 provide(BUILDER_KEY, {
   fieldStateMap: computed(() => {
     //  将fieldStates转换对象类型
-    const fieldStateMap = {};
+    const fieldStateMap: FieldStateMap = {};
     props.fieldStates?.forEach((fieldState) => {
       fieldStateMap[fieldState.field] = fieldState;
     });
