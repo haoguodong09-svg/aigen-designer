@@ -1,7 +1,7 @@
-# EDesigner 设计器
+# AigenDesigner 设计器
 
 :::tip 设计器
-`EDesigner` 是一个可视化设计器组件，用户可以通过拖拽组件的方式快速生成 JSON 配置。它提供了丰富的组件库和配置项，用户可以根据需要选择合适的组件并配置相应的属性、事件和动作。设计器还提供了实时预览功能，用户可以随时查看所设计页面的效果。最终，用户可以将 JSON 配置导出，用于页面的生成和修改。
+`AigenDesigner` 是一个可视化设计器组件，用户可以通过拖拽组件的方式快速生成 JSON 配置。它提供了丰富的组件库和配置项，用户可以根据需要选择合适的组件并配置相应的属性、事件和动作。设计器还提供了实时预览功能，用户可以随时查看所设计页面的效果。最终，用户可以将 JSON 配置导出，用于页面的生成和修改。
 :::
 
 ## 设计器布局说明
@@ -23,18 +23,18 @@
 
 <ConfigProvider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }">
   <div class="aigen-designer-container">
-    <EDesigner  @save="handleSubmit"  />
+    <AigenDesigner  @save="handleSubmit"  />
   </div>
 </ConfigProvider>
 
 ```vue
 <template>
   <div class="aigen-designer-container">
-    <EDesigner @save="handleSubmit" />
+    <AigenDesigner @save="handleSubmit" />
   </div>
 </template>
 <script lang="ts" setup>
-import { EDesigner, type PageSchema } from "aigen-designer";
+import { AigenDesigner, type PageSchema } from "aigen-designer";
 
 /**
  * 点击保存按钮操作
@@ -55,7 +55,7 @@ function handleSubmit(e:PageSchema) {
 
 <script setup>
 import "aigen-designer/dist/style.css";
-import { EDesigner, pluginManager } from "aigen-designer";
+import { AigenDesigner, pluginManager } from "aigen-designer";
 import { setupAntd } from "@aigen-designer/antd";
 import { ConfigProvider, theme } from 'ant-design-vue'
 import { useTheme } from '@aigen-designer/hooks'

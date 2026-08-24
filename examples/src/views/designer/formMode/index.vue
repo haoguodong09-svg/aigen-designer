@@ -3,9 +3,9 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { ref } from 'vue';
 
-import { EDesigner } from '@aigen-designer/core';
+import { AigenDesigner } from '@aigen-designer/core';
 
-const designerRef = ref<InstanceType<typeof EDesigner>>();
+const designerRef = ref<InstanceType<typeof AigenDesigner>>();
 /**
  * 点击保存按钮操作
  * @param e
@@ -15,7 +15,7 @@ function handleSubmit(e: PageSchema) {
 }
 </script>
 <template>
-  <EDesigner
+  <AigenDesigner
     ref="designerRef"
     form-mode
     title="表单模式示例"
@@ -24,5 +24,5 @@ function handleSubmit(e: PageSchema) {
     <template #header-prefix>
       <div>欢迎使用AigenDesigner设计器</div>
     </template>
-  </EDesigner>
+  </AigenDesigner>
 </template>

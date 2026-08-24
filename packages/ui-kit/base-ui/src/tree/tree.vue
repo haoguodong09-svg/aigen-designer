@@ -8,11 +8,11 @@ import { computed, provide, ref, useSlots } from 'vue';
 import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
-import ETreeNodes from './treeNodes.vue';
+import AigenTreeNodes from './treeNodes.vue';
 import { TREE_CONTEXT_KEY } from './useTreeContext';
 
 defineOptions({
-  name: 'ETree',
+  name: 'AigenTree',
 });
 
 const props = withDefaults(defineProps<TreeProps>(), {
@@ -103,7 +103,7 @@ provide(TREE_CONTEXT_KEY, {
     </div>
     <!-- 搜素框 end -->
     <div class="aigen-tree-main h-0 flex-1 overflow-auto">
-      <ETreeNodes v-model:schemas="getTreeData" />
+      <AigenTreeNodes v-model:schemas="getTreeData" />
       <div
         v-show="getTreeData.length === 0"
         class="pt-42px text-center text-gray-400"

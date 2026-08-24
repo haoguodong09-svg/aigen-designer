@@ -70,7 +70,7 @@ export default {
         show: ({ values }) => {
           return values.props?.labelLayout === 'fixed';
         },
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
       {
         field: 'props.labelCol.span',

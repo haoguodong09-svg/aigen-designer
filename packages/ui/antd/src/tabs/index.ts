@@ -44,7 +44,7 @@ export default {
         field: 'children',
         label: '页签管理',
         layout: 'vertical',
-        type: 'ETabPaneEditor',
+        type: 'AigenTabPaneEditor',
       },
       {
         field: 'props.size',

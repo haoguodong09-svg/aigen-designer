@@ -3,9 +3,9 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { ref } from 'vue';
 
-import { EBuilder } from '@aigen-designer/core';
+import { AigenBuilder } from '@aigen-designer/core';
 
-const ebRef = ref<InstanceType<typeof EBuilder>>();
+const ebRef = ref<InstanceType<typeof AigenBuilder>>();
 const pageSchema = ref<PageSchema>({
   canvas: {
     mode: 'desktop',
@@ -93,5 +93,5 @@ const pageSchema = ref<PageSchema>({
 </script>
 
 <template>
-  <EBuilder ref="ebRef" :page-schema="pageSchema" />
+  <AigenBuilder ref="ebRef" :page-schema="pageSchema" />
 </template>

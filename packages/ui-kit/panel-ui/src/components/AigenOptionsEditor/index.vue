@@ -4,7 +4,7 @@ import { provide, reactive } from 'vue';
 import { pluginManager } from '@aigen-designer/manager';
 import { useVModel } from '@vueuse/core';
 
-import EOptionItem from './optionItem.vue';
+import AigenOptionItem from './optionItem.vue';
 import { OPTIONS_EDITOR_TREE_KEY } from './optionsEditorContext';
 
 interface Option {
@@ -43,7 +43,7 @@ function handleAdd() {
     >
       暂无选项
     </div>
-    <EOptionItem v-model="innerValue" />
+    <AigenOptionItem v-model="innerValue" />
     <Button @click="handleAdd"> 添加选项 </Button>
   </div>
 </template>

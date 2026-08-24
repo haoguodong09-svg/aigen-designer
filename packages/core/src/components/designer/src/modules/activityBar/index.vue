@@ -7,7 +7,7 @@ import { AigenIcon, AigenTooltip } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 defineOptions({
-  name: 'EActivityBar',
+  name: 'AigenActivityBar',
 });
 const activityBars = computed(() => {
   return pluginManager.panel.activityBars.value

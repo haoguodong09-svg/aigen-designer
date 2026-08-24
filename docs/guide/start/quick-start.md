@@ -94,16 +94,16 @@ import { setupNaiveUi } from "@aigen-designer/naive-ui";
 setupNaiveUi();
 ```
 
-## EDesigner(设计器) 基础用法
+## AigenDesigner(设计器) 基础用法
 
 ```vue
 <template>
   <div class="h-full">
-    <EDesigner />
+    <AigenDesigner />
   </div>
 </template>
 <script setup lang="ts">
-import { EDesigner } from "aigen-designer";
+import { AigenDesigner } from "aigen-designer";
 </script>
 <style>
 .h-full {
@@ -112,16 +112,16 @@ import { EDesigner } from "aigen-designer";
 </style>
 ```
 
-## EBuilder(生成器) 基础用法
+## AigenBuilder(生成器) 基础用法
 
 ```vue
 <template>
   <div>
-    <EBuilder :pageSchema="pageSchema" />
+    <AigenBuilder :pageSchema="pageSchema" />
   </div>
 </template>
 <script setup>
-import { EBuilder } from "aigen-designer";
+import { AigenBuilder } from "aigen-designer";
 
 const pageSchema = {
   schemas: [

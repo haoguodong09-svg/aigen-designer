@@ -81,7 +81,7 @@ export default {
         props: {
           ruleType: 'boolean',
         },
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
     event: [

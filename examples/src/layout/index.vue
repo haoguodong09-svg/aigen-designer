@@ -8,9 +8,9 @@ import {
   theme,
 } from 'ant-design-vue';
 
-import EHeader from './components/Header/index.vue';
+import AigenHeader from './components/Header/index.vue';
 import Main from './components/Main/index.vue';
-import EMenu from './components/Menu/index.vue';
+import AigenMenu from './components/Menu/index.vue';
 
 const { isDark } = useTheme();
 </script>
@@ -21,11 +21,11 @@ const { isDark } = useTheme();
     }"
   >
     <Layout class="maximize aigen-scoped">
-      <EHeader />
+      <AigenHeader />
       <Layout>
         <LayoutSider>
           <div class="aigen-demo-menu h-full">
-            <EMenu />
+            <AigenMenu />
           </div>
         </LayoutSider>
         <LayoutContent>

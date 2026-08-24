@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 
 defineOptions({
-  name: 'EIcon',
+  name: 'AigenIcon',
 });
 const props = withDefaults(
   defineProps<{

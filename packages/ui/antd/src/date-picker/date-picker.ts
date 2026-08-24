@@ -4,7 +4,7 @@ import { DatePicker } from 'ant-design-vue';
 // 二次封装组件
 export default defineComponent({
   emits: ['update:modelValue', 'change', 'blur'],
-  name: 'EDatePicker',
+  name: 'AigenDatePicker',
   props: {
     modelValue: {
       default: null,

@@ -1,7 +1,7 @@
-# EBuilder 生成器
+# AigenBuilder 生成器
 
 :::tip 生成器
-`EBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，功能包括组件渲染、事件绑定和数据回显等。
+`AigenBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，功能包括组件渲染、事件绑定和数据回显等。
 :::
 
 ## 基础用法
@@ -9,17 +9,17 @@
 > 通过 JSON 渲染组件
 
 <div>
-	<EBuilder :pageSchema="pageSchema" />
+	<AigenBuilder :pageSchema="pageSchema" />
 </div>
 
 ```vue
 <template>
   <div>
-    <EBuilder :pageSchema="pageSchema" />
+    <AigenBuilder :pageSchema="pageSchema" />
   </div>
 </template>
 <script lang="ts" setup>
-import { EBuilder } from "aigen-designer";
+import { AigenBuilder } from "aigen-designer";
 
 const pageSchema = {
   schemas: [
@@ -50,7 +50,7 @@ const pageSchema = {
 
 ## 校验表单并获取数据
 <div>
-	<EBuilder ref="ebForm" :pageSchema="pageSchemaForm" />
+	<AigenBuilder ref="ebForm" :pageSchema="pageSchemaForm" />
   <button @click="handleValidate">获取数据</button>
   <div>
   {{formData}}
@@ -60,7 +60,7 @@ const pageSchema = {
 ```vue
 <template>
 	<div>
-		<EBuilder ref="ebForm" :pageSchema="pageSchema" />
+		<AigenBuilder ref="ebForm" :pageSchema="pageSchema" />
   		<button @click="handleValidate">获取数据</button>
   	<div>
   {{formData}}
@@ -69,7 +69,7 @@ const pageSchema = {
 </template>
 <script lang="ts" setup>
 import { ref } from "vue";
-import { EBuilder } from "aigen-designer";
+import { AigenBuilder } from "aigen-designer";
 
 const pageSchema = {
   schemas: [
@@ -189,8 +189,8 @@ async function handleValidate(){
 
 ## 重置表单
   <div>
-    <EBuilder ref="ebRef2" :pageSchema="pageSchema2">
-    </EBuilder>
+    <AigenBuilder ref="ebRef2" :pageSchema="pageSchema2">
+    </AigenBuilder>
     <button @click="handleReset">
       重置表单
     </button>
@@ -199,14 +199,14 @@ async function handleValidate(){
 ```vue
 <template>
   <div>
-    <EBuilder ref="ebRef" :pageSchema="pageSchema"> </EBuilder>
+    <AigenBuilder ref="ebRef" :pageSchema="pageSchema"> </AigenBuilder>
     <button @click="handleReset">重置数据</button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
-import { EBuilder, PageSchema } from "aigen-designer";
+import { AigenBuilder, PageSchema } from "aigen-designer";
 
 const ebRef = ref<any>(null);
 
@@ -278,10 +278,10 @@ onMounted(async () => {
 ```
 
 <script setup>
-import { EBuilder } from "aigen-designer";
+import { AigenBuilder } from "aigen-designer";
 import { ref,onMounted } from 'vue'
 import "aigen-designer/dist/style.css";
-import { EDesigner, pluginManager } from "aigen-designer";
+import { AigenDesigner, pluginManager } from "aigen-designer";
 import { setupElementPlus } from "@aigen-designer/element-plus";
 import 'element-plus/dist/index.css'
 setupElementPlus(pluginManager);
@@ -496,9 +496,9 @@ onMounted(async () => {
 
 | 参数       | 说明                             | 类型    | 默认值 | 版本  |
 | ---------- | -------------------------------- | ------- | ------ | ----- |
-| pageSchema | EDesigner 设计器生成的 json 数据 | json    | -      | -     |
+| pageSchema | AigenDesigner 设计器生成的 json 数据 | json    | -      | -     |
 | formData   | 表单数据，用于数据回显(仅用于name为default的表单)           | FormDataModel | -  | 0.9.15 |
-| disabled   | 禁用EBuilder所有输入项           | boolean | false  | 0.9.4 |
+| disabled   | 禁用AigenBuilder所有输入项           | boolean | false  | 0.9.4 |
 | readonly | 设置表单为只读 | boolean | false | 1.1.9 |
 | fieldStates | 控制表单字段状态 | FieldStates | - | 1.1.0 |
 

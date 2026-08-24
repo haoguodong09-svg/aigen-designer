@@ -7,7 +7,7 @@ export default {
       {
         field: 'children',
         label: '折叠项管理',
-        type: 'EColEditor',
+        type: 'AigenColEditor',
       },
       {
         field: 'props.hidden',

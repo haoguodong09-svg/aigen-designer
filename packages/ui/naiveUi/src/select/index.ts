@@ -151,14 +151,14 @@ export default {
         field: 'rules',
         label: '表单校验',
         layout: 'vertical',
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
       {
         description: '配置选项',
         field: 'props.options',
         label: '选项管理',
         layout: 'vertical',
-        type: 'EOptionsEditor',
+        type: 'AigenOptionsEditor',
       },
     ],
     event: [

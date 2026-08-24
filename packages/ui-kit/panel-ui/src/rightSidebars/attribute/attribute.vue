@@ -6,7 +6,7 @@ import { useDesignerContext, useTableMeta } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { useClipboard } from '@vueuse/core';
 
-import EAttributeItem from './modules/attributeItem.vue';
+import AigenAttributeItem from './modules/attributeItem.vue';
 
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
@@ -41,13 +41,13 @@ const componentAttributes = computed(() => {
         editData: pageSchema,
         field: 'canvas.width',
         label: '画布宽度',
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
       {
         editData: pageSchema,
         field: 'canvas.height',
         label: '画布高度',
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
     );
   }
@@ -87,7 +87,7 @@ const componentAttributes = computed(() => {
     </div>
     <!-- 数据表 end -->
     <div v-for="item in componentAttributes" :key="item.field">
-      <EAttributeItem :schema="item" />
+      <AigenAttributeItem :schema="item" />
     </div>
   </div>
 </template>

@@ -107,7 +107,7 @@ export default {
         show: ({ values }) => {
           return values.props.vertical;
         },
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
       {
         field: 'props.showInput',
@@ -199,7 +199,7 @@ export default {
         props: {
           ruleType: 'number',
         },
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
     event: [

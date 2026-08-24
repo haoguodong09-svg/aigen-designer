@@ -49,7 +49,7 @@ export default {
       {
         field: 'props.labelWidth',
         label: '标签宽度',
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
       {
         field: 'props.labelSuffix',

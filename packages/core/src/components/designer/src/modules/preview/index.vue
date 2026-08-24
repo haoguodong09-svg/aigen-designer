@@ -7,7 +7,7 @@ import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { findSchemas } from '@aigen-designer/utils';
 
-import { EBuilder } from '../../../../builder';
+import { AigenBuilder } from '../../../../builder';
 
 const props = withDefaults(
   defineProps<{
@@ -116,7 +116,7 @@ defineExpose({
       class="min-w-750px translate-y-0px h-full rounded"
       :style="{ padding: getCanvasPadding }"
     >
-      <EBuilder v-if="visible" ref="kb" :page-schema="pageSchema" />
+      <AigenBuilder v-if="visible" ref="kb" :page-schema="pageSchema" />
       <!-- 表单数据 start -->
       <Modal
         v-model="dataVisible"

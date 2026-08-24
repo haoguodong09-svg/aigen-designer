@@ -12,14 +12,14 @@
 ```vue
 <template>
   <div>
-    <EBuilder ref="kfb" :pageSchema="pageSchema" @ready="handleReady">
-    </EBuilder>
+    <AigenBuilder ref="kfb" :pageSchema="pageSchema" @ready="handleReady">
+    </AigenBuilder>
 
   </div>
 </template>
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
-import { EBuilder, PageManager, PageSchema } from 'aigen-designer'
+import { AigenBuilder, PageManager, PageSchema } from 'aigen-designer'
     
 const pageSchema = ref<PageSchema>({
   "schemas": [

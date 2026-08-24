@@ -54,13 +54,13 @@ const componentAttributes = computed(() => {
         editData: pageSchema,
         field: 'canvas.width',
         label: '画布宽度',
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
       {
         editData: pageSchema,
         field: 'canvas.height',
         label: '画布高度',
-        type: 'EInputSize',
+        type: 'AigenInputSize',
       },
     );
   }

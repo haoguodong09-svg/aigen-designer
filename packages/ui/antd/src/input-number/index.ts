@@ -126,7 +126,7 @@ export default {
         props: {
           ruleType: 'number',
         },
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
     event: [

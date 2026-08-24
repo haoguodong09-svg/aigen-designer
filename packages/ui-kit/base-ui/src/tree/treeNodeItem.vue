@@ -7,11 +7,11 @@ import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
-import ETreeNodes from './treeNodes.vue';
+import AigenTreeNodes from './treeNodes.vue';
 import { useTreeContext } from './useTreeContext';
 
 defineOptions({
-  name: 'ETreeNodeItem',
+  name: 'AigenTreeNodeItem',
 });
 
 const props = defineProps<{
@@ -111,7 +111,7 @@ init();
       </span>
       <TreeNodeText />
     </a>
-    <ETreeNodes
+    <AigenTreeNodes
       v-if="props.schema.children?.length"
       v-model:schemas="props.schema.children"
       class="aigen-tree-sublist"

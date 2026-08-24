@@ -186,7 +186,7 @@ export default {
         field: 'rules',
         label: '表单校验',
         layout: 'vertical',
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
     event: [

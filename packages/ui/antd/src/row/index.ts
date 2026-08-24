@@ -65,7 +65,7 @@ export default {
         field: 'children',
         label: '列编辑',
         layout: 'vertical',
-        type: 'EColEditor',
+        type: 'AigenColEditor',
       },
       {
         field: 'props.wrap',

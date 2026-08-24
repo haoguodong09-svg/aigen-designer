@@ -3,10 +3,10 @@ import type { FieldStates, PageSchema } from '@aigen-designer/types';
 
 import { onMounted, ref } from 'vue';
 
-import { EBuilder } from '@aigen-designer/core';
+import { AigenBuilder } from '@aigen-designer/core';
 import { Alert } from 'ant-design-vue';
 
-const ebRef = ref<InstanceType<typeof EBuilder>>();
+const ebRef = ref<InstanceType<typeof AigenBuilder>>();
 
 const fieldStates = ref<FieldStates>([
   {
@@ -224,7 +224,7 @@ onMounted(() => {
     <div class="my-4 pl-8">
       <Alert message="试试将年龄修改为16岁或者性别设置为男" type="info" />
     </div>
-    <EBuilder
+    <AigenBuilder
       ref="ebRef"
       :page-schema="pageSchema"
       :field-states="fieldStates"

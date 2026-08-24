@@ -15,7 +15,7 @@ interface Option {
 }
 
 defineOptions({
-  name: 'EOptionItem',
+  name: 'AigenOptionItem',
 });
 
 const props = defineProps<{
@@ -95,7 +95,7 @@ function handleRemove(index: number) {
         />
       </div>
       <div v-if="option.children" class="pl-4">
-        <EOptionItem v-model="option.children" />
+        <AigenOptionItem v-model="option.children" />
       </div>
     </div>
   </VueDraggable>

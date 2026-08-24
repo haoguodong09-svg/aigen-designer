@@ -22,32 +22,32 @@ export function setupPage(pluginManager: PluginManager): void {
  */
 export function setupComponent(pluginManager: PluginManager): void {
   pluginManager.component.add(
-    'EInputSize',
-    async () => await import('./EInputSize/index.vue'),
+    'AigenInputSize',
+    async () => await import('./AigenInputSize/index.vue'),
   );
   pluginManager.component.add(
-    'EColEditor',
-    async () => await import('./EColEditor/index.vue'),
+    'AigenColEditor',
+    async () => await import('./AigenColEditor/index.vue'),
   );
   pluginManager.component.add(
-    'EActionEditor',
-    async () => await import('./EActionEditor/index.vue'),
+    'AigenActionEditor',
+    async () => await import('./AigenActionEditor/index.vue'),
   );
   pluginManager.component.add(
     'aigenActionModal',
     async () => await import('./aigenActionModal/index.vue'),
   );
   pluginManager.component.add(
-    'ERuleEditor',
-    async () => await import('./ERuleEditor/index.vue'),
+    'AigenRuleEditor',
+    async () => await import('./AigenRuleEditor/index.vue'),
   );
   pluginManager.component.add(
-    'ETabPaneEditor',
-    async () => await import('./ETabPaneEditor/index.vue'),
+    'AigenTabPaneEditor',
+    async () => await import('./AigenTabPaneEditor/index.vue'),
   );
   pluginManager.component.add(
-    'EOptionsEditor',
-    async () => await import('./EOptionsEditor/index.vue'),
+    'AigenOptionsEditor',
+    async () => await import('./AigenOptionsEditor/index.vue'),
   );
 
   pluginManager.component.add('AigenNode', AigenNode);

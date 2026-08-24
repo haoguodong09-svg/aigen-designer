@@ -237,6 +237,6 @@ eventBus?.on('dataSelector:selected', (data) => {
 
 ## 注意事项
 
-`useEventBus` 需要在 `createEventBus` 提供的作用域内使用，通常在 EBuilder 组件内部使用
+`useEventBus` 需要在 `createEventBus` 提供的作用域内使用，通常在 AigenBuilder 组件内部使用
 事件名称建议使用命名空间风格（如 `module:event`）以避免命名冲突
 虽然提供了自动清理功能，但对于短暂的监听器，也可以手动调用返回的取消监听函数

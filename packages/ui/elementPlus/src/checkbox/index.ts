@@ -91,7 +91,7 @@ export default {
         field: 'props.options',
         label: '选项管理',
         layout: 'vertical',
-        type: 'EOptionsEditor',
+        type: 'AigenOptionsEditor',
       },
       {
         description: '校验规则需要配合表单使用',
@@ -101,7 +101,7 @@ export default {
         props: {
           ruleType: 'array',
         },
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
     event: [

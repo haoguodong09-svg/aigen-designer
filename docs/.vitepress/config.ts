@@ -99,11 +99,11 @@ export default defineConfig({
           text: '组件',
           items: [
             {
-              link: '/guide/components/EDesigner',
+              link: '/guide/components/AigenDesigner',
               text: 'Designer 设计器',
             },
             {
-              link: '/guide/components/EBuilder',
+              link: '/guide/components/AigenBuilder',
               text: 'Builder 生成器',
             },
           ],

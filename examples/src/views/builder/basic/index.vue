@@ -3,10 +3,10 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { ref } from 'vue';
 
-import { EBuilder } from '@aigen-designer/core';
+import { AigenBuilder } from '@aigen-designer/core';
 import { pluginManager } from '@aigen-designer/manager';
 
-const ebRef = ref<InstanceType<typeof EBuilder>>();
+const ebRef = ref<InstanceType<typeof AigenBuilder>>();
 const Button = pluginManager.component.get('button');
 
 const pageSchema = ref<PageSchema>({
@@ -196,6 +196,6 @@ const onReset = () => {
   <div>
     <Button @click="onValidate">校验</Button>
     <Button @click="onReset">重置表单</Button>
-    <EBuilder ref="ebRef" :page-schema="pageSchema" />
+    <AigenBuilder ref="ebRef" :page-schema="pageSchema" />
   </div>
 </template>

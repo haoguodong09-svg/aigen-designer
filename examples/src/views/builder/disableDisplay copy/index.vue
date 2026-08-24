@@ -4,7 +4,7 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { onMounted, ref } from 'vue';
 
-import { EBuilder } from '@aigen-designer/core';
+import { AigenBuilder } from '@aigen-designer/core';
 
 const ebRef = ref<any>(null);
 const data = ref({});
@@ -99,7 +99,7 @@ onMounted(async () => {
 
 <template>
   <div class="aigen-page-main p-2">
-    <EBuilder ref="ebRef" :page-schema="pageSchema" @ready="handleReady" />
+    <AigenBuilder ref="ebRef" :page-schema="pageSchema" @ready="handleReady" />
     <div @click="handleGetData">获取数据</div>
     {{ data }}
   </div>

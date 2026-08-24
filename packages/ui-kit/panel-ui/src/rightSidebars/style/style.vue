@@ -5,7 +5,7 @@ import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { ComponentSchema } from '@aigen-designer/types';
 
-import EAttributeItem from '../attribute/modules/attributeItem.vue';
+import AigenAttributeItem from '../attribute/modules/attributeItem.vue';
 
 const designer = useDesignerContext();
 const componentConfigs = pluginManager.component.getComponentConfigs();
@@ -18,22 +18,22 @@ const defaultStyle = [
   {
     field: 'props.style.width',
     label: '宽度',
-    type: 'EInputSize',
+    type: 'AigenInputSize',
   },
   {
     field: 'props.style.height',
     label: '高度',
-    type: 'EInputSize',
+    type: 'AigenInputSize',
   },
   {
     field: 'props.style.padding',
     label: '内边距',
-    type: 'EInputSize',
+    type: 'AigenInputSize',
   },
   {
     field: 'props.style.margin',
     label: '外边距',
-    type: 'EInputSize',
+    type: 'AigenInputSize',
   },
   {
     field: 'props.style.backgroundColor',
@@ -60,7 +60,7 @@ const componentStyles = computed<ComponentSchema[]>(() => {
 <template>
   <div :key="selectedNode?.id" class="aigen-style-view">
     <div v-for="item in componentStyles" :key="item.field">
-      <EAttributeItem :schema="item" />
+      <AigenAttributeItem :schema="item" />
     </div>
   </div>
 </template>

@@ -11,7 +11,7 @@ import { deepClone, deepEqual } from '@aigen-designer/utils';
 import { useVModel } from '@vueuse/core';
 
 import { triggerOptions, typeOptions } from './data';
-import ERuleItem from './ERuleItem.vue';
+import AigenRuleItem from './AigenRuleItem.vue';
 
 const props = defineProps({
   modelValue: {
@@ -167,7 +167,7 @@ function handleDelete(index: number) {
     <!-- 必填项 end -->
 
     <!-- 其他校验规则 start -->
-    <ERuleItem
+    <AigenRuleItem
       v-for="(item, index) in rules"
       :key="index"
       v-model:rule="rules[index]"

@@ -3,7 +3,7 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { ref } from 'vue';
 
-import { EBuilder } from '@aigen-designer/core';
+import { AigenBuilder } from '@aigen-designer/core';
 
 const pageSchema = ref<PageSchema>({
   canvas: {
@@ -190,5 +190,5 @@ const formData = ref({
 </script>
 
 <template>
-  <EBuilder :page-schema="pageSchema" :form-data="formData" />
+  <AigenBuilder :page-schema="pageSchema" :form-data="formData" />
 </template>

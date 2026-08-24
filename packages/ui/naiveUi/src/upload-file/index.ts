@@ -61,7 +61,7 @@ export default {
         props: {
           ruleType: 'string',
         },
-        type: 'ERuleEditor',
+        type: 'AigenRuleEditor',
       },
     ],
   },

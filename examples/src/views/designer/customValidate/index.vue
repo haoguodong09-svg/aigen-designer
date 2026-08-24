@@ -9,14 +9,14 @@ import {
   ref,
 } from 'vue';
 
-import { EDesigner } from '@aigen-designer/core';
+import { AigenDesigner } from '@aigen-designer/core';
 
 import {
   hideCustomValidateComponent,
   showCustomValidateComponent,
 } from './registerCustomValidateComponent';
 
-const designerRef = ref<InstanceType<typeof EDesigner>>();
+const designerRef = ref<InstanceType<typeof AigenDesigner>>();
 
 const pageSchema: PageSchema = {
   canvas: {
@@ -117,9 +117,9 @@ function handleSubmit(e: PageSchema) {
 }
 </script>
 <template>
-  <EDesigner ref="designerRef" title="自定义校验组件示例" @save="handleSubmit">
+  <AigenDesigner ref="designerRef" title="自定义校验组件示例" @save="handleSubmit">
     <template #header-prefix>
       <div>欢迎使用AigenDesigner设计器</div>
     </template>
-  </EDesigner>
+  </AigenDesigner>
 </template>

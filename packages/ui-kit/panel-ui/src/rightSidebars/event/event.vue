@@ -9,7 +9,7 @@ import { getValueByPath, setValueByPath } from '@aigen-designer/utils';
 
 const designer = useDesignerContext();
 const revoke = designer.revoke;
-const EActionEditor = pluginManager.component.get('EActionEditor');
+const AigenActionEditor = pluginManager.component.get('AigenActionEditor');
 
 const componentConfigs = pluginManager.component.getComponentConfigs();
 const selectedNode = computed(() => {
@@ -92,7 +92,7 @@ function handleSetValue(value: any, field: string) {
 <template>
   <div class="aigen-event-view">
     <div v-if="selectedNode">
-      <EActionEditor
+      <AigenActionEditor
         :key="selectedNode.id"
         :event-list="eventList"
         :model-value="getValueByPath(selectedNode!, `on`)"

@@ -22,7 +22,7 @@
 
 ## 简介
 
-可以简称`aigen设计器`，是一个功能强大、开箱即用的拖拽式低代码设计器。它基于 Vue3 开发，兼容多套 UI 组件库，除了基础的页面设计功能，AigenDesigner 还提供了强大的扩展功能，可以让开发者根据自己的需求自由扩展和定制组件。此外，AigenDesigner使用 JSON 配置来生成页面，可帮助开发者快速生成页面，提高开发效率。它提供了两个重要组件：`EDesigner` 设计器和 `EBuilder` 生成器。
+可以简称`aigen设计器`，是一个功能强大、开箱即用的拖拽式低代码设计器。它基于 Vue3 开发，兼容多套 UI 组件库，除了基础的页面设计功能，AigenDesigner 还提供了强大的扩展功能，可以让开发者根据自己的需求自由扩展和定制组件。此外，AigenDesigner使用 JSON 配置来生成页面，可帮助开发者快速生成页面，提高开发效率。它提供了两个重要组件：`AigenDesigner` 设计器和 `AigenBuilder` 生成器。
 
 
 ## 最新版本
@@ -48,13 +48,13 @@
 
 ## 核心组件介绍
 
-#### EDesigner 设计器
+#### AigenDesigner 设计器
 
-`EDesigner ` 是一个可视化设计器组件，用户可以通过拖拽组件的方式快速生成 JSON 配置。它提供了丰富的组件库和配置项，用户可以根据需要选择合适的组件并配置相应的属性、事件和动作。设计器还提供了实时预览功能，用户可以随时查看所设计页面的效果。最终，用户可以将 JSON 配置导出，用于页面的生成和修改。
+`AigenDesigner ` 是一个可视化设计器组件，用户可以通过拖拽组件的方式快速生成 JSON 配置。它提供了丰富的组件库和配置项，用户可以根据需要选择合适的组件并配置相应的属性、事件和动作。设计器还提供了实时预览功能，用户可以随时查看所设计页面的效果。最终，用户可以将 JSON 配置导出，用于页面的生成和修改。
 
-#### EBuilder 生成器
+#### AigenBuilder 生成器
 
-`EBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，完成组件的渲染、事件绑定和数据回显等操作。
+`AigenBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，完成组件的渲染、事件绑定和数据回显等操作。
 
 ## 安装 aigen-designer
 
@@ -149,16 +149,16 @@ import { setupNaiveUi } from "@aigen-designer/naive-ui";
 setupNaiveUi();
 ```
 
-## EDesigner(设计器) 基础用法
+## AigenDesigner(设计器) 基础用法
 
 ```vue
 <template>
   <div class="h-full">
-    <EDesigner />
+    <AigenDesigner />
   </div>
 </template>
 <script setup lang="ts">
-import { EDesigner } from "aigen-designer";
+import { AigenDesigner } from "aigen-designer";
 </script>
 <style>
 .h-full {
@@ -166,16 +166,16 @@ import { EDesigner } from "aigen-designer";
 }
 </style>
 ```
-## EBuilder(生成器) 基础用法
+## AigenBuilder(生成器) 基础用法
 
 ```vue
 <template>
   <div>
-    <EBuilder :pageSchema="pageSchema" />
+    <AigenBuilder :pageSchema="pageSchema" />
   </div>
 </template>
 <script setup>
-import { EBuilder } from "aigen-designer";
+import { AigenBuilder } from "aigen-designer";
 
 const pageSchema = {
   schemas: [

@@ -27,12 +27,12 @@ defineExpose({
 ## 显示,禁用交互示例-设计组件
 
 <div class="aigen-designer-container">
-	<EDesigner ref="edRef"  @save="handleSubmit"  />
+	<AigenDesigner ref="edRef"  @save="handleSubmit"  />
 </div>
 
 ## 显示,禁用交互示例-渲染组件
 
-<EBuilder :pageSchema="pageSchema" />
+<AigenBuilder :pageSchema="pageSchema" />
 aigen.json 数据
 ```json
 {
@@ -163,7 +163,7 @@ aigen.json 数据
 
 ## 表单自动求和-渲染组件
 
-<EBuilder :pageSchema="pageSchema2" />
+<AigenBuilder :pageSchema="pageSchema2" />
 aigen.json 数据
 ```json
 {
@@ -268,7 +268,7 @@ aigen.json 数据
 
 <script setup>
 import "aigen-designer/dist/style.css";
-import { EDesigner,EBuilder,pluginManager } from "aigen-designer";
+import { AigenDesigner,AigenBuilder,pluginManager } from "aigen-designer";
 import { ref, onMounted } from 'vue';
 import { setupAntd } from "@aigen-designer/antd";
 import { ConfigProvider, theme } from 'ant-design-vue'

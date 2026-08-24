@@ -7,11 +7,11 @@ import { VueDraggable } from 'vue-draggable-plus';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
-import ETreeNodeItem from './treeNodeItem.vue';
+import AigenTreeNodeItem from './treeNodeItem.vue';
 import { useTreeContext } from './useTreeContext';
 
 defineOptions({
-  name: 'ETreeNodes',
+  name: 'AigenTreeNodes',
 });
 
 const props = defineProps<{
@@ -88,7 +88,7 @@ const getDisabled = computed(() => {
     }"
     @start="handleSelect($event.oldIndex)"
   >
-    <ETreeNodeItem
+    <AigenTreeNodeItem
       v-for="element in modelSchemas"
       :key="element?.id"
       :class="isDraggable(element)"
@@ -97,7 +97,7 @@ const getDisabled = computed(() => {
   </VueDraggable>
 
   <ul v-else>
-    <ETreeNodeItem
+    <AigenTreeNodeItem
       v-for="element in modelSchemas"
       :key="element?.id"
       :schema="element"

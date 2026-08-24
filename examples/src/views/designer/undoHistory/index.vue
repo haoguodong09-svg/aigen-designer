@@ -3,10 +3,10 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { ref } from 'vue';
 
-import { EDesigner } from '@aigen-designer/core';
+import { AigenDesigner } from '@aigen-designer/core';
 import { Button } from 'ant-design-vue';
 
-const designerRef = ref<InstanceType<typeof EDesigner>>();
+const designerRef = ref<InstanceType<typeof AigenDesigner>>();
 /**
  * 点击保存按钮操作
  * @param e
@@ -55,7 +55,7 @@ function importUndoHistory() {
 }
 </script>
 <template>
-  <EDesigner
+  <AigenDesigner
     ref="designerRef"
     title="AigenDesigner基础用法示例"
     @save="handleSubmit"
@@ -76,5 +76,5 @@ function importUndoHistory() {
         导入撤销记录
       </Button>
     </template>
-  </EDesigner>
+  </AigenDesigner>
 </template>

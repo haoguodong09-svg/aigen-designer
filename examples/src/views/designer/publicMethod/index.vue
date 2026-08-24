@@ -3,7 +3,7 @@ import type { PageSchema } from '@aigen-designer/types';
 
 import { onMounted, ref } from 'vue';
 
-import { EDesigner } from '@aigen-designer/core';
+import { AigenDesigner } from '@aigen-designer/core';
 import { pluginManager } from '@aigen-designer/manager';
 
 // 模拟器api返回数据
@@ -25,7 +25,7 @@ pluginManager.publicMethods.add({
   name: 'fetchData',
 });
 
-const designerRef = ref<InstanceType<typeof EDesigner>>();
+const designerRef = ref<InstanceType<typeof AigenDesigner>>();
 
 const pageSchema: PageSchema = {
   canvas: {
@@ -128,7 +128,7 @@ function handleSubmit(e: PageSchema) {
 }
 </script>
 <template>
-  <EDesigner
+  <AigenDesigner
     ref="designerRef"
     title="AigenDesigner数据回显示例"
     @save="handleSubmit"
@@ -136,5 +136,5 @@ function handleSubmit(e: PageSchema) {
     <template #header-prefix>
       <div>欢迎使用AigenDesigner设计器</div>
     </template>
-  </EDesigner>
+  </AigenDesigner>
 </template>

@@ -4,7 +4,7 @@ import { computed, PropType, ref, toRaw, watch } from 'vue';
 import { AigenCollapse, AigenCollapsePanel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
-import EActionEditorItem from './src/EActionEditorItem.vue';
+import AigenActionEditorItem from './src/AigenActionEditorItem.vue';
 
 const props = defineProps({
   eventList: {
@@ -154,7 +154,7 @@ function handleAdd(action: any) {
       :name="item.title"
     >
       <div class="p-2 pt-0">
-        <EActionEditorItem
+        <AigenActionEditorItem
           v-model="modelValueComputed"
           :item-events="item.events"
           :all-events="allEvents"
