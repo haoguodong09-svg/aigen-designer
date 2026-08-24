@@ -1,0 +1,107 @@
+.ep-designer-skeleton {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--ep-canvas-container-background);
+    overflow: hidden;
+}
+
+.ep-skeleton-header {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border: 1px solid var(--ep-border);
+    border-bottom: 0;
+    background-color: var(--ep-designer-background);
+}
+
+.ep-skeleton-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.ep-skeleton-header-right {
+    display: flex;
+    gap: 8px;
+}
+
+.ep-skeleton-button {
+    width: 80px;
+    height: 24px;
+    background: linear-gradient(90deg, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 25%, color-mix(in oklch, var(--ep-border), var(--ep-background) 40%) 50%, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: calc(var(--ep-radius) - 2px);
+}
+
+.ep-skeleton-body {
+    flex: 1;
+    display: flex;
+    height: 0;
+    border-top: 1px solid var(--ep-border);
+    border-bottom: 1px solid var(--ep-border);
+}
+
+.ep-skeleton-activity-bar {
+    width: 48px;
+    background-color: var(--ep-designer-background);
+    border-right: 1px solid var(--ep-border);
+    border-left: 1px solid var(--ep-border);
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.ep-skeleton-activity-item {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(90deg, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 25%, color-mix(in oklch, var(--ep-border), var(--ep-background) 40%) 50%, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: calc(var(--ep-radius) - 2px);
+}
+
+.ep-skeleton-sidebar {
+    width: 280px;
+    background-color: var(--ep-designer-background);
+    border-right: 1px solid var(--ep-border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ep-skeleton-form-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ep-skeleton-form-item::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 24px;
+    background: linear-gradient(90deg, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 25%, color-mix(in oklch, var(--ep-border), var(--ep-background) 40%) 50%, color-mix(in oklch, var(--ep-border), var(--ep-background) 60%) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: calc(var(--ep-radius) - 2px);
+}
+
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "aigen-designer",
+  "version": "1.0.0",
+  "description": "基于vue3的设计器,可视化开发页面表单",
+  "private": false,
+  "keywords": [
+    "表单设计",
+    "表单设计器",
+    "低代码",
+    "可视化",
+    "设计器",
+    "页面设计",
+    "设计工具",
+    "工作流",
+    "form",
+    "designer",
+    "aigen-designer"
+  ],
+  "bugs": {
+    "url": "https://github.com/haoguodong09-svg/aigen-designer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/haoguodong09-svg/aigen-designer"
+  },
+  "author": "hao-gd",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "lint": "eslint . --fix --ext .js,.jsx,.json,.ts,.tsx,.vue"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "typings": "dist/aigen-designer/index.d.ts",
+  "peerDependencies": {
+    "monaco-editor": ">=0.48.0",
+    "vue": ">=3.1.0"
+  },
+  "dependencies": {
+    "vue-draggable-plus": "catalog:"
+  },
+  "optionalDependencies": {
+    "@aigen-designer/antd": "workspace:*",
+    "@aigen-designer/element-plus": "workspace:*",
+    "@aigen-designer/naive-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@unocss/preset-rem-to-px": "catalog:",
+    "rollup-plugin-copy": "catalog:",
+    "rollup-plugin-node-externals": "catalog:",
+    "unocss": "catalog:",
+    "vitest": "catalog:",
+    "vue-tsc": "catalog:"
+  }
+}

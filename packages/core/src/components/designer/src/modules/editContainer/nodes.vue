@@ -1,0 +1,133 @@
+<script lang="ts" setup>
+import type { ComponentSchema } from '@aigen-designer/types';
+
+import { computed, inject, ref } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
+
+import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
+import { pluginManager } from '@aigen-designer/manager';
+
+import EpNodeItem from './nodeItem.vue';
+
+defineOptions({
+  name: 'EditNodeItem',
+});
+const props = defineProps<{
+  schemas: ComponentSchema[];
+}>();
+const emit = defineEmits(['update:schemas']);
+const designer = useDesignerContext();
+const revoke = designer.revoke;
+const pageManager = usePageManager();
+const contextMenu = inject('contextMenu', {
+  close: () => {},
+  open: (_event: Event, _schema: ComponentSchema) => {},
+});
+const modelSchemas = computed({
+  get: () => props.schemas,
+  set: (val) => emit('update:schemas', val.filter(Boolean)),
+});
+
+const isDragChange = ref(false);
+
+/**
+ * 获取节点的schema
+ * @param {Element} target 节点元素
+ * @returns {ComponentSchema | null} 节点的schema
+ */
+function getNodeSchema(target) {
+  if (!target?.closest) return null;
+
+  // 优先检查当前元素
+  if (target.dataset?.epicId) {
+    return getSchemaByEpicId(target.dataset.epicId);
+  }
+
+  // 检查直接子元素（只向下查询一级）
+  if (!target.classList.contains('ep-draggable-range')) {
+    const directChild = target.querySelector(':scope > [data-epic-id]');
+    if (directChild?.dataset?.epicId) {
+      return getSchemaByEpicId(directChild.dataset.epicId);
+    }
+  }
+
+  // 向父级查找
+  const parentElement = target.closest('[data-epic-id]');
+  if (parentElement?.dataset?.epicId) {
+    return getSchemaByEpicId(parentElement.dataset.epicId);
+  }
+
+  return null;
+}
+
+/**
+ * 根据epicId获取schema的辅助函数
+ * @param {string} epicId
+ */
+function getSchemaByEpicId(epicId) {
+  const instance = pageManager.findInstance(epicId);
+  return instance?.exposed?.schema || null;
+}
+
+function setHoverNode(event: Event) {
+  const schema = getNodeSchema(event.target);
+  event.stopPropagation();
+  designer.setHoverNode(schema);
+}
+
+/**
+ * 从侧边栏拖入编辑区域，直接记录
+ * 拖入也会导致 change 被触发，Add 应该设置 isDrageChange 标识为 false
+ */
+function handleDragAdd(event: any) {
+  designer.setSelectedNode(event.clonedData);
+  isDragChange.value = false;
+}
+
+/**
+ * 编辑区域内的拖拽change事件，记录顺序发生变化
+ */
+function handleDragChange() {
+  isDragChange.value = true;
+}
+
+/**
+ * 编辑区域内的拖拽结束事件，需判断是否 change，有可能拖拽并未修改顺序
+ */
+function handleDragEnd() {
+  if (isDragChange.value) {
+    revoke.push('拖拽组件', true);
+  }
+  isDragChange.value = false;
+}
+
+function isInline(schema: ComponentSchema) {
+  const config = pluginManager.component.getComponentConfigByType(schema.type);
+  return config?.editConstraints?.inline || false;
+}
+</script>
+
+<template>
+  <VueDraggable
+    v-model="modelSchemas"
+    class="ep-draggable-range"
+    :animation="200"
+    group="edit-draggable"
+    ghost-class="ep-moveing"
+    @mouseover.stop="setHoverNode"
+    @change="handleDragChange"
+    @add="handleDragAdd"
+    @end="handleDragEnd"
+  >
+    <div
+      class="ep-node-item"
+      :class="{ 'ep-inline': isInline(element) }"
+      v-for="element in modelSchemas"
+      :key="element.id"
+      @contextmenu.stop="contextMenu.open($event, element)"
+      :data-epic-id="element.id"
+    >
+      <EpNodeItem :schema="element" />
+    </div>
+  </VueDraggable>
+</template>

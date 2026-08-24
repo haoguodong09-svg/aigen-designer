@@ -1,0 +1,528 @@
+<script lang="ts" setup>
+import type {
+  ComponentSchema,
+  EpNodeInstance,
+  FieldStateType,
+} from '@aigen-designer/types';
+
+import type { AsyncComponentLoader } from 'vue';
+
+import {
+  computed,
+  defineComponent,
+  getCurrentInstance,
+  onBeforeUnmount,
+  provide,
+  reactive,
+  ref,
+  renderSlot,
+  shallowRef,
+  useAttrs,
+  VNode,
+  watch,
+  watchEffect,
+} from 'vue';
+
+import {
+  injectBuilderDisabled,
+  injectBuilderReadonly,
+  NODE_ATTRS_KEY,
+  useBuilderContext,
+  useFieldPathPrefix,
+  useFormItem,
+  usePageManager,
+} from '@aigen-designer/hooks';
+import { pluginManager } from '@aigen-designer/manager';
+import {
+  capitalizeFirstLetter,
+  deepClone,
+  deepCompareAndModify,
+  deepEqual,
+  getValueByPath,
+  setValueByPath,
+} from '@aigen-designer/utils';
+
+import dynamicFormItem from './dynamicFormItem.vue';
+
+interface EpNodeProps {
+  componentSchema: ComponentSchema;
+  isProperty?: boolean;
+  modelValue?: any;
+  ruleField?: string[];
+  showHiddenItems?: boolean;
+}
+defineOptions({
+  name: 'EpNode',
+});
+
+const props = withDefaults(defineProps<EpNodeProps>(), {
+  isProperty: false,
+  modelValue: undefined,
+  ruleField: () => [],
+  showHiddenItems: false,
+});
+
+// 定义组件的事件
+const emit = defineEmits(['update:modelValue', 'change']);
+
+const nodeInstance = getCurrentInstance();
+
+// 表单formData数据
+const { formData } = useFormItem();
+
+const { fieldStateMap, slots } = useBuilderContext();
+const disabled = injectBuilderDisabled();
+const readonly = injectBuilderReadonly();
+// 接收页面管理对象
+const pageManager = usePageManager();
+// 校验前缀字段
+const fieldPathPrefix = useFieldPathPrefix();
+const scopeName = computed(() => {
+  if (fieldPathPrefix) {
+    return fieldPathPrefix.join('.');
+  }
+  return 'default';
+});
+
+// 内部schema数据
+const innerSchema = reactive<ComponentSchema>(
+  deepClone(props.componentSchema, !props.isProperty),
+);
+
+// 双向绑定Value
+const innerValue = computed({
+  get: getBindValue,
+  set: handleUpdate,
+});
+// 设计模式模式下，添加字段后缀
+addDesignModeSuffix();
+
+// 监听 props.componentSchema 的变化，并在变化时调用 deepCompareAndModify 方法更新内部schema数据
+watch(
+  () => props.componentSchema,
+  (componentSchema) => {
+    // 深度比较对象属性值是否变更, 忽略 children 节点
+    if (deepEqual(innerSchema, componentSchema, ['children'])) {
+      return;
+    }
+    deepCompareAndModify(innerSchema, deepClone(componentSchema, false));
+    addDesignModeSuffix();
+  },
+  {
+    deep: true,
+  },
+);
+
+/**
+ * 获取表单项 数据
+ */
+function getBindValue() {
+  return props.modelValue ?? getValueByPath(formData, innerSchema.field ?? '');
+}
+
+/**
+ * 在设计模式下为innerSchema.field添加特殊后缀。
+ * 此函数用于标识在设计模式下使用的字段，通过添加'-design-mode'后缀，
+ * 可以区分运行时和设计时的数据字段，以便在设计工具中进行特殊处理。
+ *
+ * @remarks
+ * 此函数仅在pageManager的isDesignMode为true时执行，确保只在设计模式下影响字段命名。
+ * 如果innerSchema.field已经是字符串类型，则直接追加后缀，否则不进行处理。
+ */
+function addDesignModeSuffix() {
+  // 检查当前是否处于设计模式
+  // 检查是否是设计模式
+  if (
+    pageManager.isDesignMode.value && // 判断innerSchema.field的类型，仅在是字符串类型时追加后缀
+    // 检查 innerSchema.field 是否为字符串类型
+    typeof innerSchema.field === 'string'
+  ) {
+    // 给字段名添加设计模式后缀
+    // 给 innerSchema.field 添加后缀 '-design-mode'
+    innerSchema.field += '-design-mode';
+  }
+}
+
+// 传递额外的attrs
+const attrs = useAttrs();
+if (Object.keys(attrs).length > 0) {
+  provide(NODE_ATTRS_KEY, attrs);
+}
+
+// 定义组件及组件props字段
+const componentRef = shallowRef<any>(null);
+const checkPayload = ref<null | { message?: string; result?: boolean }>(null);
+
+const fieldStateType = ref<FieldStateType | null>(null);
+const fieldRequired = ref<boolean | null | undefined>(null);
+
+watchEffect(() => {
+  const fieldName = innerSchema?.field;
+  const currentFieldState = fieldName && fieldStateMap.value?.[fieldName];
+
+  if (!currentFieldState) {
+    fieldStateType.value = null;
+    fieldRequired.value = null;
+    return;
+  }
+
+  const { condition, required, state } = currentFieldState;
+  if (typeof condition === 'function') {
+    fieldStateType.value = condition(formData) ? state : null;
+    fieldRequired.value = condition(formData) ? required : null;
+  } else {
+    fieldStateType.value = state;
+    fieldRequired.value = required;
+  }
+});
+
+const show = computed(() => {
+  // 设计模式且showHiddenItems为true时 显示隐藏组件，提供查看隐藏元素的能力
+  if (props.showHiddenItems && pageManager.isDesignMode.value) return true;
+
+  // fieldStateType 属性优先级最高
+  if (fieldStateType.value === 'WRITE') {
+    return true;
+  } else if (innerSchema.props?.hidden || fieldStateType.value === 'HIDE') {
+    return false;
+  }
+
+  // show属性为boolean类型则直接返回
+  if (typeof innerSchema.show === 'boolean') {
+    return innerSchema.show;
+  }
+
+  return innerSchema.show?.({ values: formData }) ?? true;
+});
+
+// 获取FormItemProps
+const getFormItemProps = computed<ComponentSchema>(() => {
+  let rules =
+    show.value &&
+    innerSchema.rules?.map((rule) => {
+      const processedRule = { ...rule };
+
+      if (processedRule.required !== undefined) {
+        // 必填项优先级：fieldState.required > props.required > rules.required
+        processedRule.required =
+          fieldRequired.value ??
+          innerSchema.props?.required ??
+          processedRule.required;
+      }
+
+      // 处理自定义验证器
+      if (rule.validator) {
+        processedRule.validator =
+          pageManager.funcs.value[rule.validator as string];
+      }
+
+      return processedRule;
+    });
+
+  const needsRequired =
+    fieldRequired.value === true || innerSchema.props?.required;
+  const hasRequiredRule =
+    Array.isArray(rules) && rules.some((rule) => rule.required !== undefined);
+
+  if (needsRequired && !hasRequiredRule) {
+    const rule = {
+      message: '必填项',
+      required: true,
+      trigger: ['change', 'blur'],
+      type: 'string',
+    };
+    if (rules) {
+      rules.push(rule);
+    } else {
+      rules = [rule];
+    }
+  }
+
+  // 获取校验字段
+  let model: string | string[] | undefined = innerSchema.field;
+
+  if (props.ruleField && props.ruleField.length > 0) {
+    // 设置为父级传入的校验字段
+    model = props.ruleField;
+  } else if (fieldPathPrefix && innerSchema.field) {
+    // 添加校验字段前缀
+    model = deepClone(fieldPathPrefix) as [];
+    model.push(innerSchema.field);
+  }
+
+  const style = innerSchema.props?.style ?? {};
+  const formItemProps = {
+    ...innerSchema,
+    ...attrs,
+    field: model,
+    rule: rules,
+    rules,
+    style: {
+      ...style,
+      width: undefined,
+    },
+  } as ComponentSchema;
+
+  // 移除元素只读属性 children
+  if (formItemProps.children) {
+    delete formItemProps.children;
+  }
+  return formItemProps;
+});
+
+// 获取组件原配置
+const getComponentConfig = computed(() => {
+  return (
+    pluginManager.component.getComponentConfigByType(innerSchema.type) ?? null
+  );
+});
+
+const hasFormItem = computed(() => {
+  return (
+    innerSchema.noFormItem !== true &&
+    getComponentConfig.value?.defaultSchema.input
+  );
+});
+
+// 获取组件props数据
+const getProps = computed(() => {
+  const bindModel = getComponentConfig.value?.bindModel ?? 'modelValue';
+  const onEvent: { [type: string]: Function } = {};
+  if (!pageManager.isDesignMode.value) {
+    // 设计模式下，不添加事件 防止误触发事件
+    innerSchema.on &&
+      Object.keys(innerSchema.on).forEach((item) => {
+        onEvent[`on${capitalizeFirstLetter(item)}`] = (...args) =>
+          pageManager.doActions(
+            innerSchema.on![item],
+            scopeName.value,
+            ...args,
+          );
+      });
+  }
+
+  const style = innerSchema.props?.style ?? {};
+  const finalStyle = hasFormItem.value
+    ? Object.fromEntries(
+        (['height', 'width'] as const)
+          .filter((k) => style[k] !== undefined && style[k] !== null)
+          .map((k) => [k, style[k]]),
+      )
+    : style;
+  return {
+    ...props,
+    ...attrs,
+    ...innerSchema.props,
+    bindModel,
+    disabled:
+      fieldStateType.value !== 'WRITE' &&
+      (fieldStateType.value === 'DISABLED' ||
+        disabled.value ||
+        innerSchema.props?.disabled),
+    hidden: !show.value,
+    readonly:
+      fieldStateType.value !== 'WRITE' &&
+      (fieldStateType.value === 'READ' ||
+        readonly.value ||
+        innerSchema.props?.readonly),
+    style: finalStyle,
+    ...onEvent,
+  };
+});
+
+function handleCheck(payload: { message?: string; result?: boolean }) {
+  checkPayload.value = payload;
+}
+
+// 添加组件实例
+function handleAddComponentInstance(vNode?: VNode) {
+  if (show.value) {
+    // 组件实例不存在时，标记成待加载项，存在时，移除待加载项
+    (vNode ? pageManager.mountMonitor.pop : pageManager.mountMonitor.push)(
+      innerSchema.id as string,
+    );
+  }
+
+  const instance = (vNode?.component ?? nodeInstance) as EpNodeInstance;
+  if (!innerSchema.id || !instance) {
+    return;
+  }
+
+  // 确保 instance.exposed 对象存在
+  instance.exposed ??= {};
+
+  // 输入组件则添加setValue方法
+  if (innerSchema.input) {
+    instance.exposed.setValue = handleUpdate;
+    instance.exposed.getValue = getBindValue;
+  }
+
+  instance.exposed.schema = innerSchema;
+
+  // 添加属性设置方法
+  instance.exposed.setAttr = (key: string, value: any) => {
+    // 确保 props 属性对象存在
+    innerSchema.props ??= {};
+    return (innerSchema.props[key] = value);
+  };
+
+  // 添加获取设置方法
+  instance.exposed.getAttr = (key: string) => {
+    return innerSchema.props?.[key];
+  };
+
+  pageManager.addComponentInstance(innerSchema.id, instance, scopeName.value);
+}
+
+/**
+ * 移除组件实例
+ */
+function handleVnodeUnmounted() {
+  if (innerSchema.id) {
+    // 移除实例 及 formItem实例
+    pageManager.removeComponentInstance(innerSchema.id, scopeName.value);
+    if (
+      getComponentConfig.value?.defaultSchema.input &&
+      innerSchema.noFormItem !== true
+    ) {
+      pageManager.removeComponentInstance(`${innerSchema.id}_formItem`);
+    }
+  }
+}
+
+/**
+ * 初始化组件
+ */
+async function initComponent() {
+  // 如果存在默认值，则会在初始化之后赋值
+  if (innerSchema.props?.defaultValue !== undefined) {
+    const defaultValue = pageManager.isDesignMode.value
+      ? innerSchema.props?.defaultValue
+      : (formData[innerSchema.field!] ?? innerSchema.props?.defaultValue);
+
+    handleUpdate(deepClone(defaultValue), true);
+  }
+
+  await pluginManager.hook.execute('nodeRender', innerSchema);
+
+  // 组件为slot类型时
+  if (innerSchema.type === 'slot') {
+    const slotName = innerSchema.slotName;
+    if (!slotName) return;
+
+    componentRef.value = defineComponent({
+      setup() {
+        return () =>
+          renderSlot(slots, slotName, {
+            componentSchema: innerSchema,
+            model: formData,
+          });
+      },
+    });
+
+    return;
+  }
+
+  // 内置组件
+  const cmp = pluginManager.component.get(innerSchema.type);
+  // 内部不存在组件
+  if (!cmp) {
+    console.error(`组件${innerSchema.type}未注册`);
+    pageManager.mountMonitor.pop(innerSchema.id as string);
+    return;
+  }
+
+  // 如果数据项为函数，则判定为懒加载组件
+  if (typeof cmp === 'function') {
+    const res = await (cmp as AsyncComponentLoader)();
+    componentRef.value = res.default ?? res;
+  } else {
+    // 否则为预加载组件
+    componentRef.value = cmp;
+  }
+}
+
+/**
+ * 通过函数更新值
+ * @param value value值
+ * @param isInit 是否初始化
+ */
+function handleUpdate(value: any, isInit?: boolean) {
+  const oldValue = getBindValue();
+  // 值相同时,无需重复更新数据
+  if (value === oldValue) {
+    return;
+  }
+  if (innerSchema.field) {
+    setValueByPath(formData, innerSchema.field, value);
+    // 触发formChange钩子
+    if (!isInit) {
+      pageManager.hook.execute('formChange', {
+        field: innerSchema.field,
+        formData,
+        value,
+      });
+    }
+  }
+  emit('update:modelValue', value);
+  emit('change', value);
+}
+
+let oldData: null | string = null;
+// 需要监听值变化，重新渲染组件
+watch(
+  () => innerSchema,
+  (newVal) => {
+    // 过滤所有子节点
+    const newData = JSON.stringify({ ...newVal, children: undefined });
+    if (newData === oldData) {
+      return false;
+    }
+    oldData = newData;
+    initComponent();
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
+
+// 添加组件实例
+handleAddComponentInstance();
+
+// 组件卸载时移除组件实例
+onBeforeUnmount(handleVnodeUnmounted);
+</script>
+<template>
+  <dynamicFormItem
+    v-if="componentRef && show"
+    :check-payload="checkPayload"
+    :has-form-item="hasFormItem"
+    :form-item-props="getFormItemProps"
+  >
+    <component
+      :is="componentRef"
+      v-bind="getProps"
+      v-model:[getProps.bindModel]="innerValue"
+      :model="formData"
+      @check="handleCheck"
+      :class="{
+        'ep-hidden': innerSchema.props?.hidden,
+        'ep-readonly': getProps.readonly,
+      }"
+      @vue:mounted="handleAddComponentInstance"
+    >
+      <!-- 嵌套组件递归 start -->
+      <!-- 渲染子组件 start -->
+      <template #node="data">
+        <EpNode v-bind="data" />
+      </template>
+      <!-- 渲染子组件 end -->
+      <!-- 渲染布局设计子组件列表 start -->
+      <template #edit-node>
+        <slot name="edit-node"></slot>
+      </template>
+      <!-- 渲染布局设计子组件列表 end -->
+    </component>
+  </dynamicFormItem>
+</template>

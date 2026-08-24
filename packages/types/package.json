@@ -1,0 +1,11 @@
+{
+  "name": "@aigen-designer/types",
+  "version": "1.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "aigen-designer types",
+  "author": "hao-gd",
+  "type": "module",
+  "main": "./src/index.ts"
+}

@@ -1,0 +1,162 @@
+<script lang="ts" setup>
+import type { ComponentSchema, FormDataModel } from '@aigen-designer/types';
+
+import type { VNode } from 'vue';
+
+import { computed, ref } from 'vue';
+
+import { provideBuilderDisabled, useForm } from '@aigen-designer/hooks';
+import { Form } from 'ant-design-vue';
+
+interface FormInstance extends InstanceType<typeof Form> {
+  getData?: () => FormDataModel;
+  resetData: () => void;
+  resetFields: () => void;
+  scrollToField: (name: string) => void;
+  setData?: (data: FormDataModel) => void;
+  validate: () => Promise<unknown>;
+  validateFields: () => Promise<unknown>;
+}
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const props = withDefaults(
+  defineProps<{
+    componentSchema: ComponentSchema;
+    disabled?: boolean;
+    scrollToFirstError?: boolean;
+  }>(),
+  {
+    componentSchema: () => ({ type: '' }),
+    disabled: false,
+    scrollToFirstError: false,
+  },
+);
+
+provideBuilderDisabled(computed(() => props.disabled));
+
+const form = ref<FormInstance | null>(null);
+const { formData, formInstances } = useForm(
+  props.componentSchema?.props?.name ?? 'default',
+);
+
+/**
+ * 获取表单数据
+ */
+function getData(): FormDataModel {
+  return formData;
+}
+
+/**
+ * 校验表单数据
+ */
+async function validate() {
+  try {
+    return await form.value?.validateFields();
+  } catch (error) {
+    if (props.scrollToFirstError) {
+      // 滚动到第一个错误字段
+      form.value?.scrollToField(error.errorFields[0].name.toString());
+    }
+    throw error;
+  }
+}
+
+/**
+ * 设置表单数据
+ * @param data
+ */
+function setData(data: FormDataModel) {
+  Object.assign(formData, data);
+}
+
+/**
+ * 重置表单数据
+ */
+function resetData() {
+  form.value?.resetFields();
+}
+
+// form组件需要特殊处理
+const mountedForm = (vNode: VNode) => {
+  form.value = vNode.component?.exposed as FormInstance;
+
+  if (
+    props.componentSchema?.type === 'form' &&
+    formInstances.value &&
+    form.value
+  ) {
+    const name =
+      props.componentSchema?.props?.name ??
+      props.componentSchema?.name ??
+      ('default' as string);
+
+    form.value.validate = validate;
+    formInstances.value[name] = form.value;
+    form.value.getData = getData;
+    form.value.setData = setData;
+    form.value.resetData = resetData;
+    return false;
+  }
+};
+
+const formProps = computed(() => {
+  const recordProps = props.componentSchema!.props;
+  let labelCol = recordProps.labelCol;
+  let wrapperCol = recordProps.wrapperCol;
+  if (recordProps.layout === 'vertical') {
+    labelCol = wrapperCol = { span: 24 };
+  } else if (
+    recordProps.layout === 'inline' &&
+    recordProps.labelLayout === 'fixed'
+  ) {
+    // 处理内联固定label宽度导致换行问题
+    labelCol = {};
+    wrapperCol = { flex: 1 };
+  } else if (recordProps.labelLayout === 'fixed') {
+    // 兼容 旧版本 labelWidth 是 number 的情况
+    labelCol = {
+      flex: `${typeof recordProps.labelWidth === 'number' ? `${recordProps.labelWidth}px` : recordProps.labelWidth}`,
+    };
+    wrapperCol = { flex: 1 };
+  }
+
+  return {
+    ...recordProps,
+    labelCol,
+    wrapperCol,
+  };
+});
+
+function onFinish() {}
+
+const children = computed(() => {
+  return props.componentSchema!.children ?? [];
+});
+
+defineExpose({
+  form,
+  getData,
+  resetData,
+  setData,
+  validate,
+});
+</script>
+<template>
+  <Form
+    :model="formData"
+    v-bind="formProps"
+    @finish="onFinish"
+    @vue:mounted="mountedForm"
+  >
+    <slot name="edit-node">
+      <slot
+        v-for="item in children"
+        name="node"
+        :component-schema="item"
+      ></slot>
+    </slot>
+  </Form>
+</template>

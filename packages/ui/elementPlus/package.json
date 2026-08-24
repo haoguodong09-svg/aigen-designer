@@ -1,0 +1,41 @@
+{
+  "name": "@aigen-designer/element-plus",
+  "version": "1.0.0",
+  "description": "aigen-designer base ui",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "hao-gd",
+  "type": "module",
+  "scripts": {
+    "build": "unbuild",
+    "stub": "tsx dev-stub.ts"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "peerDependencies": {
+    "element-plus": ">=2.11.9",
+    "aigen-designer": ">=1.0.0",
+    "vue": ">=3.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-alias": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "rollup-plugin-postcss": "catalog:",
+    "tsx": "catalog:",
+    "unbuild": "catalog:"
+  }
+}

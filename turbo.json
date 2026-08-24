@@ -1,0 +1,30 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "stub": {
+      "cache": false
+    },
+    "aigen-examples#dev": {
+      "dependsOn": [
+        "@aigen-designer/antd#stub",
+        "@aigen-designer/element-plus#stub",
+        "@aigen-designer/naive-ui#stub"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "aigen-examples#build": {
+      "cache": true
+    }
+  }
+}

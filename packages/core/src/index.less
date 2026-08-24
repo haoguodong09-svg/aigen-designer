@@ -1,0 +1,53 @@
+@import "./static/icons/iconify.css";
+@import "./theme/application.less";
+@import "./components/designer/src/index.less";
+
+// iconfont 图标样式
+.iconfont {
+  font-family: "epic-iconfont", "iconfont" !important;
+  font-style: normal;
+  font-size: 1em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.ep-button {
+  color: var(--ep-text-main);
+  border: 1px solid var(--ep-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--ep-radius);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease-out-quart;
+
+  &:hover {
+    color: var(--ep-primary);
+    background-color: color-mix(in oklch, var(--ep-primary), transparent 92%);
+    border-color: var(--ep-primary);
+  }
+
+  &.small {
+    height: 24px;
+    padding: 0 8px;
+    border-radius: calc(var(--ep-radius) - 2px);
+  }
+
+  &.primary {
+    color: var(--ep-primary-foreground);
+    background-color: var(--ep-primary);
+    border-color: var(--ep-primary);
+    box-shadow: 0 2px 0 color-mix(in oklch, var(--ep-primary), transparent 90%);
+  }
+
+  &.ghost {
+    color: var(--ep-primary);
+    background-color: transparent;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,66 @@
+// 活动视图切换器
+.ep-action-bar {
+  width: 48px;
+  background-color: var(--ep-designer-background);
+  border-right: 1px solid var(--ep-border);
+  border-left: 1px solid var(--ep-border);
+  padding: 8px 0;
+
+  .ep-action-item {
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    color: var(--ep-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: all 0.3s;
+    border-radius: var(--ep-radius);
+
+    &:hover {
+      background: var(--ep-muted);
+    }
+
+    &::before {
+      content: '';
+      height: 80%;
+      width: 80%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: var(--ep-primary);
+      border-radius: var(--ep-radius);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+
+    &.checked {
+      color: var(--ep-primary-foreground);
+      &::before {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// 左侧栏
+.ep-left-sidebar {
+  width: 280px;
+  background-color: var(--ep-designer-background);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.3s;
+  border-right: 1px solid var(--ep-border);
+
+  .ep-sidebar-container {
+    min-width: 280px;
+    height: 100%;
+  }
+
+  &.hide {
+    width: 0;
+    border: 0;
+  }
+}

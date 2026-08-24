@@ -1,0 +1,94 @@
+.ep-designer-main {
+  .el-input {
+    width: 100% !important;
+  }
+
+  // 表单样式
+  .el-form--inline {
+    [name='ep-draggable-range'] {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .el-form-item__content {
+      width: 175px;
+    }
+  }
+
+  // 折叠面板
+  .el-collapse {
+    border: 1px solid var(--ep-border);
+    border-top: 0;
+
+    .el-collapse-item__header {
+      width: 100%;
+      height: 42px;
+      background: var(--ep-canvas-container-background);
+      padding-left: 12px;
+      border: 1px solid var(--ep-border);
+      border-left: 0;
+      border-right: 0;
+      border-bottom: 1px solid transparent;
+      &.is-active {
+        border-bottom: 1px solid var(--ep-border);
+      }
+    }
+    .el-collapse-item:last-child .el-collapse-item__header {
+      border-bottom: 1px solid var(--ep-border);
+    }
+    .el-collapse-item__content {
+      padding: 8px;
+    }
+  }
+}
+
+// 适配k-input-size样式
+.ep-input-size {
+  > .el-input__wrapper {
+    padding-right: 1px;
+  }
+  .el-input__suffix {
+    margin-left: 0px;
+    .el-select__wrapper {
+      height: 32px;
+      line-height: 30px;
+      padding: 0 8px 0 4px;
+      border: 0;
+      box-shadow: none !important;
+      border-left: 1;
+      position: relative;
+      line-height: auto;
+    }
+  }
+
+  .el-select-selector {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+  }
+}
+
+.ep-el-modal {
+  margin: 20px auto 0 !important;
+  height: calc(100vh - 50px);
+  // element plus弹出框样式适配
+  .el-dialog__body {
+    padding: 0;
+    height: calc(100% - 89px) !important;
+    overflow: auto;
+  }
+}
+
+.ep-el-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// 适配设计组件表单内联模式
+.el-form--inline {
+  & > .ep-draggable-range {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+}

@@ -1,0 +1,139 @@
+.ep-event-item {
+  .ep-event-info {
+    display: flex;
+    background-color: var(--ep-canvas-container-background);
+    padding: 0 12px;
+    justify-content: space-between;
+    align-items: center;
+    height: 36px;
+    border: 1px solid var(--ep-border);
+    color: var(--ep-text-main);
+    margin: 0px -1px -1px 0px;
+  }
+
+  .ep-event-btn>span {
+    cursor: pointer;
+  }
+
+  .ep-action-editor-main {
+    .ep-editor-item {
+      margin: 8px 0px;
+      border: 1px solid var(--ep-border);
+      color: var(--ep-text-main);
+      padding: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+
+  }
+}
+
+.ep-modal-action-main {
+  display: flex;
+  height: 100%;
+}
+
+.ep-modal-left-panel {
+  width: 240px;
+  border: 1px solid var(--ep-border);
+  overflow: auto;
+  padding: 8px;
+  box-sizing: border-box;
+
+  .fun-btn {
+    border: 1px solid var(--ep-border);
+    padding: 8px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 6px;
+
+    &.checked {
+      background-color: var(--ep-primary-faded);
+      border-color: var(--ep-primary);
+      color: var(--ep-primary);
+    }
+  }
+}
+
+.ep-modal-right-panel {
+  flex: 1;
+  width: 0;
+  border: 1px solid var(--ep-border);
+  margin-left: 8px;
+  padding: 8px;
+
+  .action-select {
+    margin-right: 8px;
+    min-width: 175px;
+  }
+}
+
+.ep-action-select {
+  border-top: 1px solid var(--ep-border);
+  margin-top: 12px;
+  padding: 8px;
+  padding-right: 0;
+  overflow: auto;
+
+  .ep-action-item {
+    height: 32px;
+    line-height: 32px;
+    padding-left: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid transparent;
+
+    &:hover {
+      background-color: var(--ep-primary-faded);
+      color: var(--ep-primary);
+    }
+
+    &.checked {
+      background-color: var(--ep-primary-faded);
+      border-color: var(--ep-primary);
+      color: var(--ep-primary);
+    }
+  }
+}
+
+.ep-editor-item {
+  display: flex;
+  align-items: center;
+  padding-top: 6px;
+
+  .ep-action-box {
+    display: flex;
+    align-items: center;
+
+
+    .ep-del-btn {
+      width: 30px;
+      height: 100%;
+      text-align: center;
+      cursor: pointer;
+
+      &:hover {
+        color: var(--ep-destructive);
+      }
+    }
+
+    .ep-edit-btn {
+      width: 30px;
+      height: 100%;
+      text-align: center;
+      cursor: pointer;
+
+      &:hover {
+        color: var(--ep-primary);
+      }
+    }
+  }
+}
+
+.add-btn {
+  cursor: pointer;
+  margin-top: 6px;
+  color: var(--ep-primary);
+}

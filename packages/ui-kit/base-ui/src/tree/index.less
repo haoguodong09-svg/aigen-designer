@@ -1,0 +1,137 @@
+.ep-tree {
+  .ep-tree-main {
+    padding-right: 10px;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  a {
+    color: var(--ep-text-main);
+    display: flex;
+
+    &:hover {
+      color: var(--ep-text-main);
+    }
+
+    .text {
+      display: inline-block;
+      width: 100%;
+
+      &.hover {
+        background-color: var(--ep-muted);
+      }
+
+      &.checked {
+        background: var(--ep-primary-faded);
+        color: var(--ep-primary);
+      }
+
+      .ep-text-padding {
+        padding: 0 6px;
+        white-space: nowrap;
+        color: var(--ep-text-main);
+
+        &.hidden {
+          color: var(--ep-text-helper);
+        }
+        .ep-copy-id-btn{
+          display: none;
+        }
+        &:hover .ep-copy-id-btn{
+          display: block;
+        }
+      }
+    }
+  }
+
+  .ep-node-type-text {
+    font-size: var(--ep-text-sm);
+    color: var(--ep-disabled);
+    margin-left: 6px;
+  }
+
+  .ep-tree-node {
+    padding-left: 16px;
+    min-height: 30px;
+    line-height: 30px;
+    cursor: pointer;
+
+    &.level-1 {
+      padding-left: 10px;
+    }
+
+    .is-locked>a>span,
+    .is-locked>a>span>div {
+
+      >.ep-text-padding {
+        color: var(--ep-disabled);
+        cursor: not-allowed;
+      }
+
+      .ep-tree-action {
+        display: none !important;
+      }
+
+    }
+
+    .icon-expanded {
+      position: absolute;
+      left: 8px;
+      transition: transform 0.3s;
+      color: var(--ep-border);
+      font-size: var(--ep-text-sm);
+
+      &.expanded {
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  .ep-tree-sublist {
+    height: 0;
+    overflow: hidden;
+
+    &.expanded {
+      height: auto;
+    }
+
+    .ep-tree-node {
+      position: relative;
+
+      &::after,
+      &::before {
+        content: "";
+        position: absolute;
+        background: var(--ep-border);
+        z-index: 99;
+      }
+
+      &::after {
+        width: 1px;
+        height: 100%;
+        left: 4px;
+        top: 0;
+      }
+
+      &::before {
+        width: 8px;
+        height: 1px;
+        left: 4px;
+        top: 13px;
+      }
+
+      &.expanded::before {
+        display: none;
+      }
+
+      &:last-child {
+        &::after {
+          height: 13px;
+        }
+      }
+    }
+  }
+}

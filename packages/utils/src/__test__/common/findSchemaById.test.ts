@@ -1,0 +1,78 @@
+import { describe, expect, it } from 'vitest';
+
+import { findSchemaById } from '../../';
+
+describe('findSchemaById 函数测试', () => {
+  const schemas = [
+    {
+      props: {
+        
+      },
+      id: 'root',
+      label: '页面',
+      type: 'page',
+      children: [
+        {
+          label: '表单',
+          type: 'form',
+          props: {
+            labelCol: {
+              span: 5,
+            },
+            labelLayout: 'fixed',
+            labelWidth: '100px',
+            name: 'default',
+            wrapperCol: {
+              span: 19,
+            },
+          },
+          children: [
+            {
+              label: '输入框',
+              type: 'input',
+              field: 'input_ttuyobv9',
+              input: true,
+              props: {
+                placeholder: '请输入',
+              },
+              id: 'input_ttuyobv9',
+            },
+            {
+              label: '数字输入框',
+              type: 'number',
+              field: 'number_m7ogpi26',
+              input: true,
+              props: {
+                placeholder: '请输入',
+                style: {
+                  width: '100%',
+                },
+              },
+              id: 'number_m7ogpi26',
+            },
+          ],
+          id: 'form_oyvwbf00',
+        },
+      ],
+    },
+  ];
+
+  it('应该返回正确的节点', () => {
+    const result = findSchemaById(schemas, 'input_ttuyobv9');
+    expect(result).toEqual({
+      props: {
+        placeholder: '请输入',
+      },
+      field: 'input_ttuyobv9',
+      id: 'input_ttuyobv9',
+      input: true,
+      label: '输入框',
+      type: 'input',
+    });
+  });
+
+  it('应该返回null当节点不存在', () => {
+    const result = findSchemaById(schemas, 'non_existent_id');
+    expect(result).toBeNull();
+  });
+});

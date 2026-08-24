@@ -1,0 +1,17 @@
+{
+  "name": "@aigen-designer/panel-ui",
+  "version": "1.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "aigen-designer panel-ui",
+  "author": "hao-gd",
+  "type": "module",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "vue-draggable-plus": "catalog:"
+  },
+  "devDependencies": {
+    "monaco-editor": "catalog:"
+  }
+}

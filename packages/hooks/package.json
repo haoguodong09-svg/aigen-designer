@@ -1,0 +1,11 @@
+{
+  "name": "@aigen-designer/hooks",
+  "version": "1.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "aigen-designer hooks",
+  "author": "hao-gd",
+  "type": "module",
+  "main": "src/index.ts"
+}

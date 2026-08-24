@@ -1,0 +1,131 @@
+import type { ComponentConfigModel } from '@aigen-designer/types';
+
+export default {
+  component: () => import('./button'),
+  config: {
+    attribute: [
+      {
+        field: 'label',
+        label: '标题',
+        type: 'input',
+      },
+      {
+        field: 'props.type',
+        label: '类型',
+        props: {
+          clearable: true,
+          options: [
+            {
+              label: 'primary',
+              value: 'primary',
+            },
+            {
+              label: 'success',
+              value: 'success',
+            },
+            {
+              label: 'info',
+              value: 'info',
+            },
+            {
+              label: 'warning',
+              value: 'warning',
+            },
+            {
+              label: 'danger',
+              value: 'danger',
+            },
+          ],
+        },
+        type: 'select',
+      },
+      {
+        field: 'props.native-type',
+        label: '操作类型',
+        props: {
+          clearable: true,
+          options: [
+            {
+              label: 'button',
+              value: 'button',
+            },
+            {
+              label: 'submit',
+              value: 'submit',
+            },
+            {
+              label: 'reset',
+              value: 'reset',
+            },
+          ],
+        },
+        type: 'select',
+      },
+      {
+        field: 'props.color',
+        label: '自定义颜色',
+        props: {
+          type: 'color',
+        },
+        type: 'color-picker',
+      },
+      {
+        field: 'props.plain',
+        label: '朴素按钮',
+        type: 'switch',
+      },
+      {
+        field: 'props.round',
+        label: '圆角按钮',
+        type: 'switch',
+      },
+      {
+        field: 'props.circle',
+        label: '圆形按钮',
+        type: 'switch',
+      },
+      {
+        field: 'props.text',
+        label: '文字按钮',
+        type: 'switch',
+      },
+      {
+        field: 'props.loading',
+        label: '加载状态',
+        type: 'switch',
+      },
+      {
+        field: 'props.disabled',
+        label: '禁用',
+        type: 'switch',
+      },
+      {
+        field: 'props.hidden',
+        label: '隐藏',
+        type: 'switch',
+      },
+    ],
+    event: [
+      {
+        description: '点击按钮时',
+        type: 'click',
+      },
+      {
+        description: '双击按钮时',
+        type: 'dblclick',
+      },
+    ],
+  },
+  defaultSchema: {
+    field: 'input',
+    input: false,
+    label: '按钮',
+    type: 'button',
+  },
+  editConstraints: {
+    inline: true,
+  },
+  groupName: '表单',
+  icon: 'icon--epic--fit-screen-rounded',
+  sort: 1200,
+} as ComponentConfigModel;

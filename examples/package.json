@@ -1,0 +1,33 @@
+{
+  "name": "aigen-examples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "catalog:",
+    "@shikijs/monaco": "catalog:",
+    "ant-design-vue": "catalog:",
+    "dayjs": "catalog:",
+    "element-plus": "catalog:",
+    "magic-string": "catalog:",
+    "monaco-editor": "catalog:",
+    "shiki": "catalog:",
+    "vue": "catalog:",
+    "vue-draggable-plus": "catalog:",
+    "vue-router": "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "catalog:",
+    "typescript": "catalog:",
+    "unocss": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-monaco-editor": "catalog:",
+    "vite-plugin-vue-devtools": "catalog:",
+    "vue-tsc": "catalog:"
+  }
+}

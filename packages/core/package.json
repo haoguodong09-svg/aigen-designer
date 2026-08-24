@@ -1,0 +1,40 @@
+{
+  "name": "@aigen-designer/core",
+  "version": "1.0.0",
+  "description": "基于vue3的设计器,可视化开发页面表单",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "form",
+    "aigen-designer",
+    "设计器",
+    "页面设计",
+    "低代码",
+    "可视化",
+    "工作流"
+  ],
+  "bugs": {
+    "url": "https://github.com/haoguodong09-svg/aigen-designer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/haoguodong09-svg/aigen-designer"
+  },
+  "author": "hao-gd",
+  "type": "module",
+  "scripts": {
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "main": "src/index.ts",
+  "dependencies": {
+    "monaco-editor": "catalog:",
+    "vue-draggable-plus": "catalog:"
+  },
+  "devDependencies": {
+    "unocss": "catalog:",
+    "vitest": "catalog:"
+  }
+}

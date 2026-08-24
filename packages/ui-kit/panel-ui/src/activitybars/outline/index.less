@@ -1,0 +1,49 @@
+.ep-outline {
+    overflow: auto;
+    height: 100%;
+    box-sizing: border-box;
+
+    .ep-event-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        font-size: var(--ep-text-sm);
+        line-height: 1.4;
+        border-radius: var(--ep-radius);
+        background-color: var(--ep-secondary);
+        color: var(--ep-primary);
+    }
+
+    .ep-tree-action {
+    display: none;
+    align-items: center;
+
+    &.active {
+      display: flex;
+    }
+
+    .iconfont {
+      color: var(--ep-muted-foreground);
+      display: none;
+
+      &.active {
+        color: var(--ep-primary);
+        display: inline-block;
+      }
+    }
+
+  }
+
+   .ep-outline-item:hover {
+    .ep-tree-action {
+      display: flex;
+    }
+
+    .ep-tree-action .iconfont {
+      display: inline-block;
+    }
+  }
+  }
+  
+  

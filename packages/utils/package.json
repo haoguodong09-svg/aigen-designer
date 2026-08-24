@@ -1,0 +1,22 @@
+{
+  "name": "@aigen-designer/utils",
+  "version": "1.0.0",
+  "description": "Aigen Designer 核心工具库，提供通用工具函数和管理器类",
+  "private": false,
+  "author": "hao-gd",
+  "type": "module",
+  "scripts": {},
+  "files": [
+    "dist"
+  ],
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "typings": "src/index.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "jsep": "^1.4.0",
+    "rollup-plugin-node-externals": "catalog:"
+  }
+}

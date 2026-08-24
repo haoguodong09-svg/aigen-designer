@@ -1,0 +1,70 @@
+.ep-designer-main {
+  .ant-input-number {
+    width: 100%;
+  }
+
+  .ant-collapse-content > .ant-collapse-content-box {
+    padding: 8px;
+  }
+
+  .ant-select {
+    width: 100%;
+  }
+
+  .ep-upload-image {
+    .avatar-uploader > .ant-upload {
+      width: 128px;
+      height: 128px;
+    }
+  }
+}
+
+// 适配ep-input-size样式
+.ep-input-size {
+  &.ant-input-affix-wrapper {
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
+  .ant-select-selector {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+  }
+}
+
+// 适配设计组件表单内联模式
+.ant-form-inline {
+  & > .ep-draggable-range {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+}
+
+// 适配ep-readonly样式
+.ep-readonly {
+  .ant-form-item-control-input {
+    pointer-events: none;
+  }
+
+  .ant-upload {
+    display: none !important;
+  }
+
+  .ant-form-item-label {
+    pointer-events: none;
+  }
+
+  /* 上传组件样式 */
+  .ant-upload-list {
+    pointer-events: auto;
+    margin-bottom: 8px;
+
+    // 隐藏删除按钮
+    button {
+      display: none !important;
+    }
+  }
+}

@@ -1,0 +1,151 @@
+import type { PluginManager } from '@aigen-designer/manager';
+import type { SetupConfig } from '@aigen-designer/types';
+
+import { watchEffect } from 'vue';
+
+// 注册ant-design-vue ui
+import { pluginManager as pManager } from '@aigen-designer/manager';
+import { message, version } from 'ant-design-vue';
+
+import Button from './button';
+import Card from './card';
+import Cascader from './cascader';
+import Checkbox from './checkbox';
+import Col from './col';
+import colorPicker from './color-picker';
+import DatePicker from './date-picker';
+import Form from './form';
+import FormItem from './form-item';
+import Input from './input';
+import InputNumber from './input-number';
+import Modal from './modal';
+import Radio from './radio';
+import Row from './row';
+import Select from './select';
+import Slider from './slider';
+import Switch from './switch';
+import TabsPane from './tab-pane';
+import Tabs from './tabs';
+import Textarea from './textarea';
+import TimePicker from './time-picker';
+import UploadFile from './upload-file';
+import UploadImage from './upload-image';
+
+// 引入样式
+import './index.less';
+
+export function setupAntd(
+  pluginManager: PluginManager = pManager,
+  config: SetupConfig = {},
+): void {
+  // 版本兼容处理 start
+  const versionArray = version.split('.');
+  // 获取版本号第一个数字
+  const firstNumber = Number.parseInt(versionArray[0]);
+
+  // 创建一个 style 标签
+  const style = document.createElement('style');
+
+  // 大于v3版本
+  if (firstNumber > 3) {
+    // 定义 CSS 样式
+    const css = `
+.ep-modal-ant .ep-modal-main {
+  padding: 4px 12px 12px;
+}
+.ep-modal-ant .ant-modal-title {
+  padding: 16px 16px 0px;
+}
+.ep-modal-ant .ant-modal-content {
+  padding: 0px;
+}`;
+    style.append(document.createTextNode(css));
+    // 将 style 标签插入到页面的 head 中
+    document.head.append(style);
+    // 版本兼容处理 end
+  } else {
+    // v3版本
+    Form.config.attribute = Form.config.attribute?.filter(
+      (item) => item.label !== '禁用',
+    );
+  }
+
+  // 加载组件
+  pluginManager.component.add(
+    'Collapse',
+    async () => (await import('ant-design-vue')).Collapse,
+  );
+  pluginManager.component.add(
+    'CollapseItem',
+    async () => (await import('ant-design-vue')).CollapsePanel,
+  );
+
+  pluginManager.component.add(
+    'epTable',
+    async () => (await import('ant-design-vue')).Table,
+  );
+
+  const componentArray = [
+    Form,
+    FormItem,
+    Input,
+    Textarea,
+    InputNumber,
+    Radio,
+    Checkbox,
+    Select,
+    Slider,
+    TimePicker,
+    DatePicker,
+    Cascader,
+    Switch,
+    UploadImage,
+    UploadFile,
+    colorPicker,
+    Button,
+    Card,
+    Row,
+    Col,
+    Modal,
+    Tabs,
+    TabsPane,
+  ];
+
+  const { uploadFile, uploadImage } = config;
+  // 若配置了图片上传地址，则覆盖上传组件的默认接口地址
+  if (uploadImage) UploadImage.defaultSchema.props.action = uploadImage;
+  // 若配置了文件上传地址，则覆盖上传组件的默认接口地址
+  if (uploadFile) UploadFile.defaultSchema.props.action = uploadFile;
+
+  // 更新默认上传地址相关配置
+  watchEffect(() => {
+    // 当全局配置图片上传地址时，过滤该属性配置，默认使用全局配置
+    if (pluginManager.global.uploadImage) {
+      UploadImage.config.attribute = UploadImage.config.attribute?.filter(
+        (item) => item.field !== 'props.action',
+      );
+    }
+    // 当全局配置文件上传地址时，过滤该属性配置，默认使用全局配置
+    if (pluginManager.global.uploadFile) {
+      UploadFile.config.attribute = UploadFile.config.attribute?.filter(
+        (item) => item.field !== 'props.action',
+      );
+    }
+  });
+
+  componentArray.forEach((item) => {
+    pluginManager.component.register(item);
+    pluginManager.component.addBaseComponentType(item.defaultSchema.type);
+  });
+
+  // 注册全局提示函数
+  pluginManager.global.$message = {
+    error: message.error,
+    info: message.info,
+    success: message.success,
+    warning: message.warning,
+  };
+
+  // ui初始化完成。
+  pluginManager.designer.setInitialized(true);
+}

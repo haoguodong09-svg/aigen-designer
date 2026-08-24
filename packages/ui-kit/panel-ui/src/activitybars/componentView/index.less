@@ -1,0 +1,37 @@
+// 组件选择面板
+.ep-component-view {
+  height: 100%;
+
+  .ep-component-item {
+    cursor: pointer;
+    background-color: var(--ep-secondary);
+    padding: 8px 10px;
+    border-radius: var(--ep-radius);
+    border: 1px solid transparent;
+
+    .iconfont {
+      margin-right: 5px;
+      font-size: 16px;
+      color: var(--ep-text-secondary);
+    }
+
+    &:hover {
+      border-color: var(--ep-primary);
+      color: var(--ep-primary);
+      background-color: var(--ep-primary-faded);
+
+      .iconfont {
+        color: var(--ep-primary);
+      }
+    }
+  }
+
+  .ep-search-box {
+    border-bottom: 1px solid var(--ep-border);
+
+    // element 搜素框样式
+    // .el-input__wrapper {
+    //   background-color: #f7f7f7;
+    // }
+  }
+}

@@ -1,0 +1,17 @@
+.rule-item-main {
+  background-color: var(--ep-designer-background);
+  border-color: var(--ep-border);
+  &:hover{
+  border-color: var(--ep-primary);
+  }
+  .rule-btn-delete {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover > .rule-btn-delete {
+    opacity: 1;
+    pointer-events: all;
+    background-color: var(--ep-primary);
+  }
+}

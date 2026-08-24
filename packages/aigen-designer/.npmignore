@@ -1,0 +1,23 @@
+node_modules/
+vite.config.ts
+pnpm-lock.yaml
+*.map
+*.html
+index.ts
+uno.config.ts
+.eslintrc.cjs
+.babelrc
+
+# local env files
+.env.local
+.env.*.local
+
+# Editor directories and files
+.turbo
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*

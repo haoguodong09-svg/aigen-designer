@@ -1,0 +1,152 @@
+<script lang="ts" setup>
+import type { PropType } from 'vue';
+
+import { VueDraggable } from 'vue-draggable-plus';
+
+import { EpIcon } from '@aigen-designer/base-ui';
+import { useDesignerContext } from '@aigen-designer/hooks';
+import { findSchemaById } from '@aigen-designer/utils';
+
+const props = defineProps({
+  allEvents: {
+    default: () => [],
+    type: Array as PropType<any>,
+  },
+  events: {
+    default: () => ({}),
+    type: Object as PropType<any>,
+  },
+  itemEvents: {
+    default: () => [],
+    type: Array as PropType<any>,
+  },
+  modelValue: {
+    default: () => ({}),
+    type: Object as PropType<any>,
+  },
+});
+const emit = defineEmits(['add', 'edit', 'update:modelValue']);
+
+const { pageSchema } = useDesignerContext();
+
+/**
+ * 打开动作配置窗口
+ * @param type
+ */
+function handleOpen(type: string) {
+  emit('add', type);
+}
+
+/**
+ * 获取组件label
+ * @param id
+ */
+function getLabel(id: string) {
+  const schema = findSchemaById(pageSchema.schemas, id);
+  return schema?.label;
+}
+
+/**
+ * 删除
+ * @param index
+ */
+function handleDelete(index: number | string, type: string) {
+  const newEvents = getNewEvents(type);
+  newEvents[type] = props.events[type].filter(
+    (_item: any, i: number) => index !== i,
+  );
+  if (!newEvents[type]?.length) {
+    delete newEvents[type];
+  }
+  emit('update:modelValue', newEvents);
+}
+
+/**
+ * 修改事件
+ * @param index
+ * @param type
+ * @param action
+ */
+function handleEdit(index: number | string, type: string, action: any) {
+  emit('edit', index, type, action);
+}
+
+/**
+ * 获取新的事件数据，过滤空数据
+ * @param type
+ */
+function getNewEvents(type: string) {
+  const newEvents: { [type: string]: any } = {};
+  props.allEvents.forEach((item: any) => {
+    if (props.events[item.type].length === 0) {
+      return false;
+    }
+    if (item.type === type) {
+      return false;
+    }
+    newEvents[item.type] = props.events[item.type];
+  });
+  return newEvents;
+}
+</script>
+<template>
+  <div v-for="item in itemEvents" :key="item.type" class="ep-event-item">
+    <div class="ep-event-info">
+      <div class="epic-event-label" :title="item.describe ?? item.description">
+        {{ item.describe ?? item.description }}
+      </div>
+      <div
+        class="ep-event-btn text-$ep-text-secondary flex items-center text-lg"
+      >
+        <EpIcon
+          name="icon--epic--add-rounded"
+          @click="handleOpen(item.type)"
+        />
+      </div>
+    </div>
+    <div class="ep-action-editor-main">
+      <VueDraggable
+        v-model="props.events[item.type]"
+        item-key="id"
+        :component-data="{
+          type: 'transition-group',
+        }"
+        group="option-list"
+        handle=".handle"
+        :animation="200"
+      >
+        <div
+          v-for="(action, index) in props.events[item.type]"
+          class="ep-editor-item rounded"
+          :key="action.id"
+        >
+          <div class="w-36px flex items-center text-lg">
+            <EpIcon
+              class="handle text-$ep-text-helper mr-2 cursor-move text-lg"
+              name="icon--epic--drag"
+            />
+          </div>
+          <div class="flex-1">
+            <div v-if="action.type === 'component'">
+              {{ getLabel(action.componentId) }}
+            </div>
+            <div v-else-if="action.type === 'custom'">自定义函数</div>
+            <div v-else-if="action.type === 'public'">公共函数</div>
+            {{ action.methodName }}
+          </div>
+          <div class="ep-action-box text-$ep-text-helper text-lg">
+            <div
+              class="ep-edit-btn"
+              @click="handleEdit(index, item.type, action)"
+            >
+              <EpIcon name="icon--epic--page-info-outline-rounded" />
+            </div>
+            <div class="ep-del-btn" @click="handleDelete(index, item.type)">
+              <EpIcon name="icon--epic--delete-outline-rounded" />
+            </div>
+          </div>
+        </div>
+      </VueDraggable>
+    </div>
+  </div>
+</template>
