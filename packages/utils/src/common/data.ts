@@ -268,6 +268,19 @@ export function deepEqual(
   ignoreKeys: string[] = [],
   visitedObjs = new WeakMap<object, object>(),
 ): boolean {
+  // 循环引用检测：必须放在严格相等判断之前。
+  // 当同一引用在两侧同时出现、且该引用已与其他对象配对时
+  // （例如 obj1.b = obj1 与 obj2.b = obj1），Object.is 会提前返回 true，
+  // 绕过配对检查导致结果错误；先查配对才能保证引用映射唯一。
+  if (typeof obj1 === 'object' && obj1 !== null && visitedObjs.has(obj1)) {
+    // obj1 已经访问过，检查是否和之前配对的是同一个 obj2
+    return visitedObjs.get(obj1) === obj2;
+  }
+  if (typeof obj2 === 'object' && obj2 !== null && visitedObjs.has(obj2)) {
+    // obj2 已经访问过，检查是否和之前配对的是同一个 obj1
+    return visitedObjs.get(obj2) === obj1;
+  }
+
   // 严格相等直接返回 true
   if (Object.is(obj1, obj2)) {
     return true;
@@ -281,16 +294,6 @@ export function deepEqual(
     obj2 === null
   ) {
     return false;
-  }
-
-  // 循环引用检测
-  if (visitedObjs.has(obj1)) {
-    // obj1 已经访问过，检查是否和之前配对的是同一个 obj2
-    return visitedObjs.get(obj1) === obj2;
-  }
-  if (visitedObjs.has(obj2)) {
-    // obj2 已经访问过，检查是否和之前配对的是同一个 obj1
-    return visitedObjs.get(obj2) === obj1;
   }
 
   visitedObjs.set(obj1, obj2);
