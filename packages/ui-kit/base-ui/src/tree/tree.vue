@@ -5,7 +5,7 @@ import type { TreeProps } from './types';
 
 import { computed, provide, ref, useSlots } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 import ETreeNodes from './treeNodes.vue';
@@ -86,9 +86,9 @@ provide(TREE_CONTEXT_KEY, {
 });
 </script>
 <template>
-  <div class="ep-tree flex h-full flex-col">
+  <div class="aigen-tree flex h-full flex-col">
     <!-- 搜素框 start -->
-    <div class="ep-search-box px-10px py-6px">
+    <div class="aigen-search-box px-10px py-6px">
       <Input
         v-model="keyword"
         v-model:value="keyword"
@@ -97,12 +97,12 @@ provide(TREE_CONTEXT_KEY, {
         allow-clear
       >
         <template #prefix>
-          <EpIcon name="icon--aigen--search-rounded" />
+          <AigenIcon name="icon--aigen--search-rounded" />
         </template>
       </Input>
     </div>
     <!-- 搜素框 end -->
-    <div class="ep-tree-main h-0 flex-1 overflow-auto">
+    <div class="aigen-tree-main h-0 flex-1 overflow-auto">
       <ETreeNodes v-model:schemas="getTreeData" />
       <div
         v-show="getTreeData.length === 0"

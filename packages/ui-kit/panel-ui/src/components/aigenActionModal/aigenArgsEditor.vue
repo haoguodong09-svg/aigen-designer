@@ -3,7 +3,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed } from 'vue';
 
-import { EpNode } from '@aigen-designer/base-ui';
+import { AigenNode } from '@aigen-designer/base-ui';
 
 const props = defineProps<{
   actionArgsConfigs: ComponentSchema[];
@@ -42,14 +42,14 @@ function handleSetValue(value: any, field: string) {
 }
 </script>
 <template>
-  <div class="ep-attribute-view">
+  <div class="aigen-attribute-view">
     <div v-for="item in props.actionArgsConfigs" :key="item.id">
-      <div v-show="isShow(item)" class="ep-attr-item" :class="item.layout">
-        <div class="ep-attr-label" :title="item.label">
+      <div v-show="isShow(item)" class="aigen-attr-item" :class="item.layout">
+        <div class="aigen-attr-label" :title="item.label">
           {{ item.label }}
         </div>
-        <div class="ep-attr-input">
-          <EpNode
+        <div class="aigen-attr-input">
+          <AigenNode
             is-property
             :component-schema="{
               ...item,

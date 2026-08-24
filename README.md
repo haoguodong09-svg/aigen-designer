@@ -204,9 +204,3 @@ const pageSchema = {
 </script>
 ```
 
-## 交流
-
-点击链接加入 qq 群聊
-
-- [【aigen-designer 交流群：747609683】（已满员）](https://jq.qq.com/?_wv=1027&k=CtrM9ce2)
-- [【aigen-designer 交流群二：615906349】](https://qm.qq.com/q/l9MNNwWEF2)

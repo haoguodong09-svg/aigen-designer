@@ -3,7 +3,7 @@ import type { ActivitybarModel } from '@aigen-designer/types';
 
 import { computed, ref, shallowRef } from 'vue';
 
-import { EpIcon, EpTooltip } from '@aigen-designer/base-ui';
+import { AigenIcon, AigenTooltip } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 defineOptions({
@@ -33,32 +33,32 @@ function handleClick(item: ActivitybarModel, index: number) {
 </script>
 <template>
   <div class="relative flex">
-    <div class="ep-action-bar">
-      <ul class="ep-actions-container flex-center flex-col gap-1">
-        <EpTooltip
+    <div class="aigen-action-bar">
+      <ul class="aigen-actions-container flex-center flex-col gap-1">
+        <AigenTooltip
           placement="right"
           :content="item.title"
           v-for="(item, index) in activityBars"
           :key="index"
         >
           <li
-            class="ep-action-item flex-center h-8 w-8 text-[16px]"
+            class="aigen-action-item flex-center h-8 w-8 text-[16px]"
             :class="{ checked: activityBarCheckedIndex === index }"
             @click="handleClick(item, index)"
           >
-            <EpIcon :name="item.icon" />
+            <AigenIcon :name="item.icon" />
             <!-- <div class="text-14px">
             {{ item.title }}
           </div> -->
           </li>
-        </EpTooltip>
+        </AigenTooltip>
       </ul>
     </div>
     <div
-      class="ep-left-sidebar"
+      class="aigen-left-sidebar"
       :class="{ hide: activityBarCheckedIndex === null }"
     >
-      <div class="ep-sidebar-container">
+      <div class="aigen-sidebar-container">
         <component :is="sidebarComponent" />
       </div>
     </div>

@@ -284,11 +284,11 @@ watch(
 </script>
 <template>
   <!-- 使用 span 作为行内包装器 -->
-  <span ref="wrapperRef" class="ep-tooltip-wrapper">
+  <span ref="wrapperRef" class="aigen-tooltip-wrapper">
     <!-- 使用内联样式包裹用户内容 -->
     <span
       ref="triggerRef"
-      class="ep-tooltip-trigger"
+      class="aigen-tooltip-trigger"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
       @click="handleClick"
@@ -298,21 +298,21 @@ watch(
     </span>
     <!-- Tooltip 内容 -->
     <teleport to="body">
-      <transition name="ep-tooltip-fade">
+      <transition name="aigen-tooltip-fade">
         <div
           v-if="visible"
           ref="tooltipRef"
-          class="ep-tooltip"
-          :class="[`ep-tooltip-placement-${placement}`, `ep-tooltip-${color}`]"
+          class="aigen-tooltip"
+          :class="[`aigen-tooltip-placement-${placement}`, `aigen-tooltip-${color}`]"
           :style="tooltipStyle"
           role="tooltip"
         >
-          <div class="ep-tooltip-content">
-            <div class="ep-tooltip-arrow" v-if="arrow">
-              <span class="ep-tooltip-arrow-content"></span>
+          <div class="aigen-tooltip-content">
+            <div class="aigen-tooltip-arrow" v-if="arrow">
+              <span class="aigen-tooltip-arrow-content"></span>
             </div>
             <div
-              class="ep-tooltip-inner"
+              class="aigen-tooltip-inner"
               :class="overlayClassName"
               :style="overlayStyle"
             >

@@ -1,5 +1,5 @@
-.ep-tree {
-  .ep-tree-main {
+.aigen-tree {
+  .aigen-tree-main {
     padding-right: 10px;
   }
 
@@ -9,11 +9,11 @@
   }
 
   a {
-    color: var(--ep-text-main);
+    color: var(--aigen-text-main);
     display: flex;
 
     &:hover {
-      color: var(--ep-text-main);
+      color: var(--aigen-text-main);
     }
 
     .text {
@@ -21,39 +21,39 @@
       width: 100%;
 
       &.hover {
-        background-color: var(--ep-muted);
+        background-color: var(--aigen-muted);
       }
 
       &.checked {
-        background: var(--ep-primary-faded);
-        color: var(--ep-primary);
+        background: var(--aigen-primary-faded);
+        color: var(--aigen-primary);
       }
 
-      .ep-text-padding {
+      .aigen-text-padding {
         padding: 0 6px;
         white-space: nowrap;
-        color: var(--ep-text-main);
+        color: var(--aigen-text-main);
 
         &.hidden {
-          color: var(--ep-text-helper);
+          color: var(--aigen-text-helper);
         }
-        .ep-copy-id-btn{
+        .aigen-copy-id-btn{
           display: none;
         }
-        &:hover .ep-copy-id-btn{
+        &:hover .aigen-copy-id-btn{
           display: block;
         }
       }
     }
   }
 
-  .ep-node-type-text {
-    font-size: var(--ep-text-sm);
-    color: var(--ep-disabled);
+  .aigen-node-type-text {
+    font-size: var(--aigen-text-sm);
+    color: var(--aigen-disabled);
     margin-left: 6px;
   }
 
-  .ep-tree-node {
+  .aigen-tree-node {
     padding-left: 16px;
     min-height: 30px;
     line-height: 30px;
@@ -66,12 +66,12 @@
     .is-locked>a>span,
     .is-locked>a>span>div {
 
-      >.ep-text-padding {
-        color: var(--ep-disabled);
+      >.aigen-text-padding {
+        color: var(--aigen-disabled);
         cursor: not-allowed;
       }
 
-      .ep-tree-action {
+      .aigen-tree-action {
         display: none !important;
       }
 
@@ -81,8 +81,8 @@
       position: absolute;
       left: 8px;
       transition: transform 0.3s;
-      color: var(--ep-border);
-      font-size: var(--ep-text-sm);
+      color: var(--aigen-border);
+      font-size: var(--aigen-text-sm);
 
       &.expanded {
         transform: rotate(90deg);
@@ -90,7 +90,7 @@
     }
   }
 
-  .ep-tree-sublist {
+  .aigen-tree-sublist {
     height: 0;
     overflow: hidden;
 
@@ -98,14 +98,14 @@
       height: auto;
     }
 
-    .ep-tree-node {
+    .aigen-tree-node {
       position: relative;
 
       &::after,
       &::before {
         content: "";
         position: absolute;
-        background: var(--ep-border);
+        background: var(--aigen-border);
         z-index: 99;
       }
 

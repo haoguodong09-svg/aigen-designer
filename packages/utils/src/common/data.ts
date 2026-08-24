@@ -1018,7 +1018,7 @@ export function reorganizeSchemasForTableView(
         const config = pluginManager.component.getConfigByType(child.type);
         const isInput = Boolean(child.input && config && !config.isSubTable);
         if (isInput && fullWidthTypes.includes(child.type)) {
-          child.class = 'ep-full-width';
+          child.class = 'aigen-full-width';
         }
         return isInput;
       },
@@ -1026,7 +1026,7 @@ export function reorganizeSchemasForTableView(
       (item) => {
         const config = pluginManager.component.getConfigByType(item.type);
         if (config?.isSubTable) {
-          item.class = 'ep-sub-table ep-full-width';
+          item.class = 'aigen-sub-table aigen-full-width';
           subTables.push(item);
           return false;
         }

@@ -1,2 +1,2 @@
-export { default as EpBaseLoader } from './baseLoader.vue';
-export { default as EpDesignerLoader } from './designerLoader.vue';
+export { default as AigenBaseLoader } from './baseLoader.vue';
+export { default as AigenDesignerLoader } from './designerLoader.vue';

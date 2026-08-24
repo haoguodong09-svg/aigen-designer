@@ -4,7 +4,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 import { computed, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { EpCollapse, EpCollapsePanel, EpIcon } from '@aigen-designer/base-ui';
+import { AigenCollapse, AigenCollapsePanel, AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { findSchemaInfoById, generateNewSchema } from '@aigen-designer/utils';
@@ -16,7 +16,7 @@ const revoke = designer.revoke;
 const pageSchema = designer.pageSchema;
 const groups = pluginManager.component.getComponentSchemaGroups();
 const keyword = ref('');
-const activeKeys = useStorage('ep-component-view-keys', []);
+const activeKeys = useStorage('aigen-component-view-keys', []);
 
 /**
  * 计算组件分类列表
@@ -61,9 +61,9 @@ function handleClick(schema: ComponentSchema) {
 }
 </script>
 <template>
-  <div class="ep-component-view flex flex-col">
+  <div class="aigen-component-view flex flex-col">
     <!-- 搜素框 start -->
-    <div class="ep-search-box px-10px py-2">
+    <div class="aigen-search-box px-10px py-2">
       <Input
         v-model="keyword"
         v-model:value="keyword"
@@ -72,8 +72,8 @@ function handleClick(schema: ComponentSchema) {
         allow-clear
       >
         <template #prefix>
-          <EpIcon
-            class="text-$ep-text-helper"
+          <AigenIcon
+            class="text-$aigen-text-helper"
             name="icon--aigen--search-rounded"
           />
         </template>
@@ -84,11 +84,11 @@ function handleClick(schema: ComponentSchema) {
       <!-- 分类选项 start  -->
 
       <div class="box-border h-full flex-1 overflow-auto">
-        <EpCollapse
+        <AigenCollapse
           :default-expand-all="!activeKeys.length"
           v-model="activeKeys"
         >
-          <EpCollapsePanel
+          <AigenCollapsePanel
             v-for="group in getSchemaTypeList"
             :name="group.title"
             :title="group.title"
@@ -107,22 +107,22 @@ function handleClick(schema: ComponentSchema) {
               <div
                 v-for="item in group.list"
                 :key="item.type"
-                class="ep-component-item flex items-center truncate"
+                class="aigen-component-item flex items-center truncate"
                 @click="handleClick(item)"
               >
-                <EpIcon
+                <AigenIcon
                   :name="
                     pluginManager.component.getConfigByType(item.type).icon ??
                     ''
                   "
                 />
-                <div class="ep-component-label w-0 flex-1 truncate">
+                <div class="aigen-component-label w-0 flex-1 truncate">
                   {{ item.label }}
                 </div>
               </div>
             </VueDraggable>
-          </EpCollapsePanel>
-        </EpCollapse>
+          </AigenCollapsePanel>
+        </AigenCollapse>
         <div
           v-show="getSchemaTypeList.length === 0"
           class="pt-42px text-center text-gray-400"

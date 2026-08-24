@@ -15,7 +15,7 @@ import 'element-plus/theme-chalk/dark/css-vars.css';
 import 'ant-design-vue/dist/reset.css';
 
 const { isDark } = useTheme();
-const aigenDarkMode = useStorage<boolean>('ep-dark-mode', false);
+const aigenDarkMode = useStorage<boolean>('aigen-dark-mode', false);
 isDark.value = aigenDarkMode.value;
 watch(
   () => isDark.value,
@@ -94,7 +94,7 @@ function switchUI(ui: string) {
 switchUI(selectValue.value);
 </script>
 <template>
-  <div class="ep-demo-header h-64px flex items-center justify-between px-6">
+  <div class="aigen-demo-header h-64px flex items-center justify-between px-6">
     <a
       class="decoration-none flex items-center"
       href="https://github.com/haoguodong09-svg/aigen-designer"
@@ -104,7 +104,7 @@ switchUI(selectValue.value);
       <span class="text-16px ml-4 font-bold">AigenDesigner低代码设计器</span>
     </a>
 
-    <div class="ep-demo-header-right flex items-center">
+    <div class="aigen-demo-header-right flex items-center">
       <a
         v-for="(item, index) in links"
         :key="index"

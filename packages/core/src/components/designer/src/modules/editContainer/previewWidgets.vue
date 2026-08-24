@@ -3,7 +3,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, ref, watch } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import {
   useDesignerContext,
   usePageManager,
@@ -357,11 +357,11 @@ defineExpose({
   <div
     v-show="showSelector && designer.state.selectedNode?.id !== 'root'"
     ref="selectorRef"
-    class="ep-selected-widget z-999 pointer-events-none absolute"
+    class="aigen-selected-widget z-999 pointer-events-none absolute"
     :class="`${selectorPosition} ${selectorTransition ? 'transition-all' : ''}`"
   >
-    <div ref="actionBoxRef" class="ep-widget-action-box">
-      <div class="ep-widget-action-item whitespace-nowrap">
+    <div ref="actionBoxRef" class="aigen-widget-action-box">
+      <div class="aigen-widget-action-item whitespace-nowrap">
         <!-- {{ designer.state.selectedNode?.type }} -->
         {{
           pluginManager.component.getConfigByType(
@@ -373,24 +373,24 @@ defineExpose({
       <div v-if="isRemovableAndDraggable" class="flex items-center">
         <div
           title="选择父节点"
-          class="ep-widget-action-item pointer-events-auto"
+          class="aigen-widget-action-item pointer-events-auto"
           @click="handleSelectParentNode"
         >
-          <EpIcon name="icon--aigen--upward" />
+          <AigenIcon name="icon--aigen--upward" />
         </div>
         <div
           title="复制"
-          class="ep-widget-action-item pointer-events-auto"
+          class="aigen-widget-action-item pointer-events-auto"
           @click="designer.handleDuplicate"
         >
-          <EpIcon name="icon--aigen--copy-all-outline-rounded" />
+          <AigenIcon name="icon--aigen--copy-all-outline-rounded" />
         </div>
         <div
           title="删除"
-          class="ep-widget-action-item pointer-events-auto"
+          class="aigen-widget-action-item pointer-events-auto"
           @click="designer.handleDelete"
         >
-          <EpIcon name="icon--aigen--delete-outline-rounded" />
+          <AigenIcon name="icon--aigen--delete-outline-rounded" />
         </div>
       </div>
       <!-- 操作按钮 end  -->
@@ -404,7 +404,7 @@ defineExpose({
       designer.state.selectedNode?.id !== designer.state.hoverNode?.id
     "
     ref="hoverWidgetRef"
-    class="ep-hover-widget z-998 pointer-events-none absolute"
+    class="aigen-hover-widget z-998 pointer-events-none absolute"
   ></div>
   <!-- 悬停效果 end  -->
 </template>

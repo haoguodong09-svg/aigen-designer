@@ -3,14 +3,14 @@ import type { ComponentSchema, FormDataModel } from '@aigen-designer/types';
 
 import { computed, nextTick, reactive, ref, toRaw } from 'vue';
 
-import { EpIcon, EpTree } from '@aigen-designer/base-ui';
+import { AigenIcon, AigenTree } from '@aigen-designer/base-ui';
 import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { deepClone, findSchemaById, getUUID } from '@aigen-designer/utils';
 import { useClipboard } from '@vueuse/core';
 
-import epArgsEditor from './epArgsEditor.vue';
-import epScriptEdit from './epScriptEdit.vue';
+import aigenArgsEditor from './aigenArgsEditor.vue';
+import aigenScriptEdit from './aigenScriptEdit.vue';
 
 const emit = defineEmits(['add', 'edit']);
 const Modal = pluginManager.component.get('modal');
@@ -245,8 +245,8 @@ defineExpose({
     @close="handleClose"
     @ok="handleSave"
   >
-    <div class="ep-modal-action-main rounded">
-      <div class="ep-modal-left-panel flex h-full flex-col">
+    <div class="aigen-modal-action-main rounded">
+      <div class="aigen-modal-left-panel flex h-full flex-col">
         <!-- 动作所属对象 start -->
         <div class="flex h-0 flex-1 flex-col">
           <div
@@ -265,18 +265,18 @@ defineExpose({
           </div>
           组件
           <div class="h-0 flex-1">
-            <EpTree
+            <AigenTree
               v-model:selected-keys="selectedKeys"
               :options="pageSchema.schemas"
               @node-click="handleNodeClick"
             >
               <template #tree-node="{ schema }">
                 <div
-                  class="ep-text-padding hover:bg-$ep-muted flex items-center"
+                  class="aigen-text-padding hover:bg-$aigen-muted flex items-center"
                   :class="{ hidden: schema.props?.hidden }"
                 >
                   <span class="max-w-full truncate">
-                    <EpIcon
+                    <AigenIcon
                       v-if="schema.props?.hidden"
                       name="icon--aigen--visibility-off-outline-rounded"
                       class="translate-y-2px"
@@ -287,11 +287,11 @@ defineExpose({
                         ?.defaultSchema.label
                     }}
                   </span>
-                  <span class="ep-node-type-text w-0 flex-1 truncate">
+                  <span class="aigen-node-type-text w-0 flex-1 truncate">
                     {{ schema.id }}
                   </span>
                   <Button
-                    class="ep-copy-id-btn"
+                    class="aigen-copy-id-btn"
                     size="small"
                     @click.stop="copy(schema.id)"
                   >
@@ -299,18 +299,18 @@ defineExpose({
                   </Button>
                 </div>
               </template>
-            </EpTree>
+            </AigenTree>
           </div>
         </div>
         <!-- 动作选择 start -->
-        <div class="ep-action-select h-30/100 flex flex-col">
+        <div class="aigen-action-select h-30/100 flex flex-col">
           <div class="mb-2">动作选择（{{ actionTypeText }}）</div>
           <div class="pr-8px flex-1 overflow-auto">
             <div
               v-for="item in methodOptions"
               :key="item.value"
               :class="{ checked: item.value === state.actionItem.methodName }"
-              class="ep-action-item"
+              class="aigen-action-item"
               @click="handleCheckedMethod(item.value)"
             >
               <span :title="item.value">{{ item.label }}</span>
@@ -327,19 +327,19 @@ defineExpose({
         <!-- 动作选择 end -->
       </div>
       <!-- 动作配置 start -->
-      <div class="ep-modal-right-panel">
-        <epScriptEdit v-if="state.actionItem.type === 'custom'" />
+      <div class="aigen-modal-right-panel">
+        <aigenScriptEdit v-if="state.actionItem.type === 'custom'" />
         <div v-if="state.actionItem.type !== 'custom'">
           <div
             v-if="state.actionItem.methodName && methodOptions?.length"
-            class="bg-$ep-muted mb-4 rounded-lg border p-4 transition-colors"
+            class="bg-$aigen-muted mb-4 rounded-lg border p-4 transition-colors"
           >
             <div class="flex flex-col gap-1">
               <div class="flex items-center">
-                <EpIcon name="icon--aigen--info" class="mr-2" />
-                <span class="text-$ep-text-helper text-sm font-medium">
+                <AigenIcon name="icon--aigen--info" class="mr-2" />
+                <span class="text-$aigen-text-helper text-sm font-medium">
                   {{ componentSchema?.label }}
-                  <span class="text-$ep-text-secondary">
+                  <span class="text-$aigen-text-secondary">
                     {{
                       methodOptions.find(
                         (item) => item.value === state.actionItem.methodName,
@@ -357,7 +357,7 @@ defineExpose({
           >
             暂无配置
           </div>
-          <epArgsEditor
+          <aigenArgsEditor
             v-else
             :key="argsEditorKey"
             v-model="state.actionItem.args"

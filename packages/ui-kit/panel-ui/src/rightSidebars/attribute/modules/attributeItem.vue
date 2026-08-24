@@ -3,7 +3,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, nextTick, ref, watchEffect } from 'vue';
 
-import { EpNode } from '@aigen-designer/base-ui';
+import { AigenNode } from '@aigen-designer/base-ui';
 import { useDesignerContext, useTableMeta } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { getValueByPath, setValueByPath } from '@aigen-designer/utils';
@@ -109,21 +109,21 @@ watchEffect(() => {
 <template>
   <div
     v-if="isShow(props.schema)"
-    class="ep-attr-item"
+    class="aigen-attr-item"
     :class="props.schema.layout"
   >
     <div
       v-if="props.schema.label"
-      class="ep-attr-label"
+      class="aigen-attr-label"
       :title="props.schema.label"
     >
       {{ props.schema.label }}
     </div>
     <div
-      class="ep-attr-input"
+      class="aigen-attr-input"
       :class="{ 'block!': props.schema.layout === 'vertical' }"
     >
-      <EpNode
+      <AigenNode
         is-property
         :component-schema="{
           ...props.schema,

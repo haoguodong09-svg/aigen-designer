@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
@@ -15,7 +15,7 @@ function handleSelect(schema: ComponentSchema) {
 }
 </script>
 <template>
-  <div class="ep-breadcrumb h-40px flex items-center truncate py-2 pl-4">
+  <div class="aigen-breadcrumb h-40px flex items-center truncate py-2 pl-4">
     <span v-for="(item, index) in designer.state.matched" :key="index">
       <span
         v-if="index > designer.state.matched.length - 4"
@@ -28,7 +28,7 @@ function handleSelect(schema: ComponentSchema) {
           "
           >...
         </span>
-        <EpIcon
+        <AigenIcon
           v-if="index !== 0"
           class="m-1"
           name="icon--aigen--arrow-forward-ios-rounded"

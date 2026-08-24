@@ -10,7 +10,7 @@ const uiKey = computed(() => {
 });
 </script>
 <template>
-  <div :key="uiKey" class="ep-page-container">
+  <div :key="uiKey" class="aigen-page-container">
     <Maximize />
     <router-view />
   </div>

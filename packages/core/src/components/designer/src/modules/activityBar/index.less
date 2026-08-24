@@ -1,25 +1,25 @@
 // 活动视图切换器
-.ep-action-bar {
+.aigen-action-bar {
   width: 48px;
-  background-color: var(--ep-designer-background);
-  border-right: 1px solid var(--ep-border);
-  border-left: 1px solid var(--ep-border);
+  background-color: var(--aigen-designer-background);
+  border-right: 1px solid var(--aigen-border);
+  border-left: 1px solid var(--aigen-border);
   padding: 8px 0;
 
-  .ep-action-item {
+  .aigen-action-item {
     text-align: center;
     position: relative;
     cursor: pointer;
-    color: var(--ep-text-main);
+    color: var(--aigen-text-main);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     transition: all 0.3s;
-    border-radius: var(--ep-radius);
+    border-radius: var(--aigen-radius);
 
     &:hover {
-      background: var(--ep-muted);
+      background: var(--aigen-muted);
     }
 
     &::before {
@@ -30,14 +30,14 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: var(--ep-primary);
-      border-radius: var(--ep-radius);
+      background-color: var(--aigen-primary);
+      border-radius: var(--aigen-radius);
       opacity: 0;
       transition: all 0.3s;
     }
 
     &.checked {
-      color: var(--ep-primary-foreground);
+      color: var(--aigen-primary-foreground);
       &::before {
         opacity: 1;
       }
@@ -46,15 +46,15 @@
 }
 
 // 左侧栏
-.ep-left-sidebar {
+.aigen-left-sidebar {
   width: 280px;
-  background-color: var(--ep-designer-background);
+  background-color: var(--aigen-designer-background);
   overflow-x: hidden;
   overflow-y: auto;
   transition: width 0.3s;
-  border-right: 1px solid var(--ep-border);
+  border-right: 1px solid var(--aigen-border);
 
-  .ep-sidebar-container {
+  .aigen-sidebar-container {
     min-width: 280px;
     height: 100%;
   }

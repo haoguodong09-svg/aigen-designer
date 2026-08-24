@@ -26,7 +26,7 @@ defineExpose({
 
 ## 显示,禁用交互示例-设计组件
 
-<div class="ep-designer-container">
+<div class="aigen-designer-container">
 	<EDesigner ref="edRef"  @save="handleSubmit"  />
 </div>
 
@@ -507,10 +507,10 @@ function handleSubmit (e) {
 </script>
 
 <style>
-.ep-designer-container{
+.aigen-designer-container{
 width:1200px;
 height:800px;
-border: 1px solid var(--ep-border);
+border: 1px solid var(--aigen-border);
 position: relative;
 z-index: 20;
 background: white;
@@ -526,25 +526,25 @@ background: white;
 
 ### find
 
-类型：`(queryValue: string, queryField?: string) => EpNodeInstance['exposed'] | null`
+类型：`(queryValue: string, queryField?: string) => AigenNodeInstance['exposed'] | null`
 
 说明：根据指定字段查找组件实例并返回其暴露的属性和方法
 
 ### findAll
 
-类型：`(queryValue: string, queryField?: string) => EpNodeInstance['exposed'][]`
+类型：`(queryValue: string, queryField?: string) => AigenNodeInstance['exposed'][]`
 
 说明：根据指定字段查找所有匹配的组件实例并返回其暴露的属性和方法数组
 
 ### findInstance
 
-类型：`(queryValue: string, queryField?: string) => EpNodeInstance | null`
+类型：`(queryValue: string, queryField?: string) => AigenNodeInstance | null`
 
 说明：根据指定字段查找组件实例并返回完整的组件实例对象
 
 ### findInstanceAll
 
-类型：`(queryValue: string, queryField?: string) => EpNodeInstance[]`
+类型：`(queryValue: string, queryField?: string) => AigenNodeInstance[]`
 
 说明：根据指定字段查找所有匹配的组件实例并返回完整的组件实例对象数组
 

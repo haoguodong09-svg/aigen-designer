@@ -17,7 +17,7 @@ export default {
       {
         field: 'field',
         label: '数据字段',
-        type: 'EpField',
+        type: 'AigenField',
       },
       {
         field: 'label',

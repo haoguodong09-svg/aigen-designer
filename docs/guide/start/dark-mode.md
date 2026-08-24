@@ -41,7 +41,7 @@ toggleDark()
 ```css
 html.dark {
   /* 自定义深色背景颜色 */
-  --ep-primary: #98f;
+  --aigen-primary: #98f;
 }
 ```
 
@@ -75,25 +75,25 @@ import './styles/dark-vars.css'
 
 ```
   /* 背景色 */
-  --ep-background: oklch(0.141 0.005 285.823);
+  --aigen-background: oklch(0.141 0.005 285.823);
   /* 前景色 */
-  --ep-foreground: oklch(0.985 0 0);
+  --aigen-foreground: oklch(0.985 0 0);
   /* 主色调 */
-  --ep-primary: oklch(0.623 0.214 259.815);
+  --aigen-primary: oklch(0.623 0.214 259.815);
   /* 主色调前景 */
-  --ep-primary-foreground: oklch(0.97 0.014 254.604);
+  --aigen-primary-foreground: oklch(0.97 0.014 254.604);
   /* 辅助色调 */
-  --ep-secondary: oklch(0.274 0.006 286.033);
+  --aigen-secondary: oklch(0.274 0.006 286.033);
   /* 辅助色调前景 */
-  --ep-secondary-foreground: oklch(0.985 0 0);
+  --aigen-secondary-foreground: oklch(0.985 0 0);
   /* 柔和色调 */
-  --ep-muted: oklch(0.274 0.006 286.033);
+  --aigen-muted: oklch(0.274 0.006 286.033);
   /* 柔和色调前景 */
-  --ep-muted-foreground: oklch(0.705 0.015 286.067);
+  --aigen-muted-foreground: oklch(0.705 0.015 286.067);
   /* 警示色调 */
-  --ep-destructive: oklch(0.704 0.191 22.216);
+  --aigen-destructive: oklch(0.704 0.191 22.216);
   /* 边框与分隔线 */
-  --ep-border: oklch(1 0 0 / 10%);
+  --aigen-border: oklch(1 0 0 / 10%);
   /* 侧边栏背景 */
-  --ep-sidebar: oklch(0.21 0.006 285.885);
+  --aigen-sidebar: oklch(0.21 0.006 285.885);
 ```

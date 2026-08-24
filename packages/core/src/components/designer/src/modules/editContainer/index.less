@@ -1,41 +1,41 @@
 // 编辑画布
-.ep-edit-canvas {
+.aigen-edit-canvas {
   flex: 1;
 
   background-size: 15px 15px;
   overflow: hidden;
 
-  .ep-edit-range {
+  .aigen-edit-range {
     box-shadow:
       rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
       rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
     cursor: pointer;
-    background-color: var(--ep-designer-background);
+    background-color: var(--aigen-designer-background);
 
     & > :first-child {
       min-height: 100%;
       display: flex;
 
-      > .ep-draggable-range {
+      > .aigen-draggable-range {
         flex: 1;
         height: auto;
         border: 0;
       }
     }
 
-    .ep-draggable-range {
+    .aigen-draggable-range {
       min-height: 60px;
       height: 100%;
-      border: 1px var(--ep-border) dashed;
+      border: 1px var(--aigen-border) dashed;
       width: 100%;
     }
 
-    .ep-hidden {
+    .aigen-hidden {
       position: relative;
       &::after {
         content: '<隐藏状态>';
         position: absolute;
-        color: var(--ep-muted-foreground);
+        color: var(--aigen-muted-foreground);
         font-size: 12px;
         font-weight: 500;
         display: flex;
@@ -45,39 +45,39 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: color-mix(in oklch, var(--ep-foreground), transparent 95%);
+        background: color-mix(in oklch, var(--aigen-foreground), transparent 95%);
         border-radius: 4px;
         pointer-events: none;
       }
 
       // 防止内部嵌套的隐藏元素重复显示
-      .ep-hidden::after {
+      .aigen-hidden::after {
         display: none;
       }
     }
   }
 
-  .ep-hover-widget {
-    border: 1px var(--ep-primary) dashed;
+  .aigen-hover-widget {
+    border: 1px var(--aigen-primary) dashed;
     box-sizing: border-box;
   }
 
-  .ep-selected-widget {
-    border: 2px var(--ep-primary) solid;
-    background: var(--ep-primary-faded);
+  .aigen-selected-widget {
+    border: 2px var(--aigen-primary) solid;
+    background: var(--aigen-primary-faded);
     border-radius: 4px;
 
-    .ep-widget-action-box {
+    .aigen-widget-action-box {
       position: absolute;
       z-index: 999;
       height: 28px;
-      background: var(--ep-primary);
+      background: var(--aigen-primary);
       border-radius: 4px 4px 0px 0px;
       display: flex;
       align-items: center;
       padding: 0 4px;
 
-      .ep-widget-action-item {
+      .aigen-widget-action-item {
         height: 30px;
         padding: 0 4px;
         cursor: pointer;
@@ -93,12 +93,12 @@
 
     .form-main {
       padding: 6px;
-      border: 1px solid var(--ep-border);
+      border: 1px solid var(--aigen-border);
     }
   }
 
   // 隐藏设计区域滚动条
-  .ep-edit-screen-container {
+  .aigen-edit-screen-container {
     &::-webkit-scrollbar {
       // display: none;
       width: 6px;
@@ -106,41 +106,41 @@
     }
   }
 
-  .ep-edit-toolbar {
+  .aigen-edit-toolbar {
     height: 40px;
-    background: var(--ep-designer-background);
+    background: var(--aigen-designer-background);
     box-sizing: border-box;
-    border-bottom: 1px solid var(--ep-border);
+    border-bottom: 1px solid var(--aigen-border);
 
-    .ep-divider {
+    .aigen-divider {
       width: 1px;
       height: 20px;
-      background-color: var(--ep-border);
+      background-color: var(--aigen-border);
       margin: 0 4px;
     }
 
-    .ep-action-item {
-      color: var(--ep-text-secondary);
+    .aigen-action-item {
+      color: var(--aigen-text-secondary);
       height: 32px;
       border-radius: 4px;
 
       &.disabled {
-        color: var(--ep-disabled);
+        color: var(--aigen-disabled);
         cursor: no-drop;
       }
 
       &:hover {
-        background: var(--ep-muted);
+        background: var(--aigen-muted);
       }
     }
 
-    .ep-device {
-      border: 1px solid var(--ep-border);
+    .aigen-device {
+      border: 1px solid var(--aigen-border);
 
-      .ep-device-item {
+      .aigen-device-item {
         &.checked {
-          color: var(--ep-primary-foreground);
-          background: var(--ep-primary);
+          color: var(--aigen-primary-foreground);
+          background: var(--aigen-primary);
         }
       }
     }
@@ -155,11 +155,11 @@
   }
 
   background-image:
-    linear-gradient(var(--ep-canvas-container-background) 14px, transparent 0),
-    linear-gradient(90deg, transparent 14px, var(--ep-container-dot-color) 0);
+    linear-gradient(var(--aigen-canvas-container-background) 14px, transparent 0),
+    linear-gradient(90deg, transparent 14px, var(--aigen-container-dot-color) 0);
 }
 
-.ep-node-leaf {
+.aigen-node-leaf {
   position: relative;
   &::before {
     content: '';
@@ -171,15 +171,15 @@
     z-index: 999;
   }
 
-  .ep-node-leaf::before {
+  .aigen-node-leaf::before {
     content: none;
   }
 }
 
-.ep-node-item{
+.aigen-node-item{
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
-  &.ep-inline {
+  &.aigen-inline {
     display: inline;
   }
 }

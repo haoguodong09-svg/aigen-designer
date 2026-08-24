@@ -1,11 +1,11 @@
-.ep-designer-main {
+.aigen-designer-main {
   .el-input {
     width: 100% !important;
   }
 
   // 表单样式
   .el-form--inline {
-    [name='ep-draggable-range'] {
+    [name='aigen-draggable-range'] {
       display: flex;
       flex-wrap: wrap;
     }
@@ -17,24 +17,24 @@
 
   // 折叠面板
   .el-collapse {
-    border: 1px solid var(--ep-border);
+    border: 1px solid var(--aigen-border);
     border-top: 0;
 
     .el-collapse-item__header {
       width: 100%;
       height: 42px;
-      background: var(--ep-canvas-container-background);
+      background: var(--aigen-canvas-container-background);
       padding-left: 12px;
-      border: 1px solid var(--ep-border);
+      border: 1px solid var(--aigen-border);
       border-left: 0;
       border-right: 0;
       border-bottom: 1px solid transparent;
       &.is-active {
-        border-bottom: 1px solid var(--ep-border);
+        border-bottom: 1px solid var(--aigen-border);
       }
     }
     .el-collapse-item:last-child .el-collapse-item__header {
-      border-bottom: 1px solid var(--ep-border);
+      border-bottom: 1px solid var(--aigen-border);
     }
     .el-collapse-item__content {
       padding: 8px;
@@ -43,7 +43,7 @@
 }
 
 // 适配k-input-size样式
-.ep-input-size {
+.aigen-input-size {
   > .el-input__wrapper {
     padding-right: 1px;
   }
@@ -68,7 +68,7 @@
   }
 }
 
-.ep-el-modal {
+.aigen-el-modal {
   margin: 20px auto 0 !important;
   height: calc(100vh - 50px);
   // element plus弹出框样式适配
@@ -79,14 +79,14 @@
   }
 }
 
-.ep-el-modal-footer {
+.aigen-el-modal-footer {
   display: flex;
   justify-content: flex-end;
 }
 
 // 适配设计组件表单内联模式
 .el-form--inline {
-  & > .ep-draggable-range {
+  & > .aigen-draggable-range {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;

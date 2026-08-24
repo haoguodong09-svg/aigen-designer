@@ -3,7 +3,7 @@ import type { editor } from 'monaco-editor';
 
 import { nextTick, onMounted, ref, watch } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useTheme } from '@aigen-designer/hooks';
 import * as monaco from 'monaco-editor';
 
@@ -159,14 +159,14 @@ defineExpose({
     ref="editContainer"
     :class="{ bordered: props.bordered }"
     :style="isFullScreen ? fullScreenStyle : ''"
-    class="ep-code-editor relative"
+    class="aigen-code-editor relative"
   >
     <div
-      class="z-999 text-$ep-text-helper absolute right-4 top-2 cursor-pointer text-xl"
+      class="z-999 text-$aigen-text-helper absolute right-4 top-2 cursor-pointer text-xl"
       @click="isFullScreen = !isFullScreen"
       v-if="props.allowFullscreen"
     >
-      <EpIcon
+      <AigenIcon
         :name="
           isFullScreen
             ? `icon--aigen--close-fullscreen`
@@ -177,7 +177,7 @@ defineExpose({
   </div>
 </template>
 <style lang="less" scoped>
-.ep-code-editor {
+.aigen-code-editor {
   width: 100%;
   min-height: 150px;
   :deep(.monaco-editor) {
@@ -185,7 +185,7 @@ defineExpose({
   }
 
   &.bordered {
-    border: 1px solid var(--ep-border);
+    border: 1px solid var(--aigen-border);
   }
 }
 </style>

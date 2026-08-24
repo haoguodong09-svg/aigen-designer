@@ -1,51 +1,51 @@
-.ep-right-sidebar-container {
-  background-color: var(--ep-designer-background);
+.aigen-right-sidebar-container {
+  background-color: var(--aigen-designer-background);
 }
 
-.ep-right-sidebar-hide-btn {
+.aigen-right-sidebar-hide-btn {
   width: 16px;
   height: 88px;
-  background-color: var(--ep-designer-background);
-  color: var(--ep-text-helper);
+  background-color: var(--aigen-designer-background);
+  color: var(--aigen-text-helper);
   border-radius: 32px 0 0 32px;
-  border: 1px solid var(--ep-border);
+  border: 1px solid var(--aigen-border);
   border-right: 0;
   top: 50%;
   left: -16px;
   transform: translateY(-50%);
 }
 
-.ep-right-sidebar {
-  background-color: var(--ep-designer-background);
+.aigen-right-sidebar {
+  background-color: var(--aigen-designer-background);
   overflow-x: hidden;
   transition: width 0.3s;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--ep-border);
-  border-right: 1px solid var(--ep-border);
+  border-left: 1px solid var(--aigen-border);
+  border-right: 1px solid var(--aigen-border);
   &.hide {
     width: 0;
     border-left: 0;
   }
 
-  .ep-breadcrumb {
-    border-bottom: 1px solid var(--ep-border);
-    color: var(--ep-text-main);
+  .aigen-breadcrumb {
+    border-bottom: 1px solid var(--aigen-border);
+    color: var(--aigen-text-main);
     .iconfont {
-      color: var(--ep-text-secondary);
-      font-size: var(--ep-text-sm);
+      color: var(--aigen-text-secondary);
+      font-size: var(--aigen-text-sm);
     }
   }
 
-  .ep-actions-container {
+  .aigen-actions-container {
     display: flex;
 
-    .ep-action-item {
+    .aigen-action-item {
       padding: 8px 8px;
       flex: 1;
       text-align: center;
-      border-bottom: 1px solid var(--ep-border);
+      border-bottom: 1px solid var(--aigen-border);
       cursor: pointer;
       &::after {
         content: "";
@@ -54,7 +54,7 @@
       }
 
       &.checked {
-        color: var(--ep-primary);
+        color: var(--aigen-primary);
         position: relative;
         transition: 0.3s all;
 
@@ -65,14 +65,14 @@
           left: 0;
           width: 100%;
           height: 2px;
-          background-color: var(--ep-primary);
+          background-color: var(--aigen-primary);
           transition: 0.3s all;
         }
       }
     }
   }
 
-  .ep-sidebar-content {
+  .aigen-sidebar-content {
     flex: 1;
     overflow: auto;
   }

@@ -3,7 +3,7 @@ import type { FormItemRule } from '@aigen-designer/types';
 
 import { computed } from 'vue';
 
-import { EpIcon, EpNode } from '@aigen-designer/base-ui';
+import { AigenIcon, AigenNode } from '@aigen-designer/base-ui';
 import { usePageManager } from '@aigen-designer/hooks';
 
 import { lenTypeOptions, triggerOptions, typeOptions } from './data';
@@ -141,11 +141,11 @@ function handleDelete() {
         v-if="componentSchema.show ? componentSchema.show() : true"
         class="m-t-2 flex first:m-0"
       >
-        <div class="ep-attr-label" title="校验时机">
+        <div class="aigen-attr-label" title="校验时机">
           {{ componentSchema.label }}
         </div>
-        <div class="ep-attr-input">
-          <EpNode
+        <div class="aigen-attr-input">
+          <AigenNode
             is-property
             v-model="modelRule[componentSchema.model]"
             :component-schema="{ ...componentSchema, noFormItem: true }"
@@ -158,7 +158,7 @@ function handleDelete() {
       class="rule-btn-delete text-md w-24px h-24px rounded-bl-2 color-white absolute right-0 top-0 flex cursor-pointer items-center justify-center transition-all"
       @click="handleDelete"
     >
-      <EpIcon name="icon--aigen--delete-outline-rounded" />
+      <AigenIcon name="icon--aigen--delete-outline-rounded" />
     </div>
   </div>
 </template>

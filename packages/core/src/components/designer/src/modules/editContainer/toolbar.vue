@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 
-import { EpIcon, EpTooltip } from '@aigen-designer/base-ui';
+import { AigenIcon, AigenTooltip } from '@aigen-designer/base-ui';
 import { useDesignerContext, useStore } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import {
@@ -10,7 +10,7 @@ import {
   migrateComponentProps,
 } from '@aigen-designer/utils';
 
-import EpPreviewJson from './previewJson.vue';
+import AigenPreviewJson from './previewJson.vue';
 
 const Select = pluginManager.component.get('select');
 
@@ -18,7 +18,7 @@ const { canvasScale, disabledZoom } = useStore();
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
 const revoke = designer.revoke;
-const previewJson = ref<InstanceType<typeof EpPreviewJson> | null>(null);
+const previewJson = ref<InstanceType<typeof AigenPreviewJson> | null>(null);
 
 const deviceOptions = [
   {
@@ -271,24 +271,24 @@ function handleSetCanvas(type: string) {
 </script>
 <template>
   <!-- 工具条 start  -->
-  <div class="ep-edit-toolbar flex items-center justify-between px-2">
+  <div class="aigen-edit-toolbar flex items-center justify-between px-2">
     <!-- 操作按钮 start  -->
     <div class="flex h-full flex-1 items-center">
       <template v-for="(action, index) in actionOptions" :key="index">
         <div
           v-if="action.divider && isShow(action.show)"
-          class="ep-divider"
+          class="aigen-divider"
         ></div>
-        <EpTooltip :content="action.title">
+        <AigenTooltip :content="action.title">
           <div
             v-if="isShow(action.show)"
-            class="ep-action-item h-90% px-10px flex cursor-pointer items-center text-base"
+            class="aigen-action-item h-90% px-10px flex cursor-pointer items-center text-base"
             :class="{ disabled: action.disabled }"
             @click="action.on"
           >
-            <EpIcon :name="action.icon" />
+            <AigenIcon :name="action.icon" />
           </div>
-        </EpTooltip>
+        </AigenTooltip>
       </template>
     </div>
     <!-- 操作按钮 end  -->
@@ -316,22 +316,22 @@ function handleSetCanvas(type: string) {
       <!-- 缩放操作 end  -->
       <!-- 画布类型切换 start -->
       <div
-        class="ep-device h-28px p-2px flex items-center gap-1 rounded-md border"
+        class="aigen-device h-28px p-2px flex items-center gap-1 rounded-md border"
       >
         <template v-for="item in deviceOptions" :key="item.key">
           <div
             :title="item.title"
-            class="ep-device-item rounded-$ep-radius flex h-full cursor-pointer items-center px-1 text-base transition-colors"
+            class="aigen-device-item rounded-$aigen-radius flex h-full cursor-pointer items-center px-1 text-base transition-colors"
             :class="{ checked: item.key === selectedKey }"
             @click="handleSetCanvas(item.key)"
           >
-            <EpIcon :name="item.icon" />
+            <AigenIcon :name="item.icon" />
           </div>
         </template>
       </div>
       <!-- 画布类型切换 end -->
     </div>
   </div>
-  <EpPreviewJson ref="previewJson" />
+  <AigenPreviewJson ref="previewJson" />
   <!-- 工具条 end  -->
 </template>

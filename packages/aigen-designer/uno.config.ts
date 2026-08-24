@@ -30,7 +30,7 @@ export default defineConfig({
   variants: [
     (matcher) => ({
       matcher,
-      selector: (s) => `.ep-scoped ${s}`,
+      selector: (s) => `.aigen-scoped ${s}`,
     }),
   ],
 });

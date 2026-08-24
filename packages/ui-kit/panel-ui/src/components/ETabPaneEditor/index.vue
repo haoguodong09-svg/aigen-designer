@@ -4,7 +4,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 import { computed, PropType } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { getUUID } from '@aigen-designer/utils';
 
@@ -51,7 +51,7 @@ function handleDelete(index: number) {
 }
 </script>
 <template>
-  <div class="ep-tabs-editor">
+  <div class="aigen-tabs-editor">
     <VueDraggable
       v-model="tabList"
       item-key="id"
@@ -65,15 +65,15 @@ function handleDelete(index: number) {
       <div
         v-for="(item, index) in tabList"
         :key="index"
-        class="ep-tab-pane-editor-item my-2 grid grid-cols-[auto_auto_16px] items-center gap-2"
+        class="aigen-tab-pane-editor-item my-2 grid grid-cols-[auto_auto_16px] items-center gap-2"
       >
-        <EpIcon class="handle cursor-move text-lg" name="icon--aigen--drag" />
+        <AigenIcon class="handle cursor-move text-lg" name="icon--aigen--drag" />
         <Input v-model:value="item.label" v-model="item.label" />
         <div
           v-if="tabList.length > 1"
-          class="ep-option-del-btn flex items-center"
+          class="aigen-option-del-btn flex items-center"
         >
-          <EpIcon
+          <AigenIcon
             class="hover:text-red cursor-pointer text-lg"
             name="icon--aigen--delete-outline-rounded"
             @click="handleDelete(index)"
@@ -82,7 +82,7 @@ function handleDelete(index: number) {
       </div>
     </VueDraggable>
 
-    <div class="ep-button ghost primary" @click="handleAdd">添加</div>
+    <div class="aigen-button ghost primary" @click="handleAdd">添加</div>
   </div>
 </template>
 <style scoped lang="less">

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ComponentSchema, EpNodeInstance } from '@aigen-designer/types';
+import type { ComponentSchema, AigenNodeInstance } from '@aigen-designer/types';
 
 import type { VNode } from 'vue';
 
@@ -32,7 +32,7 @@ const addFormItemInstance = (vNode: VNode) => {
   if (vNode.component) {
     pageManager.addComponentInstance(
       `${props.formItemProps.id}_formItem`,
-      vNode.component as EpNodeInstance,
+      vNode.component as AigenNodeInstance,
     );
   }
 };
@@ -44,7 +44,7 @@ const addFormItemInstance = (vNode: VNode) => {
     v-if="props.hasFormItem"
     :check-payload="props.checkPayload"
     v-bind="props.formItemProps"
-    :class="{ 'ep-hidden': props.formItemProps.props?.hidden }"
+    :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
     @vue:mounted="addFormItemInstance"
   >
     <slot></slot>

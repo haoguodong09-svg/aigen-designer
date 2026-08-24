@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
@@ -22,8 +22,8 @@ function handleSave() {
 }
 </script>
 <template>
-  <header class="ep-header relative">
-    <div class="ep-header-item flex flex-1 items-center">
+  <header class="aigen-header relative">
+    <div class="aigen-header-item flex flex-1 items-center">
       <slot name="prefix">
         <a
           class="decoration-none flex items-center"
@@ -41,18 +41,18 @@ function handleSave() {
       </slot>
     </div>
 
-    <div class="ep-header-item text-12px flex flex-1 justify-center">
+    <div class="aigen-header-item text-12px flex flex-1 justify-center">
       <slot name="title">
         {{ designerProps.title }}
       </slot>
     </div>
-    <div class="ep-header-item flex flex-1 items-center justify-end">
+    <div class="aigen-header-item flex flex-1 items-center justify-end">
       <slot name="right-prefix"></slot>
       <slot name="right-action">
         <div>
           <Button size="small" @click="handlePreview">
             <span class="flex! h-full items-center">
-              <EpIcon name="icon--aigen--eye" class="mr-4px" />
+              <AigenIcon name="icon--aigen--eye" class="mr-4px" />
               预览
             </span>
           </Button>
@@ -60,7 +60,7 @@ function handleSave() {
         <div class="ml-2">
           <Button size="small" @click="handleSave">
             <span class="flex! h-full items-center">
-              <EpIcon
+              <AigenIcon
                 name="icon--aigen--save-outline-rounded"
                 class="mr-4px"
               />

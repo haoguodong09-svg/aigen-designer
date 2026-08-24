@@ -17,7 +17,7 @@ CSS 变量是一个非常有用的功能，几乎所有浏览器都支持。
 
 ```css
 :root {
-  --ep-primary: #98f;
+  --aigen-primary: #98f;
 }
 ```
 
@@ -48,29 +48,29 @@ import './styles/common-vars.css'
 
 ```
   // 字体大小
-  --ep-text-sm: 12px;
-  --ep-text-md: 14px;
-  --ep-text-lg: 16px;
+  --aigen-text-sm: 12px;
+  --aigen-text-md: 14px;
+  --aigen-text-lg: 16px;
   // 圆角
-  --ep-radius: 6px;
+  --aigen-radius: 6px;
   /* 背景与前景色 */
-  --ep-background: oklch(1 0 0);
-  --ep-foreground: oklch(0.141 0.005 285.823);
+  --aigen-background: oklch(1 0 0);
+  --aigen-foreground: oklch(0.141 0.005 285.823);
   /* 主色调 */
-  --ep-primary: oklch(0.623 0.214 259.815);
+  --aigen-primary: oklch(0.623 0.214 259.815);
   /* 浅紫色前景 */
-  --ep-primary-foreground: oklch(0.97 0.014 254.604);
+  --aigen-primary-foreground: oklch(0.97 0.014 254.604);
   /* 辅助色调 */
-  --ep-secondary: oklch(0.967 0.001 286.375);
-  --ep-secondary-foreground: oklch(0.21 0.006 285.885);
+  --aigen-secondary: oklch(0.967 0.001 286.375);
+  --aigen-secondary-foreground: oklch(0.21 0.006 285.885);
   /* 柔和色调 */
-  --ep-muted: oklch(0.967 0.001 286.375);
+  --aigen-muted: oklch(0.967 0.001 286.375);
   /* 柔和色调前景 */
-  --ep-muted-foreground: oklch(0.552 0.016 285.938);
+  --aigen-muted-foreground: oklch(0.552 0.016 285.938);
   /* 警示色调 */
-  --ep-destructive: oklch(0.577 0.245 27.325);
+  --aigen-destructive: oklch(0.577 0.245 27.325);
   /* 边框与分隔线 */
-  --ep-border: oklch(0.92 0.004 286.32);
+  --aigen-border: oklch(0.92 0.004 286.32);
   /* 侧边栏背景 */
-  --ep-sidebar: oklch(0.985 0 0);
+  --aigen-sidebar: oklch(0.985 0 0);
 ```

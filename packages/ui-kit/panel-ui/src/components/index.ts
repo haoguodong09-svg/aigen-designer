@@ -1,8 +1,8 @@
 import type { PluginManager } from '@aigen-designer/manager';
 
-import { EpNode } from '@aigen-designer/base-ui';
+import { AigenNode } from '@aigen-designer/base-ui';
 
-import EpField from './EpField';
+import AigenField from './AigenField';
 import MonacoEditor from './MonacoEditor';
 import Page from './Page';
 
@@ -34,8 +34,8 @@ export function setupComponent(pluginManager: PluginManager): void {
     async () => await import('./EActionEditor/index.vue'),
   );
   pluginManager.component.add(
-    'epActionModal',
-    async () => await import('./epActionModal/index.vue'),
+    'aigenActionModal',
+    async () => await import('./aigenActionModal/index.vue'),
   );
   pluginManager.component.add(
     'ERuleEditor',
@@ -50,9 +50,9 @@ export function setupComponent(pluginManager: PluginManager): void {
     async () => await import('./EOptionsEditor/index.vue'),
   );
 
-  pluginManager.component.add('EpNode', EpNode);
+  pluginManager.component.add('AigenNode', AigenNode);
 
-  const componentArray = [MonacoEditor, EpField];
+  const componentArray = [MonacoEditor, AigenField];
 
   setupPage(pluginManager);
 

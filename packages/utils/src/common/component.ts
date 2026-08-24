@@ -2,7 +2,7 @@ import type { AsyncComponentLoader, Component } from 'vue';
 
 import { defineAsyncComponent } from 'vue';
 
-import { EpBaseLoader } from '@aigen-designer/base-ui';
+import { AigenBaseLoader } from '@aigen-designer/base-ui';
 
 /**
  * 异步加载组件
@@ -10,7 +10,7 @@ import { EpBaseLoader } from '@aigen-designer/base-ui';
  */
 export const loadAsyncComponent = (
   loader: AsyncComponentLoader,
-  loadingComponent: Component = EpBaseLoader,
+  loadingComponent: Component = AigenBaseLoader,
 ) =>
   defineAsyncComponent({
     delay: 80,

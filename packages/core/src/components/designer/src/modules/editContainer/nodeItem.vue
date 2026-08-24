@@ -3,14 +3,14 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, provide, useAttrs } from 'vue';
 
-import { EpNode } from '@aigen-designer/base-ui';
+import { AigenNode } from '@aigen-designer/base-ui';
 import { NODE_ATTRS_KEY, useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
-import EpNodes from './nodes.vue';
+import AigenNodes from './nodes.vue';
 
 defineOptions({
-  name: 'EpNodeItem',
+  name: 'AigenNodeItem',
 });
 const props = withDefaults(
   defineProps<{
@@ -45,11 +45,11 @@ function isDraggable() {
 }
 </script>
 <template>
-  <EpNode
+  <AigenNode
     :component-schema="props.schema"
     class="edit-draggable-widget"
     :show-hidden-items="designerProps?.showHiddenItems"
-    :class="[isDraggable(), isLeafNode ? 'ep-node-leaf' : '']"
+    :class="[isDraggable(), isLeafNode ? 'aigen-node-leaf' : '']"
   >
     <!-- childImmovable不可拖拽设计 start -->
     <template
@@ -59,7 +59,7 @@ function isDraggable() {
       "
       #edit-node
     >
-      <EpNodeItem
+      <AigenNodeItem
         v-for="node in props.schema.children"
         :key="node.id"
         :schema="node"
@@ -68,10 +68,10 @@ function isDraggable() {
     </template>
     <!-- childImmovable不可拖拽设计 end -->
     <template v-else #edit-node>
-      <EpNodes
+      <AigenNodes
         v-if="props.schema.children"
         v-model:schemas="props.schema.children"
       />
     </template>
-  </EpNode>
+  </AigenNode>
 </template>

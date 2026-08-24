@@ -1,4 +1,4 @@
-import type { ComponentSchema, EpNodeInstance } from '@aigen-designer/types';
+import type { ComponentSchema, AigenNodeInstance } from '@aigen-designer/types';
 
 import { reactive, ref, watchEffect } from 'vue';
 
@@ -21,7 +21,7 @@ export interface ActionsModel {
   methodName: string;
   type: 'component' | 'custom' | 'public';
 }
-export type ComponentInstances = Record<string, Record<string, EpNodeInstance>>;
+export type ComponentInstances = Record<string, Record<string, AigenNodeInstance>>;
 export const DEFAULT_SCOPE = 'default';
 
 export function createPageManager() {
@@ -52,7 +52,7 @@ export function createPageManager() {
     queryValue: string,
     queryField = 'id',
     scopeName = DEFAULT_SCOPE,
-  ): EpNodeInstance['exposed'] | null {
+  ): AigenNodeInstance['exposed'] | null {
     const instance = findInstance(queryValue, queryField, scopeName);
     // 返回组件实例的 exposed 属性
     return instance?.exposed ?? null;
@@ -68,7 +68,7 @@ export function createPageManager() {
     queryValue: string,
     queryField = 'id',
     scopeName = DEFAULT_SCOPE,
-  ): EpNodeInstance['exposed'][] {
+  ): AigenNodeInstance['exposed'][] {
     const instances = findInstanceAll(queryValue, queryField, scopeName);
     // 返回组件实例的 exposed 属性数组
     return instances.map((instance) => instance.exposed);
@@ -84,7 +84,7 @@ export function createPageManager() {
     queryValue: string,
     queryField = 'id',
     scopeName = DEFAULT_SCOPE,
-  ): EpNodeInstance | null {
+  ): AigenNodeInstance | null {
     // 如果查询字段是 id，直接在组件实例映射中查找
     if (queryField === 'id') {
       return componentInstances.value[queryValue]?.[scopeName] ?? null;
@@ -116,7 +116,7 @@ export function createPageManager() {
     queryValue: string,
     queryField = 'id',
     scopeName = DEFAULT_SCOPE,
-  ): EpNodeInstance[] {
+  ): AigenNodeInstance[] {
     // 如果查询字段是 id，直接返回对应的组件实例数组
     if (queryField === 'id') {
       const instance = componentInstances.value[queryValue]?.[scopeName];
@@ -155,7 +155,7 @@ export function createPageManager() {
    */
   function addComponentInstance(
     id: string,
-    instance: EpNodeInstance,
+    instance: AigenNodeInstance,
     scopeName = DEFAULT_SCOPE,
   ) {
     // 如果第一层 id 不存在，先创建一个空对象

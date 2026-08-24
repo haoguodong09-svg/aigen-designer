@@ -27,7 +27,7 @@ const attrs = useAttrs();
 const getProps = computed<Record<string, any>>(() => ({
   ...props.componentSchema,
   ...attrs,
-  class: 'ep-el-modal ep-scoped',
+  class: 'aigen-el-modal aigen-scoped',
   'destroy-on-close': true,
   title: props.componentSchema?.label ?? '',
 }));
@@ -67,7 +67,7 @@ function handleClose() {
       </slot>
     </slot>
     <template #footer>
-      <div class="ep-el-modal-footer">
+      <div class="aigen-el-modal-footer">
         <ElButton @click="handleClose"> {{ props.cancelText }} </ElButton>
         <ElButton v-if="!props.hideConfirm" type="primary" @click="handleOk">
           {{ props.okText }}

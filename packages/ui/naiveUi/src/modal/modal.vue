@@ -30,7 +30,7 @@ const attrs = useAttrs();
 // 计算属性
 const getProps = computed<Record<string, any>>(() => ({
   ...props.componentSchema,
-  class: 'ep-modal-n',
+  class: 'aigen-modal-n',
   preset: 'card',
   show: attrs.modelValue,
   title: props.componentSchema?.label ?? '',
@@ -56,12 +56,12 @@ function handleClose() {
   <NModal
     v-bind="getProps"
     :title="getProps.label ?? ''"
-    class="ep-modal-n ep-scoped"
+    class="aigen-modal-n aigen-scoped"
     preset="card"
     :style="{ width }"
     @update:show="updateModelValue"
   >
-    <div class="ep-modal-main">
+    <div class="aigen-modal-main">
       <slot>
         <slot name="edit-node">
           <template v-if="children.length > 0">
@@ -75,7 +75,7 @@ function handleClose() {
       </slot>
     </div>
 
-    <div class="ep-modal-footer">
+    <div class="aigen-modal-footer">
       <NSpace justify="end">
         <NButton @click="handleClose"> {{ props.cancelText }} </NButton>
         <NButton v-if="!props.hideConfirm" type="primary" @click="handleOk">

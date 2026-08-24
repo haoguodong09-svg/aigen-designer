@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, PropType, ref, toRaw, watch } from 'vue';
 
-import { EpCollapse, EpCollapsePanel } from '@aigen-designer/base-ui';
+import { AigenCollapse, AigenCollapsePanel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 import EActionEditorItem from './src/EActionEditorItem.vue';
@@ -19,9 +19,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const epActionModal = pluginManager.component.get('epActionModal');
+const aigenActionModal = pluginManager.component.get('aigenActionModal');
 
-const epActionModalRef = ref<any>(null);
+const aigenActionModalRef = ref<any>(null);
 let editIndex = 0;
 const modelValueComputed = computed({
   get() {
@@ -98,7 +98,7 @@ let currentType: string = '';
  * @param type
  */
 function handleOpen(type: string) {
-  epActionModalRef.value?.handleOpen();
+  aigenActionModalRef.value?.handleOpen();
   currentType = type;
 }
 
@@ -109,8 +109,8 @@ function handleOpen(type: string) {
  * @param {any} action - 要执行的动作
  */
 function handleOpenEdit(index: number, type: string, action) {
-  // 如果 epActionModalRef.value 不为 null 或 undefined，则调用其 handleOpenEdit 方法
-  epActionModalRef.value?.handleOpenEdit(action);
+  // 如果 aigenActionModalRef.value 不为 null 或 undefined，则调用其 handleOpenEdit 方法
+  aigenActionModalRef.value?.handleOpenEdit(action);
 
   // 将要编辑的事件的索引赋值给 editIndex
   editIndex = index;
@@ -146,8 +146,8 @@ function handleAdd(action: any) {
 </script>
 
 <template>
-  <EpCollapse v-model="activeNames">
-    <EpCollapsePanel
+  <AigenCollapse v-model="activeNames">
+    <AigenCollapsePanel
       v-for="item in filterEventList"
       :key="item.title"
       :title="item.title"
@@ -163,7 +163,7 @@ function handleAdd(action: any) {
           @edit="handleOpenEdit"
         />
       </div>
-    </EpCollapsePanel>
-  </EpCollapse>
-  <epActionModal ref="epActionModalRef" @add="handleAdd" @edit="handleEdit" />
+    </AigenCollapsePanel>
+  </AigenCollapse>
+  <aigenActionModal ref="aigenActionModalRef" @add="handleAdd" @edit="handleEdit" />
 </template>

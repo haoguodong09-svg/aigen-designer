@@ -38,11 +38,11 @@ function setSchemas(e: string) {
 }
 </script>
 <template>
-  <div class="ep-source-code">
+  <div class="aigen-source-code">
     <MonacoEditor
       ref="monacoEditorRef"
       auto-toggle-theme
-      class="ep-editor"
+      class="aigen-editor"
       :read-only="designerProps.sourceCodeReadOnly"
       :model-value="initModelValue"
       line-numbers="off"

@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { EpIcon } from '../icon';
+import { AigenIcon } from '../icon';
 </script>
 <template>
   <div
-    class="text-$ep-primary text-10 flex min-h-40 items-center justify-center p-4"
+    class="text-$aigen-primary text-10 flex min-h-40 items-center justify-center p-4"
   >
-    <EpIcon class="relative" name="icon--aigen--bars-scale-fade" />
+    <AigenIcon class="relative" name="icon--aigen--bars-scale-fade" />
   </div>
 </template>

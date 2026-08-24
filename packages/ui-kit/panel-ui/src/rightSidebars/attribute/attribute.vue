@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, watchEffect } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext, useTableMeta } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { useClipboard } from '@vueuse/core';
@@ -56,17 +56,17 @@ const componentAttributes = computed(() => {
 });
 </script>
 <template>
-  <div :key="selectedNode?.id" class="ep-attribute-view">
+  <div :key="selectedNode?.id" class="aigen-attribute-view">
     <!-- 组件id展示 start -->
     <div
-      class="ep-attr-item mb-2 mt-2 flex h-8 cursor-pointer items-center px-4"
+      class="aigen-attr-item mb-2 mt-2 flex h-8 cursor-pointer items-center px-4"
     >
       <div
-        class="bg-$ep-secondary rounded-1 h-full flex-1 px-2 leading-8"
+        class="bg-$aigen-secondary rounded-1 h-full flex-1 px-2 leading-8"
         @click="copy(designer.state.selectedNode?.id ?? '')"
       >
-        <EpIcon
-          class="ep-component-icon translate-y-2px mr-1"
+        <AigenIcon
+          class="aigen-component-icon translate-y-2px mr-1"
           :name="
             pluginManager.component.getIcon(designer.state.selectedNode!.type)
           "
@@ -78,10 +78,10 @@ const componentAttributes = computed(() => {
     <!-- 数据表 start -->
     <div
       v-if="tableMeta?.tableRemark && designer.state.selectedNode?.input"
-      class="ep-attr-item mb-2 flex h-8 cursor-pointer items-center px-4"
+      class="aigen-attr-item mb-2 flex h-8 cursor-pointer items-center px-4"
     >
-      <div class="ep-attr-label">数据表</div>
-      <div class="bg-$ep-secondary rounded-1 h-full flex-1 px-2 leading-8">
+      <div class="aigen-attr-label">数据表</div>
+      <div class="bg-$aigen-secondary rounded-1 h-full flex-1 px-2 leading-8">
         {{ tableMeta.tableRemark }}
       </div>
     </div>

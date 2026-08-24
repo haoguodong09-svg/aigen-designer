@@ -130,7 +130,7 @@ function handlePreview(e: UploadFile): void {
 </script>
 
 <template>
-  <div class="ep-upload-file">
+  <div class="aigen-upload-file">
     <Upload v-bind="getUploadProps">
       <Button
         class="flex items-center"

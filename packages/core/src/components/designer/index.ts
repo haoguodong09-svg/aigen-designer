@@ -1,4 +1,4 @@
 export {
   default as EDesigner,
-  default as EpDesigner,
+  default as AigenDesigner,
 } from './src/designer.vue';

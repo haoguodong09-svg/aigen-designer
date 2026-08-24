@@ -2,7 +2,7 @@
 import { inject } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { useVModel } from '@vueuse/core';
 
@@ -69,9 +69,9 @@ function handleRemove(index: number) {
             ? 'grid-cols-[16px_auto_auto_16px_16px]'
             : 'grid-cols-[16px_auto_auto_16px]'
         "
-        class="option-item text-16px text-$ep-text-secondary mb-2 grid items-center gap-2"
+        class="option-item text-16px text-$aigen-text-secondary mb-2 grid items-center gap-2"
       >
-        <EpIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
+        <AigenIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
         <Input
           v-model="option.label"
           v-model:value="option.label"
@@ -82,13 +82,13 @@ function handleRemove(index: number) {
           v-model:value="option.value"
           placeholder="value"
         />
-        <EpIcon
+        <AigenIcon
           v-if="tree"
           class="text-lg! cursor-pointer"
           name="icon--aigen--add-rounded"
           @click="handleAddChildren(option)"
         />
-        <EpIcon
+        <AigenIcon
           class="hover:text-red cursor-pointer"
           name="icon--aigen--delete-outline-rounded"
           @click="handleRemove(index)"

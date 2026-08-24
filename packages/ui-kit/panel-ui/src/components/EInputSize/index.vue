@@ -63,7 +63,7 @@ function handleUpdate() {
   <Input
     v-model="size"
     v-model:value="size"
-    class="ep-input-size"
+    class="aigen-input-size"
     type="number"
     min="0"
     placeholder="请输入"

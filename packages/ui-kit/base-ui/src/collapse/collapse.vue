@@ -107,30 +107,30 @@ provide(COLLAPSE_CONTEXT_KEY, {
 
 <template>
   <div
-    class="ep-collapse"
-    :class="`ep-collapse--${accordion ? 'accordion' : 'default'}`"
+    class="aigen-collapse"
+    :class="`aigen-collapse--${accordion ? 'accordion' : 'default'}`"
   >
     <slot></slot>
   </div>
 </template>
 
 <style scoped>
-.ep-collapse {
-  border: 1px solid var(--ep-border);
+.aigen-collapse {
+  border: 1px solid var(--aigen-border);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.ep-collapse--default {
+.aigen-collapse--default {
   border: none;
 }
 
-.ep-collapse.bordered {
-  border: 1px solid var(--ep-border);
+.aigen-collapse.bordered {
+  border: 1px solid var(--aigen-border);
   border-radius: 4px;
 }
 
-.ep-collapse:not(.bordered) {
+.aigen-collapse:not(.bordered) {
   border: none;
 }
 </style>

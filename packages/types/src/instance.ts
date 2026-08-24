@@ -10,6 +10,6 @@ export interface ExtendedExposed {
   setValue?: (value: any) => void;
 }
 
-export type EpNodeInstance = ComponentInternalInstance & {
+export type AigenNodeInstance = ComponentInternalInstance & {
   exposed?: ComponentInternalInstance['exposed'] & ExtendedExposed;
 };

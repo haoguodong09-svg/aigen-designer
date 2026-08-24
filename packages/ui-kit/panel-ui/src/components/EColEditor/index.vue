@@ -6,7 +6,7 @@ import type { PropType } from 'vue';
 import { ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { getUUID } from '@aigen-designer/utils';
 import { useVModel } from '@vueuse/core';
@@ -90,9 +90,9 @@ function handleDelete(index: number) {
 }
 </script>
 <template>
-  <div class="ep-col-editor">
-    <div class="ep-col-editor-radio">
-      <div class="text-$ep-text-helper text-sm">选择需要配置的属性：</div>
+  <div class="aigen-col-editor">
+    <div class="aigen-col-editor-radio">
+      <div class="text-$aigen-text-helper text-sm">选择需要配置的属性：</div>
       <Radio
         v-model="selectedAttr"
         v-model:value="selectedAttr"
@@ -113,9 +113,9 @@ function handleDelete(index: number) {
       <div
         v-for="(item, index) in innerValue"
         :key="item.id"
-        class="ep-col-editor-item text-16px text-$ep-text-secondary mb-2 grid grid-cols-[16px_auto_16px] items-center gap-2"
+        class="aigen-col-editor-item text-16px text-$aigen-text-secondary mb-2 grid grid-cols-[16px_auto_16px] items-center gap-2"
       >
-        <EpIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
+        <AigenIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
         <Number
           :key="selectedAttr"
           v-model:value="item.props[selectedAttr]"
@@ -125,15 +125,15 @@ function handleDelete(index: number) {
           :max="24"
         />
         <template v-if="innerValue.length > 1">
-          <EpIcon
-            class="hover:text-$ep-destructive cursor-pointer"
+          <AigenIcon
+            class="hover:text-$aigen-destructive cursor-pointer"
             name="icon--aigen--delete-outline-rounded"
             @click="handleDelete(index)"
           />
         </template>
       </div>
     </VueDraggable>
-    <div class="ep-button ghost primary" @click="handleAdd">添加列</div>
+    <div class="aigen-button ghost primary" @click="handleAdd">添加列</div>
   </div>
 </template>
 <style scoped lang="less">

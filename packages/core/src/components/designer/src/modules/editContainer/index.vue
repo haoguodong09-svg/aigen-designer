@@ -7,11 +7,11 @@ import { useDesignerContext } from '@aigen-designer/hooks';
 import { findSchemaById } from '@aigen-designer/utils';
 
 import AigenEditScreenContainer from './editScreenContainer.vue';
-import EpNodeItem from './nodeItem.vue';
-import EpPreviewWidgets from './previewWidgets.vue';
+import AigenNodeItem from './nodeItem.vue';
+import AigenPreviewWidgets from './previewWidgets.vue';
 
 const aigenEditRangeRef = ref<HTMLDivElement | null>(null);
-const aigenPreviewWidgetsRef = ref<null | typeof EpPreviewWidgets>(null);
+const aigenPreviewWidgetsRef = ref<null | typeof AigenPreviewWidgets>(null);
 
 const { pageSchema, props, setSelectedNode } = useDesignerContext();
 const contextMenu = inject('contextMenu', {
@@ -58,7 +58,7 @@ onMounted(() => {
         parent = parent.parentElement;
 
         // 如果是点击操作栏，不处理
-        if (parent?.classList?.contains('ep-selected-widget')) {
+        if (parent?.classList?.contains('aigen-selected-widget')) {
           return;
         }
       }
@@ -68,15 +68,15 @@ onMounted(() => {
 });
 </script>
 <template>
-  <section class="ep-edit-canvas">
+  <section class="aigen-edit-canvas">
     <AigenEditScreenContainer>
       <div
         ref="aigenEditRangeRef"
-        class="ep-edit-range relative overflow-auto rounded-md"
+        class="aigen-edit-range relative overflow-auto rounded-md"
         :style="getEditRangestyle"
       >
-        <EpNodeItem :schema="rootSchema" />
-        <EpPreviewWidgets ref="aigenPreviewWidgetsRef" />
+        <AigenNodeItem :schema="rootSchema" />
+        <AigenPreviewWidgets ref="aigenPreviewWidgetsRef" />
       </div>
     </AigenEditScreenContainer>
   </section>

@@ -7,7 +7,7 @@ import { VueDraggable } from 'vue-draggable-plus';
 import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
-import EpNodeItem from './nodeItem.vue';
+import AigenNodeItem from './nodeItem.vue';
 
 defineOptions({
   name: 'EditNodeItem',
@@ -44,7 +44,7 @@ function getNodeSchema(target) {
   }
 
   // 检查直接子元素（只向下查询一级）
-  if (!target.classList.contains('ep-draggable-range')) {
+  if (!target.classList.contains('aigen-draggable-range')) {
     const directChild = target.querySelector(':scope > [data-aigen-id]');
     if (directChild?.dataset?.aigenId) {
       return getSchemaByAigenId(directChild.dataset.aigenId);
@@ -110,24 +110,24 @@ function isInline(schema: ComponentSchema) {
 <template>
   <VueDraggable
     v-model="modelSchemas"
-    class="ep-draggable-range"
+    class="aigen-draggable-range"
     :animation="200"
     group="edit-draggable"
-    ghost-class="ep-moveing"
+    ghost-class="aigen-moveing"
     @mouseover.stop="setHoverNode"
     @change="handleDragChange"
     @add="handleDragAdd"
     @end="handleDragEnd"
   >
     <div
-      class="ep-node-item"
-      :class="{ 'ep-inline': isInline(element) }"
+      class="aigen-node-item"
+      :class="{ 'aigen-inline': isInline(element) }"
       v-for="element in modelSchemas"
       :key="element.id"
       @contextmenu.stop="contextMenu.open($event, element)"
       :data-aigen-id="element.id"
     >
-      <EpNodeItem :schema="element" />
+      <AigenNodeItem :schema="element" />
     </div>
   </VueDraggable>
 </template>

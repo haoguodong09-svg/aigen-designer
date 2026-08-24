@@ -3,7 +3,7 @@ import type { DesignerProps, PageSchema } from '@aigen-designer/types';
 
 import { nextTick, onUnmounted, provide, ref, watchEffect } from 'vue';
 
-import { EpDesignerLoader } from '@aigen-designer/base-ui';
+import { AigenDesignerLoader } from '@aigen-designer/base-ui';
 import {
   createEventBus,
   DESIGNER_CONTEXT_KEY,
@@ -20,7 +20,7 @@ import {
 
 import { useDesigner } from '../hooks/useDesigner';
 import { useHotkeys } from '../hooks/useHotkeys';
-import EpPreview from './modules/preview/index.vue';
+import AigenPreview from './modules/preview/index.vue';
 
 const props = withDefaults(defineProps<DesignerProps>(), {
   canvasMode: 'desktop',
@@ -42,20 +42,20 @@ const emit = defineEmits([
 ]);
 
 setupPanel(pluginManager);
-const EpHeader = loadAsyncComponent(() => import('./modules/header/index.vue'));
-const EpActivityBar = loadAsyncComponent(
+const AigenHeader = loadAsyncComponent(() => import('./modules/header/index.vue'));
+const AigenActivityBar = loadAsyncComponent(
   () => import('./modules/activityBar/index.vue'),
 );
-const EpEditContainer = loadAsyncComponent(
+const AigenEditContainer = loadAsyncComponent(
   () => import('./modules/editContainer/index.vue'),
 );
-const EpRightSidebar = loadAsyncComponent(
+const AigenRightSidebar = loadAsyncComponent(
   () => import('./modules/rightSidebar/index.vue'),
 );
-const EpBuilderSlot = pluginManager.component.get('epBuilderSlot');
-const EpDesignerSlot = pluginManager.component.get('epDesignerSlot');
+const AigenBuilderSlot = pluginManager.component.get('aigenBuilderSlot');
+const AigenDesignerSlot = pluginManager.component.get('aigenDesignerSlot');
 
-const previewRef = ref<InstanceType<typeof EpPreview> | null>(null);
+const previewRef = ref<InstanceType<typeof AigenPreview> | null>(null);
 
 const {
   handleDelete,
@@ -198,20 +198,20 @@ defineExpose({
 });
 </script>
 <template>
-  <div v-if="!pluginManager.designer.initialized.value" class="ep-loading-box">
-    <EpDesignerLoader />
+  <div v-if="!pluginManager.designer.initialized.value" class="aigen-loading-box">
+    <AigenDesignerLoader />
   </div>
   <Suspense v-else @resolve="handleReady">
     <template #default>
       <div
-        class="ep-designer-main ep-scoped"
+        class="aigen-designer-main aigen-scoped"
         @mouseover="setHoverNode()"
         ref="designerRef"
         tabindex="0"
       >
-        <div class="ep-header-container" v-if="!props.hiddenHeader">
+        <div class="aigen-header-container" v-if="!props.hiddenHeader">
           <slot name="header">
-            <EpHeader @preview="handlePreview" @save="handleSave">
+            <AigenHeader @preview="handlePreview" @save="handleSave">
               <template #header>
                 <slot name="header-prefix"></slot>
               </template>
@@ -230,25 +230,25 @@ defineExpose({
               <template #right-suffix>
                 <slot name="header-right-suffix"></slot>
               </template>
-            </EpHeader>
+            </AigenHeader>
           </slot>
         </div>
         <div
-          class="ep-split-view-container"
+          class="aigen-split-view-container"
           :class="{ 'hidden-header': hiddenHeader }"
         >
-          <EpActivityBar />
-          <EpEditContainer />
-          <EpRightSidebar />
+          <AigenActivityBar />
+          <AigenEditContainer />
+          <AigenRightSidebar />
         </div>
-        <EpPreview ref="previewRef" :hide-confirm="props.hidePreviewConfirm" />
-        <component v-if="EpBuilderSlot" :is="EpBuilderSlot" />
-        <component v-if="EpDesignerSlot" :is="EpDesignerSlot" />
+        <AigenPreview ref="previewRef" :hide-confirm="props.hidePreviewConfirm" />
+        <component v-if="AigenBuilderSlot" :is="AigenBuilderSlot" />
+        <component v-if="AigenDesignerSlot" :is="AigenDesignerSlot" />
       </div>
     </template>
     <template #fallback>
-      <div class="ep-loading-box">
-        <EpDesignerLoader />
+      <div class="aigen-loading-box">
+        <AigenDesignerLoader />
       </div>
     </template>
   </Suspense>

@@ -36,7 +36,7 @@ function handleAdd() {
 </script>
 
 <template>
-  <div class="ep-options-editor rounded">
+  <div class="aigen-options-editor rounded">
     <div
       v-show="!innerValue?.length"
       class="my-2 py-4 text-center text-gray-400"

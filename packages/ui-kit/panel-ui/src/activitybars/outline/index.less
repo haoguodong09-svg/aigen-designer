@@ -1,21 +1,21 @@
-.ep-outline {
+.aigen-outline {
     overflow: auto;
     height: 100%;
     box-sizing: border-box;
 
-    .ep-event-badge {
+    .aigen-event-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 0 4px;
-        font-size: var(--ep-text-sm);
+        font-size: var(--aigen-text-sm);
         line-height: 1.4;
-        border-radius: var(--ep-radius);
-        background-color: var(--ep-secondary);
-        color: var(--ep-primary);
+        border-radius: var(--aigen-radius);
+        background-color: var(--aigen-secondary);
+        color: var(--aigen-primary);
     }
 
-    .ep-tree-action {
+    .aigen-tree-action {
     display: none;
     align-items: center;
 
@@ -24,23 +24,23 @@
     }
 
     .iconfont {
-      color: var(--ep-muted-foreground);
+      color: var(--aigen-muted-foreground);
       display: none;
 
       &.active {
-        color: var(--ep-primary);
+        color: var(--aigen-primary);
         display: inline-block;
       }
     }
 
   }
 
-   .ep-outline-item:hover {
-    .ep-tree-action {
+   .aigen-outline-item:hover {
+    .aigen-tree-action {
       display: flex;
     }
 
-    .ep-tree-action .iconfont {
+    .aigen-tree-action .iconfont {
       display: inline-block;
     }
   }

@@ -3,7 +3,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, defineComponent, h } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 
@@ -42,7 +42,7 @@ const TreeNodeText = defineComponent({
         treeContext!.slots['tree-node']?.(props) ??
           h(
             'span',
-            { class: 'ep-text-padding flex' },
+            { class: 'aigen-text-padding flex' },
             {
               default: () => [
                 h(
@@ -54,7 +54,7 @@ const TreeNodeText = defineComponent({
                 ),
                 h(
                   'span',
-                  { class: 'ep-node-type-text flex-1 w-0 truncate' },
+                  { class: 'aigen-node-type-text flex-1 w-0 truncate' },
                   props.schema.id,
                 ),
               ],
@@ -90,7 +90,7 @@ init();
 </script>
 <template>
   <li
-    class="ep-tree-node"
+    class="aigen-tree-node"
     :class="{
       expanded: props.schema.children?.length,
       'is-locked': pluginManager.component.getLocked(props.schema.type),
@@ -107,14 +107,14 @@ init();
         :class="{ expanded }"
         @click="handleExpanded"
       >
-        <EpIcon name="icon--aigen--caret-right-outlined" />
+        <AigenIcon name="icon--aigen--caret-right-outlined" />
       </span>
       <TreeNodeText />
     </a>
     <ETreeNodes
       v-if="props.schema.children?.length"
       v-model:schemas="props.schema.children"
-      class="ep-tree-sublist"
+      class="aigen-tree-sublist"
       :class="{ expanded }"
       :parent-schema="props.schema"
     />

@@ -6,6 +6,6 @@ export default {
   defaultSchema: {
     input: true,
     label: '数据字段',
-    type: 'EpField',
+    type: 'AigenField',
   },
 } as ComponentConfigModel;

@@ -32,7 +32,7 @@ const { handleElementDrag, handleElementDragEnd, handleElementDragStart } =
   useElementDrag(editScreenContainerRef);
 const { height, width } = useElementSize(editScreenContainerRef);
 const { canvasScale, handleZoom } = useElementZoom(draggableElRef);
-const EpContextMenu = pluginManager.component.get('epContextMenu');
+const AigenContextMenu = pluginManager.component.get('aigenContextMenu');
 
 const draggableComputed = computed(() => {
   return pressSpace.value && props.draggable;
@@ -224,7 +224,7 @@ function computedScale() {
 
     <div
       ref="editScreenContainerRef"
-      class="ep-edit-screen-container flex-1 overflow-auto overflow-y-hidden"
+      class="aigen-edit-screen-container flex-1 overflow-auto overflow-y-hidden"
       :class="{ 'cursor-grab': draggableComputed }"
       :draggable="draggableComputed"
       @wheel.passive="handleZoom"
@@ -242,7 +242,7 @@ function computedScale() {
             :class="{ 'pointer-events-none': draggableComputed }"
             :style="canvasBoxStyle"
           >
-            <component v-if="EpContextMenu" :is="EpContextMenu">
+            <component v-if="AigenContextMenu" :is="AigenContextMenu">
               <slot></slot>
             </component>
             <slot v-else></slot>

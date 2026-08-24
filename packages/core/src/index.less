@@ -12,9 +12,9 @@
 }
 
 
-.ep-button {
-  color: var(--ep-text-main);
-  border: 1px solid var(--ep-border);
+.aigen-button {
+  color: var(--aigen-text-main);
+  border: 1px solid var(--aigen-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,31 +22,31 @@
   cursor: pointer;
   height: 32px;
   padding: 0 12px;
-  border-radius: var(--ep-radius);
+  border-radius: var(--aigen-radius);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease-out-quart;
 
   &:hover {
-    color: var(--ep-primary);
-    background-color: color-mix(in oklch, var(--ep-primary), transparent 92%);
-    border-color: var(--ep-primary);
+    color: var(--aigen-primary);
+    background-color: color-mix(in oklch, var(--aigen-primary), transparent 92%);
+    border-color: var(--aigen-primary);
   }
 
   &.small {
     height: 24px;
     padding: 0 8px;
-    border-radius: calc(var(--ep-radius) - 2px);
+    border-radius: calc(var(--aigen-radius) - 2px);
   }
 
   &.primary {
-    color: var(--ep-primary-foreground);
-    background-color: var(--ep-primary);
-    border-color: var(--ep-primary);
-    box-shadow: 0 2px 0 color-mix(in oklch, var(--ep-primary), transparent 90%);
+    color: var(--aigen-primary-foreground);
+    background-color: var(--aigen-primary);
+    border-color: var(--aigen-primary);
+    box-shadow: 0 2px 0 color-mix(in oklch, var(--aigen-primary), transparent 90%);
   }
 
   &.ghost {
-    color: var(--ep-primary);
+    color: var(--aigen-primary);
     background-color: transparent;
     box-shadow: none;
   }

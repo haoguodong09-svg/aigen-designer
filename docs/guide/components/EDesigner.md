@@ -22,14 +22,14 @@
 ## 基础用法
 
 <ConfigProvider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }">
-  <div class="ep-designer-container">
+  <div class="aigen-designer-container">
     <EDesigner  @save="handleSubmit"  />
   </div>
 </ConfigProvider>
 
 ```vue
 <template>
-  <div class="ep-designer-container">
+  <div class="aigen-designer-container">
     <EDesigner @save="handleSubmit" />
   </div>
 </template>
@@ -45,10 +45,10 @@ function handleSubmit(e:PageSchema) {
 }
 </script>
 <style>
-.ep-designer-container {
+.aigen-designer-container {
   width: 100%;
   height: 800px;
-  border: 1px solid var(--ep-border);
+  border: 1px solid var(--aigen-border);
 }
 </style>
 ```
@@ -71,10 +71,10 @@ function handleSubmit (e) {
 </script>
 
 <style>
-.ep-designer-container{
+.aigen-designer-container{
 width:1200px;
 height:800px;
-border: 1px solid var(--ep-border);
+border: 1px solid var(--aigen-border);
 position: relative;
 z-index: 20;
 background: white;

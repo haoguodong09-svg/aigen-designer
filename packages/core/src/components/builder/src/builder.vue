@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { PageManager } from '@aigen-designer/manager';
 import type {
-  EpNodeInstance,
+  AigenNodeInstance,
   FieldStates,
   FormDataModel,
   PageSchema,
@@ -16,7 +16,7 @@ import {
   watch,
 } from 'vue';
 
-import { EpBaseLoader, EpNode } from '@aigen-designer/base-ui';
+import { AigenBaseLoader, AigenNode } from '@aigen-designer/base-ui';
 import {
   BUILDER_KEY,
   createEventBus,
@@ -65,7 +65,7 @@ const emit = defineEmits<{
 
 setupPage(pluginManager);
 
-const EpBuilderSlot = pluginManager.component.get('epBuilderSlot');
+const AigenBuilderSlot = pluginManager.component.get('aigenBuilderSlot');
 // 使用 hooks 获取表单相关方法和状态
 const {
   formInstances,
@@ -170,7 +170,7 @@ function triggerAigenReady() {
 }
 
 // 获取当前实例，并提取 proxy
-const instance = getCurrentInstance() as EpNodeInstance;
+const instance = getCurrentInstance() as AigenNodeInstance;
 // 注入组件实例到 pageManager
 pageManager.addComponentInstance('builder', instance);
 
@@ -199,30 +199,30 @@ defineExpose({
       !pluginManager.designer.initialized.value ||
       pageManager.pageSchema.schemas.length === 0
     "
-    class="ep-loading-box"
+    class="aigen-loading-box"
   >
-    <EpBaseLoader />
+    <AigenBaseLoader />
   </div>
   <Suspense v-else :key="suspenseKey" @resolve="handleReady">
     <template #default>
       <div
-        class="ep-builder-main ep-scoped"
+        class="aigen-builder-main aigen-scoped"
         :class="{
-          'ep-readonly': props.readonly,
-          'ep-table-view': props.tableView,
+          'aigen-readonly': props.readonly,
+          'aigen-table-view': props.tableView,
         }"
       >
-        <EpNode
+        <AigenNode
           v-for="(item, index) in pageManager.pageSchema.schemas"
           :key="index"
           :component-schema="item"
         />
-        <component v-if="EpBuilderSlot" :is="EpBuilderSlot" />
+        <component v-if="AigenBuilderSlot" :is="AigenBuilderSlot" />
       </div>
     </template>
     <template #fallback>
-      <div class="ep-loading-box">
-        <EpBaseLoader />
+      <div class="aigen-loading-box">
+        <AigenBaseLoader />
       </div>
     </template>
   </Suspense>

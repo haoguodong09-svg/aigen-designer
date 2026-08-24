@@ -5,7 +5,7 @@ import type { PropType } from 'vue';
 
 import { ref, watch } from 'vue';
 
-import { EpNode } from '@aigen-designer/base-ui';
+import { AigenNode } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { deepClone, deepEqual } from '@aigen-designer/utils';
 import { useVModel } from '@vueuse/core';
@@ -150,11 +150,11 @@ function handleDelete(index: number) {
           v-if="componentSchema.show ? componentSchema.show() : true"
           class="m-t-2 flex first:m-0"
         >
-          <div class="ep-attr-label">
+          <div class="aigen-attr-label">
             {{ componentSchema.label }}
           </div>
           <div class="flex-1">
-            <EpNode
+            <AigenNode
               is-property
               v-model="requiredRule[componentSchema.model]"
               :component-schema="{ ...componentSchema, noFormItem: true }"

@@ -3,7 +3,7 @@ import type { PanelName } from './collapseContext';
 
 import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 
-import { EpIcon } from '../icon';
+import { AigenIcon } from '../icon';
 import { COLLAPSE_CONTEXT_KEY } from './collapseContext';
 
 interface Props {
@@ -97,46 +97,46 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="ep-collapse-panel"
+    class="aigen-collapse-panel"
     :class="{
-      'ep-collapse-panel--active': isActive,
-      'ep-collapse-panel--bordered': bordered,
+      'aigen-collapse-panel--active': isActive,
+      'aigen-collapse-panel--bordered': bordered,
     }"
   >
     <!-- 面板头部 -->
     <div
-      class="ep-collapse-panel__header"
-      :class="{ 'ep-collapse-panel__header--active': isActive }"
+      class="aigen-collapse-panel__header"
+      :class="{ 'aigen-collapse-panel__header--active': isActive }"
       @click="handleHeaderClick"
     >
-      <div class="ep-collapse-panel__header-content">
+      <div class="aigen-collapse-panel__header-content">
         <!-- 自定义头部插槽 -->
         <slot v-if="$slots.header" name="header" :active="isActive"></slot>
         <template v-else>
-          <span class="ep-collapse-panel__title">{{ title }}</span>
+          <span class="aigen-collapse-panel__title">{{ title }}</span>
         </template>
       </div>
 
       <!-- 展开箭头 -->
       <div
-        class="ep-collapse-panel__arrow"
-        :class="{ 'ep-collapse-panel__arrow--active': isActive }"
+        class="aigen-collapse-panel__arrow"
+        :class="{ 'aigen-collapse-panel__arrow--active': isActive }"
       >
         <slot name="arrow">
-          <EpIcon name="icon--aigen--arrow-forward-ios-rounded" />
+          <AigenIcon name="icon--aigen--arrow-forward-ios-rounded" />
         </slot>
       </div>
     </div>
 
     <!-- 面板内容（可动画展开） -->
     <transition
-      name="ep-collapse-transition"
+      name="aigen-collapse-transition"
       @enter="handleEnter"
       @after-enter="handleAfterEnter"
       @leave="handleLeave"
     >
-      <div v-show="isActive" class="ep-collapse-panel__content-wrapper">
-        <div ref="contentRef" class="ep-collapse-panel__content">
+      <div v-show="isActive" class="aigen-collapse-panel__content-wrapper">
+        <div ref="contentRef" class="aigen-collapse-panel__content">
           <slot></slot>
         </div>
       </div>
@@ -145,19 +145,19 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.ep-collapse-panel {
+.aigen-collapse-panel {
   transition: all 0.3s ease;
 }
 
-.ep-collapse-panel--bordered {
-  border-bottom: 1px solid var(--ep-border);
+.aigen-collapse-panel--bordered {
+  border-bottom: 1px solid var(--aigen-border);
 }
 
-.ep-collapse-panel--bordered:last-child {
+.aigen-collapse-panel--bordered:last-child {
   border-bottom: none;
 }
 
-.ep-collapse-panel__header {
+.aigen-collapse-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -166,20 +166,20 @@ onUnmounted(() => {
   user-select: none;
 }
 
-.ep-collapse-panel__header-content {
+.aigen-collapse-panel__header-content {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.ep-collapse-panel__title {
+.aigen-collapse-panel__title {
   font-weight: 500;
   font-size: 14px;
-  color: var(--ep-text-main);
+  color: var(--aigen-text-main);
 }
 
-.ep-collapse-panel__arrow {
+.aigen-collapse-panel__arrow {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,24 +188,24 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-.ep-collapse-panel__arrow--active {
+.aigen-collapse-panel__arrow--active {
   transform: rotate(90deg);
 }
 
-.ep-collapse-panel__content-wrapper {
+.aigen-collapse-panel__content-wrapper {
   overflow: hidden;
   transition: height 0.3s ease;
 }
 
 /* 动画效果 */
-.ep-collapse-transition-enter-active,
-.ep-collapse-transition-leave-active {
+.aigen-collapse-transition-enter-active,
+.aigen-collapse-transition-leave-active {
   transition: height 0.3s ease;
   overflow: hidden;
 }
 
-.ep-collapse-transition-enter-from,
-.ep-collapse-transition-leave-to {
+.aigen-collapse-transition-enter-from,
+.aigen-collapse-transition-leave-to {
   height: 0;
 }
 </style>

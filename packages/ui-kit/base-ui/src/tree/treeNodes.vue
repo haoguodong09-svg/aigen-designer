@@ -77,7 +77,7 @@ const getDisabled = computed(() => {
     v-model="modelSchemas"
     item-key="id"
     :component-data="{}"
-    class="ep-draggable-range"
+    class="aigen-draggable-range"
     v-bind="{
       animation: 200,
       tag: 'ul',

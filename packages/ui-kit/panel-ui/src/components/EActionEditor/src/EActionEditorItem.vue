@@ -3,7 +3,7 @@ import type { PropType } from 'vue';
 
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { findSchemaById } from '@aigen-designer/utils';
 
@@ -90,21 +90,21 @@ function getNewEvents(type: string) {
 }
 </script>
 <template>
-  <div v-for="item in itemEvents" :key="item.type" class="ep-event-item">
-    <div class="ep-event-info">
+  <div v-for="item in itemEvents" :key="item.type" class="aigen-event-item">
+    <div class="aigen-event-info">
       <div class="aigen-event-label" :title="item.describe ?? item.description">
         {{ item.describe ?? item.description }}
       </div>
       <div
-        class="ep-event-btn text-$ep-text-secondary flex items-center text-lg"
+        class="aigen-event-btn text-$aigen-text-secondary flex items-center text-lg"
       >
-        <EpIcon
+        <AigenIcon
           name="icon--aigen--add-rounded"
           @click="handleOpen(item.type)"
         />
       </div>
     </div>
-    <div class="ep-action-editor-main">
+    <div class="aigen-action-editor-main">
       <VueDraggable
         v-model="props.events[item.type]"
         item-key="id"
@@ -117,12 +117,12 @@ function getNewEvents(type: string) {
       >
         <div
           v-for="(action, index) in props.events[item.type]"
-          class="ep-editor-item rounded"
+          class="aigen-editor-item rounded"
           :key="action.id"
         >
           <div class="w-36px flex items-center text-lg">
-            <EpIcon
-              class="handle text-$ep-text-helper mr-2 cursor-move text-lg"
+            <AigenIcon
+              class="handle text-$aigen-text-helper mr-2 cursor-move text-lg"
               name="icon--aigen--drag"
             />
           </div>
@@ -134,15 +134,15 @@ function getNewEvents(type: string) {
             <div v-else-if="action.type === 'public'">公共函数</div>
             {{ action.methodName }}
           </div>
-          <div class="ep-action-box text-$ep-text-helper text-lg">
+          <div class="aigen-action-box text-$aigen-text-helper text-lg">
             <div
-              class="ep-edit-btn"
+              class="aigen-edit-btn"
               @click="handleEdit(index, item.type, action)"
             >
-              <EpIcon name="icon--aigen--page-info-outline-rounded" />
+              <AigenIcon name="icon--aigen--page-info-outline-rounded" />
             </div>
-            <div class="ep-del-btn" @click="handleDelete(index, item.type)">
-              <EpIcon name="icon--aigen--delete-outline-rounded" />
+            <div class="aigen-del-btn" @click="handleDelete(index, item.type)">
+              <AigenIcon name="icon--aigen--delete-outline-rounded" />
             </div>
           </div>
         </div>

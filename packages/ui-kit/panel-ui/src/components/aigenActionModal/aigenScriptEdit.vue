@@ -25,7 +25,7 @@ const hasScriptError = computed(() => pageManager.scriptError.value !== null);
     <MonacoEditor
       v-model="pageSchema.script"
       auto-toggle-theme
-      class="ep-editor flex-1"
+      class="aigen-editor flex-1"
       :config="MonacoEditorConfig"
       language="javascript"
     />

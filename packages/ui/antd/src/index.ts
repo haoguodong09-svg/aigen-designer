@@ -50,13 +50,13 @@ export function setupAntd(
   if (firstNumber > 3) {
     // 定义 CSS 样式
     const css = `
-.ep-modal-ant .ep-modal-main {
+.aigen-modal-ant .aigen-modal-main {
   padding: 4px 12px 12px;
 }
-.ep-modal-ant .ant-modal-title {
+.aigen-modal-ant .ant-modal-title {
   padding: 16px 16px 0px;
 }
-.ep-modal-ant .ant-modal-content {
+.aigen-modal-ant .ant-modal-content {
   padding: 0px;
 }`;
     style.append(document.createTextNode(css));
@@ -81,7 +81,7 @@ export function setupAntd(
   );
 
   pluginManager.component.add(
-    'epTable',
+    'aigenTable',
     async () => (await import('ant-design-vue')).Table,
   );
 

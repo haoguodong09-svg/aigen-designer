@@ -3,42 +3,42 @@ body {
   margin: 0;
 }
 
-.ep-page-container {
+.aigen-page-container {
   height: calc(100vh - 64px);
   padding: 8px;
   position: relative;
 }
 
-.ep-page-main {
-  background-color: var(--ep-designer-background);
+.aigen-page-main {
+  background-color: var(--aigen-designer-background);
 }
 
-.ep-demo-header {
-  --ep-demo-header-bg: #fff;
-  --ep-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03),
+.aigen-demo-header {
+  --aigen-demo-header-bg: #fff;
+  --aigen-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03),
     0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
-  background: var(--ep-demo-header-bg);
-  box-shadow: var(--ep-demo-header-shadow);
+  background: var(--aigen-demo-header-bg);
+  box-shadow: var(--aigen-demo-header-shadow);
   z-index: 6;
 
   > a,
-  .ep-demo-header-right > a {
-    color: var(--ep-text-main);
+  .aigen-demo-header-right > a {
+    color: var(--aigen-text-main);
   }
 }
 
-.dark .ep-demo-header {
-  --ep-demo-header-bg: #141414;
-  --ep-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.8),
+.dark .aigen-demo-header {
+  --aigen-demo-header-bg: #141414;
+  --aigen-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.8),
     0 1px 6px -1px rgba(0, 0, 0, 0.7), 0 2px 4px 0 rgba(0, 0, 0, 0.7);
 }
 
 /* 当前页面最大化 css */
-.main-maximize .ep-demo-header,
+.main-maximize .aigen-demo-header,
 .main-maximize .ant-layout-sider {
   display: none !important;
 }
 
-.main-maximize .ep-page-container {
+.main-maximize .aigen-page-container {
   height: 100vh;
 }

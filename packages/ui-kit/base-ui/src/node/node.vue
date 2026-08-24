@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type {
   ComponentSchema,
-  EpNodeInstance,
+  AigenNodeInstance,
   FieldStateType,
 } from '@aigen-designer/types';
 
@@ -44,7 +44,7 @@ import {
 
 import dynamicFormItem from './dynamicFormItem.vue';
 
-interface EpNodeProps {
+interface AigenNodeProps {
   componentSchema: ComponentSchema;
   isProperty?: boolean;
   modelValue?: any;
@@ -52,10 +52,10 @@ interface EpNodeProps {
   showHiddenItems?: boolean;
 }
 defineOptions({
-  name: 'EpNode',
+  name: 'AigenNode',
 });
 
-const props = withDefaults(defineProps<EpNodeProps>(), {
+const props = withDefaults(defineProps<AigenNodeProps>(), {
   isProperty: false,
   modelValue: undefined,
   ruleField: () => [],
@@ -343,7 +343,7 @@ function handleAddComponentInstance(vNode?: VNode) {
     );
   }
 
-  const instance = (vNode?.component ?? nodeInstance) as EpNodeInstance;
+  const instance = (vNode?.component ?? nodeInstance) as AigenNodeInstance;
   if (!innerSchema.id || !instance) {
     return;
   }
@@ -507,15 +507,15 @@ onBeforeUnmount(handleVnodeUnmounted);
       :model="formData"
       @check="handleCheck"
       :class="{
-        'ep-hidden': innerSchema.props?.hidden,
-        'ep-readonly': getProps.readonly,
+        'aigen-hidden': innerSchema.props?.hidden,
+        'aigen-readonly': getProps.readonly,
       }"
       @vue:mounted="handleAddComponentInstance"
     >
       <!-- 嵌套组件递归 start -->
       <!-- 渲染子组件 start -->
       <template #node="data">
-        <EpNode v-bind="data" />
+        <AigenNode v-bind="data" />
       </template>
       <!-- 渲染子组件 end -->
       <!-- 渲染布局设计子组件列表 start -->

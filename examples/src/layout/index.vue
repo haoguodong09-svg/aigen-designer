@@ -20,11 +20,11 @@ const { isDark } = useTheme();
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     }"
   >
-    <Layout class="maximize ep-scoped">
+    <Layout class="maximize aigen-scoped">
       <EHeader />
       <Layout>
         <LayoutSider>
-          <div class="ep-demo-menu h-full">
+          <div class="aigen-demo-menu h-full">
             <EMenu />
           </div>
         </LayoutSider>

@@ -1,1 +1,1 @@
-export { default as EpNode } from './node.vue';
+export { default as AigenNode } from './node.vue';

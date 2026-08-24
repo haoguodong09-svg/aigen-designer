@@ -1,1 +1,1 @@
-export { default as EpIcon } from './icon.vue';
+export { default as AigenIcon } from './icon.vue';

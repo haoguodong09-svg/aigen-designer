@@ -3,7 +3,7 @@ import type { RightSidebarModel } from '@aigen-designer/types';
 
 import { computed, ref, shallowRef } from 'vue';
 
-import { EpIcon } from '@aigen-designer/base-ui';
+import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 import AigenBreadcrumb from './breadcrumb.vue';
@@ -35,13 +35,13 @@ function handleClick(item: RightSidebarModel, index: number) {
 }
 </script>
 <template>
-  <div v-if="sidebarComponent" class="ep-right-sidebar-container relative">
+  <div v-if="sidebarComponent" class="aigen-right-sidebar-container relative">
     <!-- 折叠按钮 start -->
     <div
-      class="ep-right-sidebar-hide-btn z-9 absolute flex cursor-pointer items-center justify-center"
+      class="aigen-right-sidebar-hide-btn z-9 absolute flex cursor-pointer items-center justify-center"
       @click="handleHideRight"
     >
-      <EpIcon
+      <AigenIcon
         class="transition-all"
         :class="{ 'rotate-180': hideRightMain }"
         name="icon--aigen--arrow-forward-ios-rounded"
@@ -49,13 +49,13 @@ function handleClick(item: RightSidebarModel, index: number) {
     </div>
     <!-- 折叠按钮 end -->
 
-    <div class="ep-right-sidebar w-308px" :class="{ hide: hideRightMain }">
+    <div class="aigen-right-sidebar w-308px" :class="{ hide: hideRightMain }">
       <AigenBreadcrumb />
-      <ul class="ep-actions-container">
+      <ul class="aigen-actions-container">
         <li
           v-for="(item, index) in rightSidebars"
           :key="index"
-          class="ep-action-item"
+          class="aigen-action-item"
           :title="item.title"
           :class="{ checked: activityBarCheckedIndex === index }"
           @click="handleClick(item, index)"
@@ -63,7 +63,7 @@ function handleClick(item: RightSidebarModel, index: number) {
           {{ item.title }}
         </li>
       </ul>
-      <div class="ep-sidebar-content">
+      <div class="aigen-sidebar-content">
         <component :is="sidebarComponent" />
       </div>
     </div>

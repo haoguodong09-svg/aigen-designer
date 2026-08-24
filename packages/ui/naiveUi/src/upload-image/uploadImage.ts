@@ -74,7 +74,7 @@ export default defineComponent({
       return h(
         'div',
         {
-          class: 'ep-upload-image',
+          class: 'aigen-upload-image',
         },
         {
           default: () => [
