@@ -370,7 +370,7 @@ const getProps = computed(() => {
     // 设计模式下，不添加事件 防止误触发事件
     innerSchema.on &&
       Object.keys(innerSchema.on).forEach((item) => {
-        onEvent[`on${capitalizeFirstLetter(item)}`] = (...args) =>
+        onEvent[`on${capitalizeFirstLetter(item)}`] = (...args: unknown[]) =>
           pageManager.doActions(
             innerSchema.on![item],
             scopeName.value,

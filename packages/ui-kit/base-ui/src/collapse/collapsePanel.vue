@@ -50,26 +50,29 @@ const handleHeaderClick = () => {
 };
 
 // 动画处理
-const handleEnter = (el: HTMLElement) => {
-  el.style.height = '0';
-  el.style.overflow = 'hidden';
+const handleEnter = (el: Element) => {
+  const target = el as HTMLElement;
+  target.style.height = '0';
+  target.style.overflow = 'hidden';
   setTimeout(() => {
     if (contentRef.value) {
-      el.style.height = `${contentRef.value.offsetHeight}px`;
+      target.style.height = `${contentRef.value.offsetHeight}px`;
     }
   }, 0);
 };
 
-const handleAfterEnter = (el: HTMLElement) => {
-  el.style.height = 'auto';
-  el.style.overflow = 'visible';
+const handleAfterEnter = (el: Element) => {
+  const target = el as HTMLElement;
+  target.style.height = 'auto';
+  target.style.overflow = 'visible';
 };
 
-const handleLeave = (el: HTMLElement) => {
-  el.style.height = `${el.offsetHeight}px`;
-  el.style.overflow = 'hidden';
+const handleLeave = (el: Element) => {
+  const target = el as HTMLElement;
+  target.style.height = `${target.offsetHeight}px`;
+  target.style.overflow = 'hidden';
   setTimeout(() => {
-    el.style.height = '0';
+    target.style.height = '0';
   }, 0);
 };
 

@@ -43,8 +43,8 @@ const selectedKeysComputed = computed({
 });
 
 // 输入防抖 150ms 后进入过滤计算
-const debouncedSetKeyword = debounce((value: string) => {
-  filterKeyword.value = value;
+const debouncedSetKeyword = debounce((value: unknown) => {
+  filterKeyword.value = value as string;
 }, 150);
 watch(keyword, (value) => debouncedSetKeyword(value));
 
@@ -62,7 +62,7 @@ const getTreeData = computed({
  * @param tree 节点树
  * @param labelToFilter 过滤关键字
  */
-function filterTreeByLabel(tree, labelToFilter) {
+function filterTreeByLabel(tree: ComponentSchema[], labelToFilter: string) {
   const filteredTree: ComponentSchema[] = [];
 
   tree.forEach((item: ComponentSchema) => {
