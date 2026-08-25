@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ElDatePicker } from 'element-plus';
+import { ElTimePicker } from 'element-plus';
 
 // 二次封装组件，显式处理 modelValue 绑定，
-// 配合 valueFormat 保证值与 antd 一致为字符串格式（如 YYYY-MM-DD）
+// 配合 valueFormat 保证值与 antd 一致为字符串格式（如 HH:mm:ss）
 const props = withDefaults(
   defineProps<{
     modelValue?: null | string | string[];
@@ -27,7 +27,7 @@ function handleUpdate(value: null | string | string[]) {
 </script>
 
 <template>
-  <ElDatePicker
+  <ElTimePicker
     :model-value="props.modelValue"
     :placeholder="props.placeholder"
     @update:model-value="handleUpdate"

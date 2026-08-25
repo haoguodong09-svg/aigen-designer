@@ -126,8 +126,8 @@ export default {
 function setDefaultValue(e) {
   const defaultValue = e.values.props?.inactiveValue || false;
   // 如果inactiveValue === ''，则在下一个事件循环中删除 inactiveValue 属性
-  if (e.values.props.unCheckedValue === '') {
-    delete e.values.props.unCheckedValue;
+  if (e.values.props.inactiveValue === '') {
+    delete e.values.props.inactiveValue;
   }
 
   // 如果activeValue === ''，则在下一个事件循环中删除 activeValue 属性

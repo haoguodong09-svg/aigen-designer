@@ -1,26 +1,9 @@
 import type { ComponentConfigModel } from '@aigen-designer/types';
 
 export default {
-  component: () => import('./textarea.vue'),
+  bindModel: 'modelValue',
+  component: () => import('./time-picker.vue'),
   config: {
-    action: [
-      {
-        description: '使 input 获取焦点',
-        type: 'focus',
-      },
-      {
-        description: '使 input 失去焦点',
-        type: 'blur',
-      },
-      {
-        description: '清除 input 值',
-        type: 'clear',
-      },
-      {
-        description: '选中 input 中的文字',
-        type: 'select',
-      },
-    ],
     attribute: [
       {
         field: 'field',
@@ -35,11 +18,21 @@ export default {
       {
         field: 'props.defaultValue',
         label: '默认值',
-        type: 'textarea',
+        type: 'time',
       },
       {
         field: 'props.placeholder',
         label: '占位内容',
+        type: 'input',
+      },
+      {
+        field: 'props.format',
+        label: '显示格式',
+        type: 'input',
+      },
+      {
+        field: 'props.valueFormat',
+        label: '数据格式',
         type: 'input',
       },
       {
@@ -65,34 +58,23 @@ export default {
         type: 'select',
       },
       {
-        field: 'props.maxlength',
-        label: '最大输入长度',
-        props: {
-          min: 0,
-        },
-        type: 'number',
-      },
-      {
-        field: 'props.showWordLimit',
-        label: '统计字数',
-        show: ({ values }) => {
-          return values.props.maxlength;
-        },
+        field: 'props.arrowControl',
+        label: '箭头控制',
         type: 'switch',
-      },
-      {
-        field: 'props.autosize.minRows',
-        label: '最小行数',
-        type: 'number',
-      },
-      {
-        field: 'props.autosize.maxRows',
-        label: '最大行数',
-        type: 'number',
       },
       {
         field: 'props.clearable',
         label: '可清空',
+        type: 'switch',
+      },
+      {
+        field: 'props.editable',
+        label: '可输入',
+        type: 'switch',
+      },
+      {
+        field: 'props.readonly',
+        label: '只读',
         type: 'switch',
       },
       {
@@ -115,33 +97,23 @@ export default {
     ],
     event: [
       {
-        description: '输入值',
-        type: 'input',
-      },
-      {
-        description: '值修改',
+        description: '值变化时',
         type: 'change',
-      },
-      {
-        description: '获取焦点',
-        type: 'focus',
-      },
-      {
-        description: '失去焦点',
-        type: 'blur',
       },
     ],
   },
   defaultSchema: {
-    field: 'textarea',
+    field: 'time',
     input: true,
-    label: '文本域',
+    label: '时间选择器',
     props: {
-      placeholder: '请输入',
+      format: 'HH:mm:ss',
+      placeholder: '请选择',
+      valueFormat: 'HH:mm:ss',
     },
-    type: 'textarea',
+    type: 'time',
   },
   groupName: '表单',
-  icon: 'icon--aigen--edit-square-outline-rounded',
-  sort: 705,
+  icon: 'icon--aigen--time-line',
+  sort: 920,
 } as ComponentConfigModel;
