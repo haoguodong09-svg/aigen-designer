@@ -9,8 +9,44 @@ import type { FormItemRule } from './rules';
 export interface ActionsModel {
   args?: string;
   componentId?: null | string;
+  /** 条件（纯 JSON DSL 对象而非函数——函数不可序列化），可选，P1 仅存储，P3 运行时生效 */
+  condition?: ConditionGroup;
+  /** 延迟执行毫秒数，可选，P1 仅存储，P3 运行时生效 */
+  delay?: number;
+  /** 启停用，缺省视为 true（undefined 视为启用，兼容旧数据），P1 仅存储，P3 运行时生效 */
+  enabled?: boolean;
+  /** 动作分组名（行为流分组），可选，P1 先存字段 P3 生效 */
+  group?: string;
+  /** 稳定身份：拖拽 key、复制、条件引用、日志定位；旧数据缺省，读取层（normalizeAction）补 UUID */
+  id?: string;
   methodName: string;
+  /** 动作命名（人话，用于摘要/搜索/下拉展示），可选 */
+  name?: string;
+  /** 备注，可选 */
+  remark?: string;
   type: 'component' | 'custom' | 'public';
+}
+
+/**
+ * 动作条件组（纯 JSON DSL，不存函数，保证可序列化），P1 仅存储，P3 运行时求值生效。
+ * 支持 AND/OR 逻辑组合与嵌套，示例：
+ * { logic: 'AND', items: [{ field: 'name', operator: '==', value: '张三' }, { logic: 'OR', items: [...] }] }
+ */
+export interface ConditionGroup {
+  /** 条件项列表：可为字段比较条件，也可为嵌套的条件组 */
+  items: Array<
+    | {
+        /** 取值字段（formData 等上下文中的字段路径） */
+        field: string;
+        /** 比较运算符 */
+        operator: '!=' | '<' | '<=' | '==' | '>' | '>=' | 'empty' | 'in';
+        /** 比较值（'empty' 等一元运算符可缺省），可选 */
+        value?: unknown;
+      }
+    | ConditionGroup
+  >;
+  /** 组合逻辑：AND（全部满足）/ OR（任一满足） */
+  logic: 'AND' | 'OR';
 }
 
 export interface RenderCallbackParams {

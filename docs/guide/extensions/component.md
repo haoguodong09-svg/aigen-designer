@@ -1,8 +1,6 @@
 # 组件扩展
 
-:::tip 组件扩展
-`pluginManager` 提供了register方法添加组件，使您可以轻松扩展设计器的组件库。
-:::
+:::tip 组件扩展 `pluginManager` 提供了register方法添加组件，使您可以轻松扩展设计器的组件库。:::
 
 参考demo仓库： [https://github.com/haoguodong09-svg/aigen-designer/tree/develop/examples](https://github.com/haoguodong09-svg/aigen-designer/tree/develop/examples)
 
@@ -73,18 +71,18 @@ button:hover {
 [ComponentConfigModel 配置字段类型](#componentconfigmodel-类型及字段注释)
 
 ```ts
-import { type ComponentConfigModel } from 'aigen-designer'
+import { type ComponentConfigModel } from 'aigen-designer';
 
 export default {
   component: async () => await import('./index.vue'),
-  groupName: "自定义组件",
-  icon: "aigen-icon-write",
+  groupName: '自定义组件',
+  icon: 'aigen-icon-write',
   defaultSchema: {
     label: '测试扩展组件',
     type: 'test',
     props: {
-      label: '测试组件'
-    }
+      label: '测试组件',
+    },
   },
   config: {
     attribute: [
@@ -92,39 +90,40 @@ export default {
         label: '组件标题',
         type: 'input',
         field: 'label',
-        value: '测试组件'
-      }
+        value: '测试组件',
+      },
     ],
     event: [
       {
         type: 'click',
-        description: '点击按钮时触发'
-      }
+        description: '点击按钮时触发',
+      },
     ],
     style: [
       {
         label: '背景颜色',
         type: 'color',
         field: 'backgroundColor',
-        value: '#f9f9f9'
+        value: '#f9f9f9',
       },
       {
         label: '边框颜色',
         type: 'color',
         field: 'borderColor',
-        value: '#e0e0e0'
-      }
-    ]
-  }
-} as ComponentConfigModel
+        value: '#e0e0e0',
+      },
+    ],
+  },
+} as ComponentConfigModel;
 ```
 
 ### 3. 新建扩展入口文件
 
 #### 新建designer-extensions/index.ts(扩展函数)
+
 ```ts
-import { pluginManager } from "aigen-designer";
-import Test from "./test";
+import { pluginManager } from 'aigen-designer';
+import Test from './test';
 
 // 安装扩展
 export function setupDesignerExtensions(): void {
@@ -138,7 +137,7 @@ export function setupDesignerExtensions(): void {
 #### main.ts 添加执行扩展函数
 
 ```ts
-import { setupDesignerExtensions } from "./designer-extensions";
+import { setupDesignerExtensions } from './designer-extensions';
 
 // 执行扩展函数
 setupDesignerExtensions();
@@ -162,14 +161,33 @@ setupDesignerExtensions();
   - `editConstraints`: 设计编辑约束，用于限制组件在设计器中的操作
   - `config`: 组件配置，包含属性编辑、事件、样式和可执行函数等
     - `attribute`: 属性编辑列表，用于在属性面板中配置组件属性
-    - `event`: 可触发事件列表，用于在事件面板中配置组件事件
+    - `event`: 可触发事件列表，用于在行为（事件）面板中配置组件事件，每项包含：
+      - `type`: 事件技术名（如 `change`、`click`）
+      - `description`: 事件人话描述（如「值改变时触发」），用于面板展示
+      - `businessName`: 业务化命名（人话），可选，用于行为面板中事件分组的人话展示，缺省时回退使用 `description`
     - `style`: 样式编辑组件列表，用于在样式面板中配置组件样式
-    - `action`: 可执行函数列表，用于在动作面板中配置组件的可执行函数
+    - `action`: 可执行函数列表，用于在动作面板中配置组件的可执行函数，每项包含：
+      - `type`: 方法技术名（如 `setValue`）
+      - `description` / `describe`: 方法人话说明，用于动作配置向导中方法列表的展示（`describe` 为旧字段，仅用于兼容旧版，请优先使用 `description`）
+      - `args`: 参数默认值列表，可选
+      - `argsConfigs`: 参数表单配置（`ComponentSchema[]`），可选，按参数顺序与 `args` 对应，用于动作配置向导的参数表单渲染
+
+:::tip 关于 businessName 组件事件（`config.event`）支持可选字段 `businessName`（业务化命名），用于行为面板中事件分组的人话展示，缺省时回退使用 `description`：
+
+```ts
+{
+  description: '输入值时',
+  type: 'input',
+  businessName: '输入时'
+}
+```
+
+:::
 
 ### 示例
 
 ```ts
-import { pluginManager, type ComponentConfigModel } from 'aigen-designer'
+import { pluginManager, type ComponentConfigModel } from 'aigen-designer';
 
 const Test = {
   // 组件，可以是异步加载函数
@@ -189,8 +207,8 @@ const Test = {
     props: {
       // 组件默认属性
       label: '测试组件',
-      value: ''
-    }
+      value: '',
+    },
   },
   // 设计编辑约束
   editConstraints: {
@@ -201,7 +219,7 @@ const Test = {
     // 表单字段是否固定 不添加随机UUID
     fixedField: false,
     // 组件锁定，不可编辑，不可选中，不可复制删除
-    locked: false
+    locked: false,
   },
   // 组件配置
   config: {
@@ -212,7 +230,7 @@ const Test = {
         type: 'input',
         field: 'name',
         // 属性默认值
-        value: '默认值'
+        value: '默认值',
       },
       {
         label: '属性2',
@@ -220,20 +238,23 @@ const Test = {
         field: 'type',
         options: [
           { label: '选项1', value: 'option1' },
-          { label: '选项2', value: 'option2' }
-        ]
-      }
+          { label: '选项2', value: 'option2' },
+        ],
+      },
     ],
     // 事件列表
     event: [
       {
         type: 'change',
-        description: '值改变时触发'
+        description: '值改变时触发',
+        // 业务化命名（可选），行为面板中人话展示，缺省回退 description
+        businessName: '值变化时',
       },
       {
         type: 'click',
-        description: '点击时触发'
-      }
+        description: '点击时触发',
+        businessName: '点击时',
+      },
     ],
     // 样式编辑列表
     style: [
@@ -241,32 +262,40 @@ const Test = {
         label: '宽度',
         type: 'input',
         field: 'width',
-        value: '100%'
+        value: '100%',
       },
       {
         label: '高度',
         type: 'input',
         field: 'height',
-        value: '40px'
-      }
+        value: '40px',
+      },
     ],
     // 可执行函数列表
     action: [
       {
         type: 'reset',
+        // 方法人话说明，用于动作配置向导中方法列表展示（describe 为旧字段，请优先使用 description）
         description: '重置组件',
+        // 参数默认值列表（可选）
         args: ['参数1', '参数2'],
+        // 参数表单配置（可选），按参数顺序与 args 对应，渲染在动作配置向导的参数步骤
         argsConfigs: [
           {
             label: '参数1',
             type: 'input',
-            field: 'arg1'
-          }
-        ]
-      }
-    ]
-  }
-}
+            field: 'arg1',
+          },
+          {
+            label: '参数2',
+            type: 'input',
+            field: 'arg2',
+          },
+        ],
+      },
+    ],
+  },
+};
 
 // 注册组件
 pluginManager.component.register(Test);
@@ -285,7 +314,23 @@ export interface EditConstraintsModel {
   // 组件锁定，不可编辑，不可选中，不可复制删除
   locked?: boolean;
 }
-  
+
+export interface EventModel {
+  // 业务化命名（人话，行为面板事件分组展示用），可选；缺省时回退使用 description
+  businessName?: string;
+  // 事件人话描述，用于行为面板展示
+  description: string;
+  // 事件技术名，如 change / click
+  type: string;
+}
+
+export interface ActionModel extends EventModel {
+  // 参数默认值列表，可选
+  args?: unknown[];
+  // 参数表单配置（可选），按参数顺序与 args 对应，用于动作配置向导的参数表单渲染
+  argsConfigs?: ComponentSchema[];
+}
+
 export interface ComponentConfigModel {
   // 组件
   component: any;
@@ -314,6 +359,23 @@ export interface ComponentConfigModel {
   sort?: number;
 }
 ```
+
+## 生命周期事件
+
+:::tip 生命周期事件除组件自身注册的 `config.event` 外，所有组件还内置了一组**生命周期事件**（技术名直接取自 Vue 组件生命周期）。行为面板中它们被**业务化命名**（人话）展示并分组：**页面级生命周期**（1 个）与**组件级生命周期**（7 个，按 挂载/更新/卸载/错误 子分组）；技术名仅在「高级/源码」模式展示，且始终伴随人话解释。:::
+
+| 技术名（旧事件名） | 业务化命名（人话） | 触发时机 | 典型用途 |
+| --- | --- | --- | --- |
+| `aigenReady` | 页面加载完成 | 首屏全部组件挂载后触发一次 | 初始化默认值、拉取首屏数据、初始跳转 |
+| `vnodeMounted` | 组件挂载完成 | 当前组件完成首次渲染后触发 | 组件自身初始化、加载选项数据 |
+| `vnodeBeforeMount` | 组件挂载前 | 组件即将渲染到页面之前 | 预置初始属性/状态 |
+| `vnodeUpdated` | 组件更新完成 | 当前组件的属性或数据更新之后触发 | 值变化的后续处理（简单场景建议优先用对应业务事件，如 `change`） |
+| `vnodeBeforeUpdate` | 组件更新前 | 更新发生之前 | 记录旧值、拦截更新 |
+| `vnodeUnmounted` | 组件卸载完成 | 组件从页面移除后触发 | 清理定时器、解绑订阅 |
+| `vnodeBeforeUnmount` | 组件卸载前 | 组件即将被移除之前 | 释放资源、确认离开 |
+| `vnodeErrorCaptured` | 组件错误捕获 | 组件内部渲染或运行出错时 | 错误提示、降级显示 |
+
+> 以上 8 个生命周期事件对所有组件均可用，无需在 `config.event` 中重复声明；行为面板会自动按上述分组与命名展示。
 
 ## 组件扩展最佳实践
 

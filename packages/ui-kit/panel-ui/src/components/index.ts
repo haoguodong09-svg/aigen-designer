@@ -34,6 +34,11 @@ export function setupComponent(pluginManager: PluginManager): void {
     async () => await import('./AigenActionEditor/index.vue'),
   );
   pluginManager.component.add(
+    'aigenActionDrawer',
+    async () => await import('./AigenActionDrawer/index.vue'),
+  );
+  // 兼容旧宿主：旧 1200px 动作配置弹窗注册保持不动
+  pluginManager.component.add(
     'aigenActionModal',
     async () => await import('./aigenActionModal/index.vue'),
   );

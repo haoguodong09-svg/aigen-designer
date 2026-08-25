@@ -24,6 +24,6 @@ export function setupRightSidebar(pluginManager: PluginManager): void {
     component: async () => await import('./event/event.vue'),
     id: 'event_view',
     sort: 300,
-    title: '事件',
+    title: '行为',
   });
 }

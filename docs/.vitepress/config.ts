@@ -109,6 +109,10 @@ export default defineConfig({
               link: '/guide/action/customFunctions',
               text: '自定义函数',
             },
+            {
+              link: '/guide/action/behavior',
+              text: '行为（事件与动作）配置',
+            },
           ],
         },
         {

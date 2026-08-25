@@ -29,6 +29,8 @@ export interface ViewsContainersModel {
 export type Components = Record<string, ComponentType>;
 
 export interface EventModel {
+  /** 业务化命名（人话，事件面板展示用），可选；缺省时回退使用 description */
+  businessName?: string;
   /**
    * @deprecated 此属性用于兼容旧版，后期可能会移除，请使用description属性代替。
    */
