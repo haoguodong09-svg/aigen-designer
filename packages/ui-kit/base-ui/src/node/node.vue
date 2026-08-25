@@ -441,7 +441,17 @@ function handleAddComponentInstance(vNode?: VNode) {
   instance.exposed.setAttr = (key: string, value: any) => {
     // 确保 props 属性对象存在
     innerSchema.props ??= {};
-    return (innerSchema.props[key] = value);
+    const prev = innerSchema.props[key];
+    innerSchema.props[key] = value;
+
+    // 初始化类属性 defaultValue：组件受控渲染（v-model 绑定 innerValue）下
+    // 仅修改 props 不会生效（antd/elementPlus/naiveUi 的 defaultValue 只用于
+    // 非受控初始化），此处立即把新值应用为当前表单值（isInit=true 不触发 formChange 钩子）
+    if (key === 'defaultValue' && value !== prev) {
+      handleUpdate(value, true);
+    }
+
+    return innerSchema.props[key];
   };
 
   // 添加获取设置方法

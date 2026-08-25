@@ -342,6 +342,9 @@ const delayText = computed({
             </option>
           </select>
         </div>
+        <p v-if="selectedAttr === 'defaultValue'" class="aigen-step-args-tip">
+          默认值属于初始化属性：动作触发时会立即把该值应用到目标元素的当前值。
+        </p>
         <div v-if="selectedAttrSchema" class="aigen-step-args-row">
           <span class="aigen-step-args-row-label">属性值</span>
           <div class="aigen-step-args-row-input">
