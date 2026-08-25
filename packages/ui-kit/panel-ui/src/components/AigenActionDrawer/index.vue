@@ -439,7 +439,9 @@ defineExpose({
 .aigen-drawer-mask {
   position: fixed;
   inset: 0;
-  z-index: 2990;
+  /* 1000：低于各 UI 库弹层（antd dropdown 1050 / elementPlus popper 2000+ / naive 3000+），
+     保证抽屉内组件的下拉、日期选择等弹层可正常弹出且不被遮罩拦截 */
+  z-index: 1000;
   background: rgba(0, 0, 0, 0.35);
 }
 
@@ -452,7 +454,7 @@ defineExpose({
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 3000;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   width: 720px;
