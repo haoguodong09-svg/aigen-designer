@@ -10,12 +10,12 @@ import { ref } from 'vue';
 import {
   applyPatch,
   createPatch,
-  debounce,
-  deepClone,
   deepCompareAndModify,
   deepToRaw,
   findSchemaById,
 } from '@aigen-designer/utils';
+
+import { postToWorker } from './schemaWorkerBridge';
 
 /**
  * 历史记录模型 - 用于存储页面状态的快照或差异
@@ -68,6 +68,20 @@ export function useRevoke(
    */
   let prevState: null | Record<string, unknown> = null;
 
+  /**
+   * 链版本号：undo/redo/reset/导入/加载数据等链变更时递增。
+   * 用于作废防抖窗口内挂起的过期提交（防抖回调触发时校验版本，若链已被改变则放弃提交，
+   * 避免基于已撤销状态产生「幽灵空记录」，对齐 revokeRace 语义）。
+   */
+  let chainVersion = 0;
+
+  /**
+   * 增量回放缓存：历史记录对象 → 该记录对应的完整页面状态（只读副本）。
+   * 链结构变更（提交/重置/导入/加载数据）时清空；undo/redo 仅移动记录对象，
+   * 记录内容不变，缓存可跨 undo/redo 复用，实现增量回放（性能文档 P-W3）。
+   */
+  const stateCache = new Map<RecordModel, Record<string, unknown>>();
+
   /** 最大历史记录数量限制，防止内存占用过大 */
   const MAX_RECORDS = 60;
 
@@ -87,11 +101,50 @@ export function useRevoke(
   ];
 
   /**
+   * 深度克隆已剥离代理的普通数据（内部实现）
+   * @description 用于替代 deepClone：raw 数据经 rawPageSchema() 剥离代理后已无 Proxy，
+   * 直接深克隆即可，避免 deepClone 内部对已 raw 数据再次 deepToRaw 的冗余遍历
+   * （性能文档 P-W3：cloneCurrentState 内 deepClone→deepToRaw 双重遍历）。
+   * 函数等不可 JSON 序列化的值按引用保留，与 deepClone 手动回退路径行为一致。
+   */
+  const cloneRawState = (
+    value: unknown,
+    cache = new WeakMap<object, unknown>(),
+  ): unknown => {
+    if (value === null || typeof value !== 'object') {
+      return value;
+    }
+    if (cache.has(value as object)) {
+      return cache.get(value as object);
+    }
+    if (Array.isArray(value)) {
+      const cloned = value.map((item) => cloneRawState(item, cache));
+      cache.set(value as object, cloned);
+      return cloned;
+    }
+    const cloned: Record<string, unknown> = {};
+    cache.set(value as object, cloned);
+    for (const key of Object.keys(value as Record<string, unknown>)) {
+      cloned[key] = cloneRawState(
+        (value as Record<string, unknown>)[key],
+        cache,
+      );
+    }
+    return cloned;
+  };
+
+  /**
    * 从基线快照开始回放差异，还原指定记录对应的页面状态
    * @param record - 历史链中的记录（需为历史列表中的记录对象）
    * @returns 该记录对应的完整页面状态（普通对象）
    */
   const materializeState = (record: RecordModel): Record<string, unknown> => {
+    // 命中缓存：直接返回只读状态副本（调用方仅读取，不会污染缓存）
+    const cached = stateCache.get(record);
+    if (cached !== undefined) {
+      return cached;
+    }
+
     const chain = getChain();
     const index = chain.indexOf(record);
     if (index === -1) {
@@ -103,8 +156,21 @@ export function useRevoke(
     if (!first || !first.snapshot) {
       throw new Error('历史链缺少基线快照，无法还原状态');
     }
+
+    // 增量回放（性能文档 P-W3）：从目标记录之前最近的一个已缓存状态开始，
+    // 避免每次撤销/重做都从基线全量回放（最长 60 条 diff 顺序执行）
+    let startIndex = 0;
     let state = JSON.parse(first.snapshot) as Record<string, unknown>;
-    for (let i = 1; i <= index; i++) {
+    for (let i = 0; i < index; i++) {
+      const cachedState = stateCache.get(chain[i]);
+      if (cachedState !== undefined) {
+        startIndex = i;
+        // 克隆缓存状态再回放，避免 applyPatch 原地修改污染缓存
+        state = cloneRawState(cachedState) as Record<string, unknown>;
+      }
+    }
+
+    for (let i = startIndex + 1; i <= index; i++) {
       const item = chain[i];
       if (item.diff) {
         applyPatch(state, JSON.parse(item.diff) as DiffOp[]);
@@ -115,6 +181,9 @@ export function useRevoke(
         throw new Error('历史记录缺少差异数据，无法还原状态');
       }
     }
+
+    // 缓存目标记录对应的完整状态（只读副本），供后续增量回放复用
+    stateCache.set(record, cloneRawState(state) as Record<string, unknown>);
     return state;
   };
 
@@ -126,12 +195,13 @@ export function useRevoke(
 
   /**
    * 克隆页面状态，作为下一次差异计算的基准
-   * @param raw - 可传入已剥离代理的状态，避免重复遍历
+   * @param raw - 已剥离代理的当前页面状态（rawPageSchema() 的返回值，即 alreadyRaw）；
+   * 省略时内部自动剥离代理
    */
   const cloneCurrentState = (
     raw?: Record<string, unknown>,
   ): Record<string, unknown> =>
-    deepClone(raw ?? rawPageSchema()) as unknown as Record<string, unknown>;
+    cloneRawState(raw ?? rawPageSchema()) as Record<string, unknown>;
 
   /**
    * 创建当前状态的记录
@@ -144,6 +214,7 @@ export function useRevoke(
     type: string,
     raw: Record<string, unknown>,
     ops: DiffOp[] | null,
+    precomputedDiff?: string,
   ): RecordModel => {
     const record: RecordModel = {
       selectedId: state.selectedNode?.id,
@@ -154,8 +225,9 @@ export function useRevoke(
       // 链首基线记录：保存完整快照
       record.snapshot = JSON.stringify(raw);
     } else {
-      // 后续记录：只保存与上一状态的差异
-      record.diff = JSON.stringify(ops);
+      // 后续记录：只保存与上一状态的差异。
+      // W16 Worker 路径可传入已序列化的 diff，避免主线程重复 JSON.stringify（1-8ms）
+      record.diff = precomputedDiff ?? JSON.stringify(ops);
     }
     return record;
   };
@@ -188,11 +260,60 @@ export function useRevoke(
     }
   };
 
-  // 防抖处理：忽略过于频繁的操作记录（重要操作跳过防抖）
-  const debounceCommit = debounce<(type: any) => void>(
-    commitCurrentState,
-    DEBOUNCE_TIME,
-  );
+  /** 防抖定时器句柄（可取消，见 clearPendingDebounce/dispose） */
+  let debounceTimer: null | ReturnType<typeof setTimeout> = null;
+  /** 防抖窗口内暂存的提交类型 */
+  let pendingCommitType: null | string = null;
+  /** 提交调度时的链版本号，回调触发时校验，防止基于已撤销状态提交 */
+  let pendingCommitVersion = -1;
+
+  /**
+   * 取消挂起的防抖提交（卸载时由 dispose 调用，避免定时器对已卸载 pageSchema 执行）
+   */
+  const clearPendingDebounce = (): void => {
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    pendingCommitType = null;
+  };
+
+  /**
+   * 释放资源：取消挂起的防抖提交
+   * @description ⚠️ core 接入点：设计器组件 onUnmounted 时应调用本方法（W6-6.4），
+   * 否则组件卸载后防抖定时器仍会对已卸载的 pageSchema 执行提交。
+   */
+  const dispose = (): void => {
+    clearPendingDebounce();
+  };
+
+  /**
+   * 防抖处理：忽略过于频繁的操作记录（重要操作跳过防抖）
+   * @description 修复防抖竞态（W6-6.2）：push 后防抖窗口内发生 undo/redo/reset/导入
+   * 等链变更时，回调触发时校验链版本——若链已被改变则放弃本次提交（过期提交），
+   * 避免基于已撤销状态产生「幽灵空记录」（diff: []）。
+   */
+  const debounceCommit = (type: string): void => {
+    pendingCommitType = type;
+    pendingCommitVersion = chainVersion;
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+    }
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      const capturedType = pendingCommitType;
+      pendingCommitType = null;
+      if (pendingCommitVersion !== chainVersion) {
+        // 链已被改变：本次提交过期。与正常提交语义一致，作废旧的重做分支
+        // （未落库的编辑意图会截断分支），但不产生空记录、不破坏链结构。
+        undoList.value = [];
+        return;
+      }
+      if (capturedType !== null) {
+        commitCurrentState(capturedType);
+      }
+    }, DEBOUNCE_TIME) as unknown as ReturnType<typeof setTimeout>;
+  };
 
   /**
    * 添加新的历史记录
@@ -210,6 +331,10 @@ export function useRevoke(
       currentRecord.value = createRecord(type, raw, null);
       prevState = nextPrev;
       undoList.value = [];
+      // 链已变化：取消挂起的防抖提交并递增版本号，作废防抖窗口内未落库的编辑
+      clearPendingDebounce();
+      chainVersion++;
+      stateCache.clear();
       return;
     }
 
@@ -242,35 +367,138 @@ export function useRevoke(
     }
   };
 
+  /** 提交序号：每次 commit 递增；异步 Worker 响应仅当序号仍为最新时才生效 */
+  let commitSeq = 0;
+
+  /**
+   * 判断当前环境是否可用 Schema Worker
+   * @description jsdom/无 Worker 环境（如部分测试与 SSR）回退同步计算，保证行为一致
+   */
+  const isWorkerAvailable = (): boolean => typeof Worker !== 'undefined';
+
+  /**
+   * 同步计算相对上一状态的差异（无 Worker 环境的回退路径）
+   */
+  const computeDiffSync = (
+    prev: Record<string, unknown>,
+    current: Record<string, unknown>,
+  ): { diff: string; ops: DiffOp[] } => {
+    const ops = createPatch(prev, current);
+    return { diff: JSON.stringify(ops), ops };
+  };
+
+  /**
+   * 异步计算相对上一状态的差异（移入 W16 Schema Worker，性能文档 P-W3）
+   * @description createPatch 递归 diff（3-15ms）+ JSON.stringify 全量序列化（1-8ms）
+   * 在 Worker 中执行，主线程仅做响应式合并；deepCompareAndModify 必须留主线程。
+   */
+  const computeDiffAsync = (
+    prev: Record<string, unknown>,
+    current: Record<string, unknown>,
+  ): Promise<{ diff: string; ops: DiffOp[] }> =>
+    postToWorker('computeDiff', { currentState: current, prevState: prev });
+
+  /**
+   * 异步预取指定历史记录的还原状态到增量回放缓存（性能文档 P-W3）
+   * @description 将 applyPatch 链回放（11-58ms）移入 Worker 计算；响应经提交序号与
+   * 链版本双重校验后回填缓存，undo/redo 保持同步 API（缓存命中即 O(1)）。
+   * 无 Worker 环境或预取失败时静默忽略，undo 时回退同步增量回放。
+   */
+  const prefetchMaterialize = (record: RecordModel): void => {
+    if (!isWorkerAvailable()) {
+      return;
+    }
+    const chain = getChain();
+    const index = chain.indexOf(record);
+    if (index === -1) {
+      return;
+    }
+    const seq = commitSeq;
+    const version = chainVersion;
+    const records = chain.map((r) => ({ diff: r.diff, snapshot: r.snapshot }));
+    postToWorker('materialize', { records, targetIndex: index })
+      .then((res: { state: Record<string, unknown> }) => {
+        // 过期校验：期间发生新的提交或链变更则丢弃，避免缓存被污染
+        if (seq !== commitSeq || version !== chainVersion) {
+          return;
+        }
+        stateCache.set(record, res.state);
+      })
+      .catch(() => {
+        // 预取失败静默处理：undo 时回退同步增量回放
+      });
+  };
+
   /**
    * 提交当前状态到历史记录
    * @description 将当前暂存的状态正式记录到历史记录中，并创建新的暂存记录
    * @param type - 操作类型描述
    */
   function commitCurrentState(type: string): void {
+    // 取消仍挂起的防抖提交（重要操作直接提交时，防止旧的防抖回调重复提交）
+    clearPendingDebounce();
+
     // 无条件作废重做列表（历史分支已改变；导入/reset 后也不允许旧分支重做）
     undoList.value = [];
 
-    // 剥离一次代理，供快照/差异/差异基准复用
+    // 剥离一次代理，供快照/差异/差异基准复用（必须在主线程同步捕获当前状态）
     const raw = rawPageSchema();
 
+    // 提交序号与链版本：异步 Worker 响应回调中校验，防止过期提交覆盖新编辑
+    const seq = ++commitSeq;
+    const versionAtCapture = chainVersion;
+
+    // 链首基线记录：完整快照（无差异计算，保持同步；先序列化成功再入链）
     if (currentRecord.value === null || prevState === null) {
-      // 链首基线记录：完整快照（先克隆基准，失败时不破坏现有链）
       const nextPrev = cloneCurrentState(raw);
-      currentRecord.value = createRecord(type, raw, null);
+      const record = createRecord(type, raw, null);
+      currentRecord.value = record;
       prevState = nextPrev;
-    } else {
-      // 后续记录：相对上一状态的差异
-      const ops = createPatch(prevState, raw);
-      const nextPrev = cloneCurrentState(raw);
-      recordList.value.push(currentRecord.value);
-      currentRecord.value = createRecord(type, raw, ops);
-      prevState = nextPrev;
+      stateCache.clear();
+      if (recordList.value.length > MAX_RECORDS) {
+        rebaseAfterShift();
+      }
+      return;
     }
 
-    // 限制历史记录数量，超出时移除最早记录并重编码链首基线
-    if (recordList.value.length > MAX_RECORDS) {
-      rebaseAfterShift();
+    // 差异计算的基准：进入差异提交分支后 prevState 已保证非空（基线分支已提前返回），
+    // 提取为 const 以便在异步回调闭包中保留类型收窄
+    const diffBaseline = prevState;
+
+    // 提交回调：主线程仅做响应式合并（创建记录/入链/更新差异基准）
+    const applyCommit = (diffResult: { diff: string; ops: DiffOp[] }): void => {
+      // 过期校验：期间发生更新的提交或链变更（undo/redo/reset/导入）则丢弃本次提交
+      if (seq !== commitSeq || versionAtCapture !== chainVersion) {
+        return;
+      }
+      const pushedRecord = currentRecord.value as RecordModel;
+      // 注意（W6-6.3）：diff 为预序列化字符串，createRecord 在 recordList.push 之前
+      // 完成记录构建，避免 ops 无法序列化抛错时「链已 push 而状态未更新」的损坏场景
+      const nextPrev = cloneCurrentState(raw);
+      const record = createRecord(type, raw, diffResult.ops, diffResult.diff);
+      recordList.value.push(pushedRecord);
+      currentRecord.value = record;
+      prevState = nextPrev;
+
+      // 链结构已变化：清空增量回放缓存，并异步预取被推入记录（下次 undo 目标）的还原状态
+      stateCache.clear();
+      prefetchMaterialize(pushedRecord);
+
+      // 限制历史记录数量，超出时移除最早记录并重编码链首基线
+      if (recordList.value.length > MAX_RECORDS) {
+        rebaseAfterShift();
+      }
+    };
+
+    if (isWorkerAvailable()) {
+      // W16 Worker：diff 计算与序列化移入 Worker，响应后主线程合并
+      computeDiffAsync(diffBaseline, raw).then(applyCommit, (error) => {
+        console.warn('[revoke] Worker 计算差异失败，回退同步计算:', error);
+        applyCommit(computeDiffSync(diffBaseline, raw));
+      });
+    } else {
+      // 无 Worker 环境（jsdom 测试等）：同步计算，行为与旧实现一致
+      applyCommit(computeDiffSync(diffBaseline, raw));
     }
   }
 
@@ -283,6 +511,8 @@ export function useRevoke(
     if (recordList.value.length === 0) {
       return false;
     }
+    // 链即将变化：递增版本号，作废防抖窗口内挂起的过期提交
+    chainVersion++;
 
     const previous = currentRecord.value;
     // 取出最后一条历史记录
@@ -316,6 +546,8 @@ export function useRevoke(
     if (undoList.value.length === 0) {
       return false;
     }
+    // 链即将变化：递增版本号，作废防抖窗口内挂起的过期提交
+    chainVersion++;
 
     const previous = currentRecord.value;
     // 取出最后一条重做记录
@@ -349,6 +581,10 @@ export function useRevoke(
     undoList.value = [];
     currentRecord.value = null;
     prevState = null;
+    // 链已变化：取消挂起的防抖提交、递增版本号、清空增量回放缓存
+    clearPendingDebounce();
+    chainVersion++;
+    stateCache.clear();
   }
 
   /**
@@ -418,49 +654,85 @@ export function useRevoke(
       return;
     }
 
-    // 数据校验：所有 snapshot/diff 必须是合法 JSON
+    // 数据校验：所有 snapshot/diff 必须是合法 JSON。
+    // 优先移入 Worker 异步校验（性能文档 P-W3：120+ 条顺序 JSON.parse 可达 120-360ms，
+    // 会阻塞主线程），无 Worker 环境回退同步校验。
     const allRecords = [
       ...normalizedRecordList,
       ...normalizedUndoList,
       ...(normalizedCurrent ? [normalizedCurrent] : []),
     ];
-    for (const record of allRecords) {
-      try {
-        if (record.snapshot) {
-          JSON.parse(record.snapshot);
-        }
-        if (record.diff) {
-          JSON.parse(record.diff);
-        }
-      } catch {
-        console.error('导入历史记录失败：存在无法解析的记录数据，已取消导入');
+    const seqAtCall = commitSeq;
+    const versionAtCall = chainVersion;
+
+    // 校验通过后的导入执行体：备份现有状态，回放失败时整体回滚
+    const applyImport = (): void => {
+      // 校验期间链已被修改（新的提交/撤销/重做/重置等）：放弃导入，避免覆盖新编辑
+      if (seqAtCall !== commitSeq || versionAtCall !== chainVersion) {
+        console.warn('导入历史记录失败：导入期间历史链已发生变化，已取消导入');
         return;
       }
-    }
 
-    // 备份现有状态，回放失败时整体回滚
-    const previousRecordList = recordList.value;
-    const previousUndoList = undoList.value;
-    const previousCurrent = currentRecord.value;
-    const previousPrev = prevState;
+      // 备份现有状态，回放失败时整体回滚
+      const previousRecordList = recordList.value;
+      const previousUndoList = undoList.value;
+      const previousCurrent = currentRecord.value;
+      const previousPrev = prevState;
 
-    recordList.value = normalizedRecordList;
-    undoList.value = normalizedUndoList;
-    currentRecord.value = normalizedCurrent;
+      // 链即将整体替换：取消挂起的防抖提交、递增版本号、清空增量回放缓存
+      clearPendingDebounce();
+      chainVersion++;
+      stateCache.clear();
 
-    // 如果有当前记录，应用它以确保页面状态同步，并重置差异基准
-    if (currentRecord.value) {
-      if (!applyRecord(currentRecord.value)) {
-        // 回放失败：回滚整个导入，保持原历史不变
-        recordList.value = previousRecordList;
-        undoList.value = previousUndoList;
-        currentRecord.value = previousCurrent;
-        prevState = previousPrev;
-        return;
+      recordList.value = normalizedRecordList;
+      undoList.value = normalizedUndoList;
+      currentRecord.value = normalizedCurrent;
+
+      // 如果有当前记录，应用它以确保页面状态同步，并重置差异基准
+      if (currentRecord.value) {
+        if (!applyRecord(currentRecord.value)) {
+          // 回放失败：回滚整个导入，保持原历史不变
+          recordList.value = previousRecordList;
+          undoList.value = previousUndoList;
+          currentRecord.value = previousCurrent;
+          prevState = previousPrev;
+          return;
+        }
+        prevState = cloneCurrentState();
+      } else {
+        prevState = null;
       }
-      prevState = cloneCurrentState();
+    };
+
+    if (isWorkerAvailable()) {
+      const records = allRecords.map((r) => ({
+        diff: r.diff,
+        snapshot: r.snapshot,
+      }));
+      postToWorker('validateImport', { records }).then(
+        () => applyImport(),
+        (error) => {
+          console.error(
+            '导入历史记录失败：存在无法解析的记录数据，已取消导入',
+            error,
+          );
+        },
+      );
     } else {
-      prevState = null;
+      for (const record of allRecords) {
+        try {
+          if (record.snapshot) {
+            JSON.parse(record.snapshot);
+          }
+          if (record.diff) {
+            JSON.parse(record.diff);
+          }
+        } catch {
+          console.error('导入历史记录失败：存在无法解析的记录数据，已取消导入');
+          return;
+        }
+      }
+      applyImport();
     }
   };
 
@@ -489,6 +761,7 @@ export function useRevoke(
 
   return {
     currentRecord,
+    dispose,
     exportHistory,
     getRedoCount,
     getUndoCount,

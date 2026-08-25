@@ -255,4 +255,33 @@ function createPropertyGroupMap<T extends Record<string, Record<string, any>>>(
   return propertyGroupMap;
 }
 
+/**
+ * 全局单例插件管理器（向后兼容保留，W6-6.6）
+ * @description ⚠️ 已知限制：模块级单例意味着所有组件注册、designer.initialized、公共方法、
+ * 全局状态等在模块加载时共享——同一页面挂载多个设计器实例时会互相干扰。
+ * 多设计器/多实例隔离场景请使用 createPluginManager() 创建独立实例
+ *（需各实例自行完成组件注册与初始化）。
+ * 完整的实例隔离方案与 W5 协调分期落地，当前版本仅文档化该限制。
+ */
 export const pluginManager = createPluginManager();
+
+// 向 utils 注册组件配置查询器（注入式，避免 utils → manager 模块级依赖形成
+// Worker 依赖图循环；详见 utils/src/common/data.ts 的 setComponentConfigProvider 注释）。
+// utils → component.ts → base-ui → … → manager 存在既有环状依赖：环内动态 import 可能
+// 拿到求值中的部分命名空间（vite-node 实测），故用 setTimeout 延后 + 类型校验失败重试，
+// 保证注册一定在 utils 模块求值完成后生效。
+function registerComponentConfigProvider(): void {
+  void import('@aigen-designer/utils')
+    .then(({ setComponentConfigProvider }) => {
+      if (typeof setComponentConfigProvider !== 'function') {
+        // 部分命名空间：下一轮事件循环重试
+        setTimeout(registerComponentConfigProvider, 0);
+        return;
+      }
+      setComponentConfigProvider((type: string) =>
+        pluginManager.component.getConfigByType(type),
+      );
+    })
+    .catch(() => setTimeout(registerComponentConfigProvider, 0));
+}
+registerComponentConfigProvider();

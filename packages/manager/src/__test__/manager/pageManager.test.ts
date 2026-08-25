@@ -61,7 +61,8 @@ describe('createPageManager 函数测试', () => {
     const formData = { field1: 'value1' };
 
     pageManager.setFormData(formData, 'form1');
-    expect(pageManager.forms.form1).toEqual(formData);
+    // forms 容器为 shallowRef（W6-6.11），表单数据位于 .value 下
+    expect(pageManager.forms.value.form1).toEqual(formData);
   });
 
   it('应该正确设置默认组件 IDs', () => {

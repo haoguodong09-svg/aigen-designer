@@ -1,6 +1,10 @@
-import type { ComponentSchema, AigenNodeInstance } from '@aigen-designer/types';
+import type {
+  ActionsModel,
+  AigenNodeInstance,
+  ComponentSchema,
+} from '@aigen-designer/types';
 
-import { reactive, ref, watchEffect } from 'vue';
+import { reactive, ref, shallowRef, watch } from 'vue';
 
 import {
   useHookManager,
@@ -15,13 +19,12 @@ import {
 
 import { pluginManager } from './pluginManager';
 
-export interface ActionsModel {
-  args?: string;
-  componentId?: null | string;
-  methodName: string;
-  type: 'component' | 'custom' | 'public';
-}
-export type ComponentInstances = Record<string, Record<string, AigenNodeInstance>>;
+// ActionsModel 由 types 包定义（避免反向依赖），此处 re-export 保持 manager 的既有导出面
+export type { ActionsModel } from '@aigen-designer/types';
+export type ComponentInstances = Record<
+  string,
+  Record<string, AigenNodeInstance>
+>;
 export const DEFAULT_SCOPE = 'default';
 
 export function createPageManager() {
@@ -35,7 +38,9 @@ export function createPageManager() {
 
   const defaultComponentIds = ref<string[]>([]);
 
-  const forms = reactive<Record<string, unknown>>({});
+  // 性能文档 P-W7：forms 容器改用 shallowRef，避免容器被深度代理
+  // （容器内每个表单数据仍通过 reactive() 保持响应式，见 setFormData）
+  const forms = shallowRef<Record<string, unknown>>({});
   const mountMonitor = useMountMonitor();
 
   // 初始化
@@ -182,6 +187,18 @@ export function createPageManager() {
    * @param scriptStr
    */
   function setMethods(scriptStr: string, outputError: boolean = false): void {
+    // CSP 安全说明（W6-6.7）：自定义脚本通过 new Function 编译执行，这是低代码设计器
+    // 编译用户脚本的固有需求。若部署环境启用严格 CSP（禁用 'unsafe-eval'），该编译会被
+    // 浏览器阻止并置 scriptError。请确保页面 CSP 策略允许 'unsafe-eval'，且不要将
+    // 不可信来源的文本直接写入 pageSchema.script。
+    if (typeof scriptStr !== 'string') {
+      scriptError.value = new Error('自定义脚本必须是字符串');
+      if (outputError) {
+        console.error('[Aigen：自定义函数]异常：脚本必须是字符串', scriptStr);
+      }
+      return;
+    }
+
     // 初始化一个空对象来存储公共方法
     const publicMethods: Record<string, Function> = {};
 
@@ -253,16 +270,32 @@ export function createPageManager() {
 
     // 遍历每个操作
     actions.forEach((action) => {
-      // 尝试解析操作参数，如果没有提供，则使用传入的参数
-      let methodArgs = action.args ? JSON.parse(action.args) : args;
+      // 尝试解析操作参数，如果没有提供，则使用传入的参数。
+      // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
+      let methodArgs: unknown[];
+      if (action.args) {
+        try {
+          const parsed = JSON.parse(action.args);
+          // 兼容非数组 JSON（如对象字面量），统一包装为数组
+          methodArgs = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (error) {
+          console.warn(
+            `[Aigen：动作(${action.methodName})]args 非法 JSON，已跳过该动作`,
+            { args: action.args, error },
+          );
+          return;
+        }
+      } else {
+        methodArgs = args;
+      }
 
-      const formNames = Object.keys(forms);
+      const formNames = Object.keys(forms.value);
       // 处理数据参数
       const context = {
         event: args,
         formData: (formNames.length === 1
-          ? forms[formNames[0]]
-          : forms) as Record<string, any>,
+          ? forms.value[formNames[0]]
+          : forms.value) as Record<string, any>,
       };
 
       methodArgs = methodArgs.map((arg: any) => {
@@ -331,7 +364,10 @@ export function createPageManager() {
       funcs.value[action.methodName]?.(...args);
     } catch (error) {
       // 如果调用失败，打印错误信息
-      console.error(`[Aigen：自定义函数(${action.methodName})]执行异常:`, error);
+      console.error(
+        `[Aigen：自定义函数(${action.methodName})]执行异常:`,
+        error,
+      );
     }
   }
 
@@ -398,9 +434,9 @@ export function createPageManager() {
     formData: Record<string, unknown>,
     formName: string = 'default',
   ) {
-    if (forms[formName]) {
-      // 存在表单数据，合并到旧数据
-      const reactiveFormData = forms[formName] as Record<string, unknown>;
+    if (forms.value[formName]) {
+      // 存在表单数据，合并到旧数据（内部数据仍是 reactive，属性级更新保持响应式）
+      const reactiveFormData = forms.value[formName] as Record<string, unknown>;
 
       Object.keys(formData).forEach((key) => {
         reactiveFormData[key] = formData[key];
@@ -409,17 +445,23 @@ export function createPageManager() {
     }
     // 没有表单数据时，创建响应式数据
     const reactiveFormData = reactive(formData);
-    forms[formName] = reactiveFormData;
+    // shallowRef 容器只追踪 .value 整体替换，新增表单时替换容器以触发响应式
+    forms.value = { ...forms.value, [formName]: reactiveFormData };
     return reactiveFormData; // 返回新创建的响应式数据
   }
 
-  // 监听自定义函数
-  watchEffect(() => {
-    const script = pageSchema.script;
-    if (script && script !== '') {
-      setMethods(script, !isDesignMode.value);
-    }
-  });
+  // 监听自定义函数：收窄响应式追踪范围（性能文档 P-W7），
+  // 原 watchEffect 会追踪 script 读取路径上的所有依赖，现改为仅在 pageSchema.script
+  // 字段变化时重编译（immediate 保留初始化即编译的行为）
+  watch(
+    () => pageSchema.script,
+    (script) => {
+      if (script && script !== '') {
+        setMethods(script, !isDesignMode.value);
+      }
+    },
+    { immediate: true },
+  );
 
   return {
     addComponentInstance,
