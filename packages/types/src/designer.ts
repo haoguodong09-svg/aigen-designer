@@ -1,4 +1,4 @@
-import { PageSchema } from '@aigen-designer/types';
+import type { PageSchema } from './aigen-designer';
 
 export interface TableColumn {
   columnName: string;

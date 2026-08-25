@@ -96,12 +96,14 @@ export interface PublicMethodModel {
    */
   describe?: string;
   description?: string;
-  handler: Function;
+  // 公共方法处理函数
+  handler: (...args: unknown[]) => unknown;
 
   /**
    * @deprecated 此属性用于兼容旧版，后期可能会移除，请使用handler属性代替。
    */
-  method?: Function;
+  // 已弃用，请使用 handler 代替
+  method?: (...args: unknown[]) => unknown;
 
   /**
    * @deprecated 此属性用于兼容旧版，后期可能会移除，请使用name属性代替。

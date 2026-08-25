@@ -4,14 +4,14 @@ export type FieldStateType = 'DISABLED' | 'HIDE' | 'READ' | 'WRITE';
 // 单个字段状态规则
 export interface FieldState {
   /** 其他扩展属性（如权限标识、作用域等） */
-  [key: string]: any;
+  [key: string]: unknown;
 
   /**
    * 动态控制条件（可选）
    * @param formData - 当前表单数据
    * @returns 返回 true 时应用当前 state，否则忽略
    */
-  condition?: (formData: any) => boolean;
+  condition?: (formData: unknown) => boolean;
 
   /** 字段路径（支持嵌套，如 "user.email" 或 "BAILOR.REAL_NAME"） */
   field: string;

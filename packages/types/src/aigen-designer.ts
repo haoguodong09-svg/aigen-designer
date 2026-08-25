@@ -1,18 +1,32 @@
-import type { ActionsModel } from '@aigen-designer/manager';
-
 import type { TableMeta } from './designer';
 import type { FormItemRule } from './rules';
 
+/**
+ * 动作模型（在 types 包内定义，避免反向依赖 manager 包）。
+ * manager 包通过 re-export 复用本类型（单一数据源），两包 barrel 导出同一声明，
+ * 不会产生命名冲突。若 manager 调整结构，需同步更新此处。
+ */
+export interface ActionsModel {
+  args?: string;
+  componentId?: null | string;
+  methodName: string;
+  type: 'component' | 'custom' | 'public';
+}
+
 export interface RenderCallbackParams {
   tableMeta?: TableMeta;
+  // TODO: 第二期收敛为 Record<string, unknown>。
+  // 当前 antd/elementPlus/naiveUi 的组件配置 show/onChange 回调仍依赖 any 索引访问 values.props。
   values: Record<string, any>;
 }
 
 export interface ComponentSchema {
-  // 其他未明确指定的属性
-  [fieldName: string]: any;
+  // 其他未明确指定的属性（第一期由 any 收紧为 unknown，第二期计划改为泛型 ComponentSchema<TProps>）
+  [fieldName: string]: unknown;
   // 子节点列表，可选
   children?: ComponentSchema[];
+  // 兼容旧版的组件属性别名，已弃用，请使用 props 代替
+  componentProps?: Record<string, unknown>;
   // 组件功能描述
   description?: string;
   // 编辑组件数据，可选（属性编辑另外绑定编辑的数据，默认则为当前选中组件数据）
@@ -31,7 +45,8 @@ export interface ComponentSchema {
   on?: {
     [eventName: string]: ActionsModel[];
   };
-  // 组件属性，可选
+  // 组件属性，可选（透传给 UI 库组件的属性集合）
+  // TODO: 第二期改为泛型 ComponentSchema<TProps> 以彻底消除 any
   props?: any;
   // 表单验证规则，可选
   rules?: FormItemRule[];
@@ -41,6 +56,8 @@ export interface ComponentSchema {
   slotName?: string;
   // 插槽列表，可选
   slots?: { [slotName: string]: ComponentSchema[] };
+  // 设计态辅助状态（如锁定、隐藏等），可选
+  status?: { lock?: boolean };
   // 节点类型，必选
   type: string;
 }
@@ -48,13 +65,16 @@ export interface ComponentSchema {
 export interface FormConfig {
   customStyle?: string;
   hideRequiredMark?: boolean;
-  labelCol: any;
-  labelLayout: any;
+  // 标签列/控件列配置（兼容 antd/element-plus 等 Col 属性的数字/字符串/对象写法）
+  labelCol: number | Record<string, number | string> | string;
+  labelLayout: 'fixed' | 'flex';
   labelWidth?: string;
   layout?: string;
-  wrapperCol: any;
+  wrapperCol: number | Record<string, number | string> | string;
 }
 
+// TODO: 第二期将 FormDataModel 收敛为 Record<string, unknown>。
+// 当前 aigenActionModal 等调用方仍依赖 any 索引访问，待调用方收敛后再收紧。
 export type FormDataModel = Record<string, any>;
 
 export interface DesignerState {
