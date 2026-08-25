@@ -21,7 +21,7 @@ interface EventChannel {
 // 创建全局的通道管理器
 const channelMap = new Map<string, EventChannel>();
 
-export function createEventBus(channelId = 'root') {
+export function createEventBus(channelId: string = 'root') {
   // 获取或创建指定通道的事件总线
   const getOrCreateChannel = (id: string): EventChannel => {
     if (!channelMap.has(id)) {

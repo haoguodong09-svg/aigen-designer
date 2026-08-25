@@ -12,7 +12,7 @@
     "lib": "vitest run && turbo run build -F aigen-designer",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "vue-tsc --noEmit -p packages/aigen-designer/tsconfig.json",
+    "typecheck": "vue-tsc --noEmit -p packages/aigen-designer/tsconfig.json && vue-tsc --noEmit -p packages/types/tsconfig.json && vue-tsc --noEmit -p packages/hooks/tsconfig.json && vue-tsc --noEmit -p packages/core/tsconfig.json && vue-tsc --noEmit -p packages/ui-kit/base-ui/tsconfig.json && vue-tsc --noEmit -p packages/ui-kit/panel-ui/tsconfig.json",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
