@@ -194,12 +194,12 @@ P1 阶段在 `ActionsModel` 上新增以下**可选字段**（均为可选、缺
 | `id` | `string` | 稳定身份：拖拽 key、复制、条件引用、日志定位 | P1（旧数据缺省，读取层补 UUID） |
 | `name` | `string` | 动作命名（人话），用于摘要/搜索/下拉展示 | P1 |
 | `remark` | `string` | 备注 | P1 |
-| `enabled` | `boolean` | 启停用，缺省视为 `true`（undefined 视为启用，兼容旧数据） | P1 存储，P3 运行时生效 |
+| `enabled` | `boolean` | 启停用，缺省视为 `true`（undefined 视为启用，兼容旧数据） | **已生效**（运行时 `doActions` 对 `enabled === false` 的动作直接跳过） |
 | `group` | `string` | 动作分组名（行为流分组） | P1 先存字段，P3 生效 |
 | `delay` | `number` | 延迟执行毫秒数 | P1 存储，P3 运行时生效 |
 | `condition` | `ConditionGroup` | 条件（纯 JSON DSL 对象而非函数——函数不可序列化），支持 AND/OR 组合与嵌套 | P1 存储，P3 运行时求值 |
 
-:::warning 阶段说明以上新字段在 **P1 阶段仅做存储与展示**（`id`/`name`/`remark` 直接用于 UI；`enabled`/`group`/`delay`/`condition` 先存入 schema），**P3 阶段才在运行时生效**（`doActions` 对 `enabled === false` 跳过、`delay` 用 `setTimeout`、`condition` 求值）。:::
+:::warning 阶段说明`id`/`name`/`remark`/`enabled` 已生效：`enabled`（动作/事件级启停用）由运行时 `doActions` 直接读取（`enabled === false` 跳过该动作），停用后预览与渲染均不再执行。`group` 先存入 schema；`delay`（延迟执行）与 `condition`（条件求值）计划在后续版本（P3）运行时生效。:::
 
 ### 旧数据兼容（normalizeAction）
 

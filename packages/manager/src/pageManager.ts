@@ -270,6 +270,12 @@ export function createPageManager() {
 
     // 遍历每个操作
     actions.forEach((action) => {
+      // 动作级启停用：enabled === false 时跳过该动作，不中断整条动作链。
+      // 缺省（undefined）视为启用，兼容旧数据（与 normalizeAction 的 enabled 缺省 true 语义一致）
+      if (action.enabled === false) {
+        return;
+      }
+
       // 尝试解析操作参数，如果没有提供，则使用传入的参数。
       // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
       let methodArgs: unknown[];
