@@ -1,6 +1,6 @@
 {
   "name": "aigen-designer",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "description": "基于vue3的设计器,可视化开发页面表单",
   "private": false,
   "keywords": [
@@ -31,14 +31,37 @@
     "test": "vitest",
     "lint": "eslint . --fix --ext .js,.jsx,.json,.ts,.tsx,.vue"
   },
-  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "uno.config.ts"
+  ],
+  "main": "dist/index.cjs",
   "module": "dist/index.js",
+  "types": "dist/aigen-designer/index.d.ts",
   "typings": "dist/aigen-designer/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/aigen-designer/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./uno.config": {
+      "types": "./dist/aigen-designer/uno.config.d.ts",
+      "import": "./uno.config.ts",
+      "default": "./uno.config.ts"
+    },
+    "./style.css": "./dist/style.css",
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
   "peerDependencies": {
     "monaco-editor": ">=0.48.0",
     "vue": ">=3.1.0"
   },
   "dependencies": {
+    "@vueuse/core": "catalog:",
+    "jsep": "catalog:",
+    "monaco-editor": "catalog:",
     "vue-draggable-plus": "catalog:"
   },
   "optionalDependencies": {
@@ -54,5 +77,8 @@
     "unocss": "catalog:",
     "vitest": "catalog:",
     "vue-tsc": "catalog:"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
