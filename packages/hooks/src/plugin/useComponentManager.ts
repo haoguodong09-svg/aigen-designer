@@ -35,6 +35,32 @@ export function useComponentManager() {
   // 组件分组排序列表(设置之后，按该数组下标排序)
   let sortedGroups: string[] = ['表单', '布局'];
 
+  // 分组重算脏标记与微任务刷新（注册批量化，性能文档 P-W4）：
+  // 连续多次 registerComponent / hideComponent / showComponent / setHideComponents /
+  // setSortedGroups 等操作只触发一次全量分组重算，而不是每次都全量重算
+  let groupsDirty = false;
+  let flushScheduled = false;
+
+  /**
+   * 将组件分组重算标记为待执行，并在微任务中统一刷新一次。
+   * 注意：刷新时机为当前同步代码执行完毕后的微任务，保证 setupAntd/setupPanel
+   * 这类同步批量注册场景在组件挂载渲染前完成分组重算。
+   */
+  function scheduleGroupsRecompute() {
+    groupsDirty = true;
+    if (flushScheduled) {
+      return;
+    }
+    flushScheduled = true;
+    Promise.resolve().then(() => {
+      flushScheduled = false;
+      if (groupsDirty) {
+        groupsDirty = false;
+        computedComponentSchemaGroups();
+      }
+    });
+  }
+
   /**
    * 添加基础组件类型
    * @param baseComponentType 基础组件类型
@@ -55,7 +81,7 @@ export function useComponentManager() {
    */
   function clearSortedGroups() {
     sortedGroups = [];
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -81,7 +107,7 @@ export function useComponentManager() {
    */
   function setHideComponents(types: string[]) {
     hiddenComponents = types;
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -260,7 +286,7 @@ export function useComponentManager() {
    */
   function hideComponent(type: string) {
     hiddenComponents.push(type);
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -268,76 +294,93 @@ export function useComponentManager() {
    * @param componentConfig 组件配置
    */
   function registerComponent(componentConfig: ComponentConfigModel): void {
+    const type = componentConfig.defaultSchema.type;
+
+    // 幂等注册：同一 type 重复注册时先移除旧记录（组件/配置/优先级一并清理），
+    // 避免重复注册导致旧记录残留、动作配置重复累积（修复 4.10）
+    if (componentConfigs[type]) {
+      removeComponent(type);
+    }
+
     // 添加组件
-    addComponent(
-      componentConfig.defaultSchema.type,
-      componentConfig.component,
-      componentConfig.priority,
-    );
+    addComponent(type, componentConfig.component, componentConfig.priority);
 
     if (!componentConfig.config.action) {
       componentConfig.config.action = [];
     }
-    // 输入组件增加动作配置
+    // 输入组件增加动作配置（幂等：已存在 setValue/getValue 时不再重复添加，
+    // 防止同一 config 对象被重复注册时动作配置累积）
     if (componentConfig.defaultSchema.input) {
-      // 补充组件可用方法
-      componentConfig.config.action.unshift(
-        {
-          // 参数配置
-          argsConfigs: [
-            {
-              ...componentConfig.defaultSchema,
-              field: '0',
-              label: '设置数据',
-            },
-          ],
-          description: '设置值',
-          type: 'setValue',
-        },
-        {
-          description: '获取值',
-          type: 'getValue',
-        },
+      const hasValueActions = componentConfig.config.action.some(
+        (item) => item.type === 'setValue' || item.type === 'getValue',
       );
+      if (!hasValueActions) {
+        // 补充组件可用方法
+        componentConfig.config.action.unshift(
+          {
+            // 参数配置
+            argsConfigs: [
+              {
+                ...componentConfig.defaultSchema,
+                field: '0',
+                label: '设置数据',
+              },
+            ],
+            description: '设置值',
+            type: 'setValue',
+          },
+          {
+            description: '获取值',
+            type: 'getValue',
+          },
+        );
+      }
     }
     const componentAttributes = [
       ...(componentConfig.config.attribute || []),
     ].filter(({ field }) => String(field).startsWith('props'));
 
-    // 为所有组件添加修改属性动作
-    componentConfig.config.action.push({
-      argsConfigs: [
-        // 第一个参数为选择属性
-        {
-          field: '0',
-          label: '选择属性',
-          props: {
-            clearable: true,
-            options: componentAttributes.map(({ field, label }) => ({
-              label,
-              value: String(field).replace('props.', ''),
-            })),
-            placeholder: '请选择',
+    // 为所有组件添加修改属性动作（幂等：已存在 setAttr 时不再重复添加）
+    if (
+      !componentConfig.config.action.some((item) => item.type === 'setAttr')
+    ) {
+      componentConfig.config.action.push({
+        argsConfigs: [
+          // 第一个参数为选择属性
+          {
+            field: '0',
+            label: '选择属性',
+            props: {
+              clearable: true,
+              options: componentAttributes.map(({ field, label }) => ({
+                label,
+                value: String(field).replace('props.', ''),
+              })),
+              placeholder: '请选择',
+            },
+            type: 'select',
           },
-          type: 'select',
-        },
-        // 动态生成所有可被修改的属性参数
-        ...componentAttributes.map((attribute, index) => {
-          const attributeField = String(attribute.field).replace('props.', '');
-          return {
-            // 属性字段默认为 index+1，即 args 数组的下标
-            field: String(index + 1),
-            label: attribute.label || '属性值',
-            props: attribute.props,
-            // 仅当选择的属性与当前属性字段匹配时显示
-            show: ({ values }: any) => values['0'] === attributeField,
-            type: attribute.type || 'input',
-          };
-        }),
-      ],
-      description: '修改属性',
-      type: 'setAttr',
-    });
+          // 动态生成所有可被修改的属性参数
+          ...componentAttributes.map((attribute, index) => {
+            const attributeField = String(attribute.field).replace(
+              'props.',
+              '',
+            );
+            return {
+              // 属性字段默认为 index+1，即 args 数组的下标
+              field: String(index + 1),
+              label: attribute.label || '属性值',
+              props: attribute.props,
+              // 仅当选择的属性与当前属性字段匹配时显示
+              show: ({ values }: any) => values['0'] === attributeField,
+              type: attribute.type || 'input',
+            };
+          }),
+        ],
+        description: '修改属性',
+        type: 'setAttr',
+      });
+    }
 
     // 兼容旧版本的 componentProps
     if (componentConfig.defaultSchema.componentProps) {
@@ -350,9 +393,9 @@ export function useComponentManager() {
     }
 
     // 添加组件配置
-    componentConfigs[componentConfig.defaultSchema.type] = componentConfig;
+    componentConfigs[type] = componentConfig;
 
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -364,7 +407,7 @@ export function useComponentManager() {
     });
     setBaseComponentTypes([]);
 
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -375,6 +418,10 @@ export function useComponentManager() {
     // 在数组中查找要移除的组件类型的索引
     delete componentConfigs[componentType];
     delete components[componentType];
+    // 同步清理优先级记录，避免残留影响重新注册（修复 4.10）
+    priorities.delete(componentType);
+    // 移除后重算组件分组
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -383,7 +430,7 @@ export function useComponentManager() {
    */
   function setSortedGroups(groups: string[]) {
     sortedGroups = groups;
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   /**
@@ -392,7 +439,7 @@ export function useComponentManager() {
    */
   function showComponent(type: string) {
     hiddenComponents = hiddenComponents.filter((item) => item !== type);
-    computedComponentSchemaGroups();
+    scheduleGroupsRecompute();
   }
 
   return {

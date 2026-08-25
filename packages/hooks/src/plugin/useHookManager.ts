@@ -73,8 +73,10 @@ export function useHookManager() {
     // 按注册顺序执行所有钩子
     for (const hook of hooks.value[hookName]) {
       try {
-        return await hook(context);
+        // 注意：不能 return，否则只执行第一个钩子就退出整条钩子链
+        await hook(context);
       } catch (error) {
+        // 单个钩子出错不影响后续钩子继续执行
         console.error(`执行钩子 ${hookName} 时出错:`, error);
       }
     }

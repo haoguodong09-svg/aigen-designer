@@ -73,11 +73,18 @@ export function usePanel() {
     );
 
     // 如果找到相同 id 的活动栏，则更新该活动栏模型
+    // 注意：列表为 shallowRef，原地 push/下标赋值不会触发响应式，
+    // 必须整体替换 value 才能让运行时注册的活动栏刷新到界面上
     if (index === -1) {
       // 否则将新的活动栏模型添加到活动栏列表中
-      viewsContainers.activityBars.value.push(activitybar);
+      viewsContainers.activityBars.value = [
+        ...viewsContainers.activityBars.value,
+        activitybar,
+      ];
     } else {
-      viewsContainers.activityBars.value[index] = activitybar;
+      const next = [...viewsContainers.activityBars.value];
+      next[index] = activitybar;
+      viewsContainers.activityBars.value = next;
     }
   }
 
@@ -105,10 +112,16 @@ export function usePanel() {
       (sidebar) => sidebar.id === rightSidebar.id,
     );
 
+    // 同上：shallowRef 需要整体替换 value 才能触发响应式
     if (index === -1) {
-      viewsContainers.rightSidebars.value.push(rightSidebar);
+      viewsContainers.rightSidebars.value = [
+        ...viewsContainers.rightSidebars.value,
+        rightSidebar,
+      ];
     } else {
-      viewsContainers.rightSidebars.value[index] = rightSidebar;
+      const next = [...viewsContainers.rightSidebars.value];
+      next[index] = rightSidebar;
+      viewsContainers.rightSidebars.value = next;
     }
   }
 

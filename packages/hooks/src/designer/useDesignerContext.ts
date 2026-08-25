@@ -1,4 +1,4 @@
-import type { Revoke } from '@aigen-designer/manager/src/revoke';
+import type { Revoke } from '@aigen-designer/manager';
 import type { DesignerProps, PageSchema } from '@aigen-designer/types';
 
 import type { InjectionKey } from 'vue';

@@ -1,20 +1,9 @@
-import type { ComputedRef, InjectionKey } from 'vue';
-
-import { computed, inject, provide } from 'vue';
-
-export const BUILDER_READONLY_KEY: InjectionKey<ComputedRef<boolean>> =
-  Symbol('builderReadonly');
-
-// 提供只读状态
-export function provideBuilderReadonly(builderReadonly: ComputedRef<boolean>) {
-  provide(BUILDER_READONLY_KEY, builderReadonly);
-}
-
-// 注入上级的只读状态
-export function injectBuilderReadonly() {
-  const builderReadonly = inject<ComputedRef<boolean>>(
-    BUILDER_READONLY_KEY,
-    computed(() => false),
-  );
-  return builderReadonly;
-}
+/**
+ * @deprecated 文件名拼写错误（Buider → Builder），请改用 ./useBuilderReadonly。
+ * 本文件仅保留用于兼容旧引用，后续版本会移除。
+ */
+export {
+  BUILDER_READONLY_KEY,
+  injectBuilderReadonly,
+  provideBuilderReadonly,
+} from './useBuilderReadonly';

@@ -20,7 +20,6 @@ export function createEventBus(channelId = 'root') {
           listeners.clear();
           eventCache.clear();
         },
-
         // 触发事件
         emit(event, ...args) {
           // 缓存事件
@@ -46,6 +45,8 @@ export function createEventBus(channelId = 'root') {
             });
           }
         },
+
+        eventCache,
 
         // 取消监听
         off(event, callback) {
@@ -77,6 +78,10 @@ export function createEventBus(channelId = 'root') {
             this.off(event, callback);
           };
         },
+
+        // 监听器集合与事件缓存挂到通道对象上，供自动清理逻辑检查
+        // （原实现只挂在闭包里，外部读取恒为 undefined，导致卸载时误判「无监听器」清空整个通道）
+        listeners,
       };
 
       channelMap.set(id, channel);
@@ -111,6 +116,16 @@ export function createEventBus(channelId = 'root') {
     channelMap.delete(channelId);
   };
 
+  // 清空 root 通道
+  const clearRoot = () => {
+    rootBus.clear();
+    channelMap.delete('root');
+  };
+
+  // 判断通道是否还存在监听器
+  const hasChannelListeners = (bus) =>
+    [...bus.listeners.values()].some((set) => set.size > 0);
+
   // 自动清理的监听函数
   const useAutoCleanupListener = (event, callback) => {
     const unsubscribe = scopedBus.on(event, callback);
@@ -119,14 +134,9 @@ export function createEventBus(channelId = 'root') {
     onUnmounted(() => {
       unsubscribe();
 
-      // 如果通道已无监听器，清理通道
-      if (channelMap.has(channelId)) {
-        const hasListeners = [...(scopedBus.listeners?.values() || [])].some(
-          (set) => set.size > 0,
-        );
-        if (!hasListeners) {
-          clear();
-        }
+      // 仅当本通道已无任何监听器时清理通道，避免一个组件卸载清掉整个通道
+      if (channelMap.has(channelId) && !hasChannelListeners(scopedBus)) {
+        clear();
       }
     });
 
@@ -140,14 +150,9 @@ export function createEventBus(channelId = 'root') {
     onUnmounted(() => {
       unsubscribe();
 
-      // 如果通道已无监听器，清理通道
-      if (channelMap.has('root')) {
-        const hasListeners = [...(rootBus.listeners?.values() || [])].some(
-          (set) => set.size > 0,
-        );
-        if (!hasListeners) {
-          clear();
-        }
+      // 清理 root 通道（原实现误调 clear() 清掉了当前作用域通道）
+      if (channelMap.has('root') && !hasChannelListeners(rootBus)) {
+        clearRoot();
       }
     });
 

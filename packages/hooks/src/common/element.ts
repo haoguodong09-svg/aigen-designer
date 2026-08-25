@@ -1,10 +1,16 @@
 import type { Ref } from 'vue';
 
-import { ref, watch } from 'vue';
+import { onUnmounted, ref, watch } from 'vue';
 
 import { onKeyDown, onKeyUp } from '@vueuse/core';
 
 import { useStore } from '../store';
+
+// 画布缩放范围常量（单位：缩放比例 1.x）
+// 注意：core 侧 editScreenContainer.vue 的自动适配缩放（0.5 ~ 1.4）后续应统一引用此常量，
+// 避免缩放范围在各处各写一份导致不一致（该文件属于 W5 范围，此处仅预留统一入口）。
+export const MIN_SCALE = 0.5;
+export const MAX_SCALE = 1.5;
 
 /**
  * 是否按住键盘状态
@@ -37,7 +43,16 @@ export function useKeyPress() {
   });
 
   onKeyDown('Control', (e) => {
-    e.preventDefault();
+    // 仅在非可编辑目标上阻止默认行为，避免干扰输入框/富文本编辑器内的 Ctrl 组合快捷键
+    const target = e.target as HTMLElement | null;
+    const isEditable =
+      !!target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable);
+    if (!isEditable) {
+      e.preventDefault();
+    }
     pressCtrl.value = true;
   });
   onKeyUp('Control', () => {
@@ -120,8 +135,8 @@ export function useElementZoom(draggableElRef: Ref<HTMLDivElement | null>) {
     let newScale = 0;
     newScale =
       event.deltaY < 0 ? canvasScale.value + 0.05 : canvasScale.value - 0.05;
-    // 限制缩放范围
-    if (newScale > 150 || newScale < 0.5) {
+    // 限制缩放范围（原代码误写为 150，单位是 1.x 比例，画布可被放大到 15000%）
+    if (newScale > MAX_SCALE || newScale < MIN_SCALE) {
       return;
     }
 
@@ -147,7 +162,7 @@ export function useElementZoom(draggableElRef: Ref<HTMLDivElement | null>) {
  * @param timeout 任务间隔
  */
 export function useTimedQuery(handler: () => void, timeout = 16.66) {
-  let timer: number;
+  let timer: number | undefined;
 
   /**
    * 开始任务执行
@@ -161,8 +176,17 @@ export function useTimedQuery(handler: () => void, timeout = 16.66) {
    * 结束任务执行
    */
   function stopTimedQuery() {
-    window.clearInterval(timer);
+    if (timer !== undefined) {
+      window.clearInterval(timer);
+      timer = undefined;
+    }
   }
+
+  // 组件卸载时自动清理定时器，避免卸载后定时任务继续执行
+  onUnmounted(() => {
+    stopTimedQuery();
+  });
+
   return {
     startTimedQuery,
     stopTimedQuery,
