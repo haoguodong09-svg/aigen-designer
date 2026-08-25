@@ -43,32 +43,14 @@ export function setupAntd(
   // 获取版本号第一个数字
   const firstNumber = Number.parseInt(versionArray[0]);
 
-  // 创建一个 style 标签
-  const style = document.createElement('style');
-
-  // 大于v3版本
-  if (firstNumber > 3) {
-    // 定义 CSS 样式
-    const css = `
-.aigen-modal-ant .aigen-modal-main {
-  padding: 4px 12px 12px;
-}
-.aigen-modal-ant .ant-modal-title {
-  padding: 16px 16px 0px;
-}
-.aigen-modal-ant .ant-modal-content {
-  padding: 0px;
-}`;
-    style.append(document.createTextNode(css));
-    // 将 style 标签插入到页面的 head 中
-    document.head.append(style);
-    // 版本兼容处理 end
-  } else {
+  // modal 相关样式已按类名 scoped 注入到 index.less，不再向 document.head 全局追加
+  if (firstNumber <= 3) {
     // v3版本
     Form.config.attribute = Form.config.attribute?.filter(
       (item) => item.label !== '禁用',
     );
   }
+  // 版本兼容处理 end
 
   // 加载组件
   pluginManager.component.add(

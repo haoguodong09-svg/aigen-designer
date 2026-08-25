@@ -48,7 +48,7 @@ export default {
           } else if (['quarter', 'quarterrange'].includes(value)) {
             values.props.format = 'YYYY-Q季度';
             values.props.valueFormat = 'YYYY-Q季度';
-          } else if (['"yearrange"', 'year'].includes(value)) {
+          } else if (['year', 'yearrange'].includes(value)) {
             values.props.format = 'YYYY';
             values.props.valueFormat = 'YYYY';
           }

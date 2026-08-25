@@ -5,7 +5,8 @@ export default {
   config: {
     attribute: [
       {
-        field: 'title',
+        // 与组件 props 对齐：modal.vue 使用 componentSchema.label 作为标题
+        field: 'label',
         label: '标题',
         type: 'input',
       },

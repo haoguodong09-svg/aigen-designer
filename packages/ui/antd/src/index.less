@@ -1,3 +1,18 @@
+// 适配 antd v4+ modal 样式（按类名 scoped，避免向 document.head 全局注入）
+.aigen-modal-ant {
+  .aigen-modal-main {
+    padding: 4px 12px 12px;
+  }
+
+  .ant-modal-title {
+    padding: 16px 16px 0px;
+  }
+
+  .ant-modal-content {
+    padding: 0px;
+  }
+}
+
 .aigen-designer-main {
   .ant-input-number {
     width: 100%;
