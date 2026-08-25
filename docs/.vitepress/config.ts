@@ -1,3 +1,5 @@
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
+
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
@@ -7,28 +9,20 @@ export default defineConfig({
   // 打包目录
   head: [
     // 添加图标
-    ['link', { href: '/favicon.ico', rel: 'epic-icon', type: 'image/x-icon' }],
+    ['link', { href: '/favicon.ico', rel: 'icon', type: 'image/x-icon' }],
   ],
   lang: 'zh-CN',
-  sitemap: {
-    hostname: 'https://docs.epicjs.cn',
-  },
   // 主题配置
   themeConfig: {
-    algolia: {
-      apiKey: '99ba99d14a34ec161f62dec1d1f303df',
-      appId: 'D2HVZWN04E',
-      indexName: 'epicjs',
-    },
     editLink: {
-      pattern: 'https://github.com/Kchengz/epic-designer/issues',
+      pattern: 'https://github.com/haoguodong09-svg/aigen-designer/issues',
       text: '为此页提供修改建议',
     },
     footer: {
-      copyright: `本文档内容版权为 EpicDesigner 作者所有，保留所有权利。<a class="beian-link" href="https://beian.miit.gov.cn/">桂ICP备17005529号-4</a>`,
+      copyright: `本文档内容版权为 AigenDesigner 作者所有，保留所有权利。`,
     },
 
-    logo: 'https://examples.epicjs.cn/static/logo.png',
+    logo: '/logo.png',
     nav: [
       {
         activeMatch: '/guide/start/index',
@@ -171,9 +165,12 @@ export default defineConfig({
       ],
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Kchengz/epic-designer' },
+      {
+        icon: 'github',
+        link: 'https://github.com/haoguodong09-svg/aigen-designer',
+      },
     ],
   },
   // 网站标题
-  title: 'EpicDesigner文档',
+  title: 'AigenDesigner文档',
 });
