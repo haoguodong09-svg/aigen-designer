@@ -1,0 +1,126 @@
+# AigenDesigner 设计器
+
+:::tip 设计器 `AigenDesigner` 是一个可视化设计器组件，用户可以通过拖拽组件的方式快速生成 JSON 配置。它提供了丰富的组件库和配置项，用户可以根据需要选择合适的组件并配置相应的属性、事件和动作。设计器还提供了实时预览功能，用户可以随时查看所设计页面的效果。最终，用户可以将 JSON 配置导出，用于页面的生成和修改。:::
+
+## 设计器布局说明
+
+![](/layout.jpg)
+
+**界面主要分为 6 个区域**
+
+1. 顶部 操作按钮
+2. 活动栏 可以切换侧边栏面板
+3. 侧边栏 组件选择或信息展示
+4. 编辑区域 拖拽组件布局设计
+5. 右侧边栏 属性编辑相关
+6. 底部 状态展示
+
+其中 活动栏，侧边栏及右侧边栏可以自定义配置修改
+
+## 基础用法
+
+<ConfigProvider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }">
+  <div class="aigen-designer-container">
+    <AigenDesigner  @save="handleSubmit"  />
+  </div>
+</ConfigProvider>
+
+```vue
+<template>
+  <div class="aigen-designer-container">
+    <AigenDesigner @save="handleSubmit" />
+  </div>
+</template>
+<script lang="ts" setup>
+import { AigenDesigner, type PageSchema } from 'aigen-designer';
+
+/**
+ * 点击保存按钮操作
+ * @param e
+ */
+function handleSubmit(e: PageSchema) {
+  console.log(e);
+}
+</script>
+<style>
+.aigen-designer-container {
+  width: 100%;
+  height: 800px;
+  border: 1px solid var(--aigen-border);
+}
+</style>
+```
+
+<script setup>
+import "aigen-designer/dist/style.css";
+import { AigenDesigner, pluginManager } from "aigen-designer";
+import { setupAntd } from "@aigen-designer/antd";
+import { ConfigProvider, theme } from 'ant-design-vue'
+import { useTheme } from '@aigen-designer/hooks'
+const { isDark } = useTheme()
+
+setupAntd(pluginManager);
+
+
+
+function handleSubmit (e) {
+  console.log(e)
+}
+</script>
+
+<style>
+.aigen-designer-container{
+width:1200px;
+height:800px;
+border: 1px solid var(--aigen-border);
+position: relative;
+z-index: 20;
+background: white;
+}
+</style>
+
+## API
+
+| 参数 | 说明 | 类型 | 默认值 | 版本 |
+| --- | --- | --- | --- | --- |
+| title | 设计器头部标题 | string | - | 0.9.7 |
+| defaultSchema | 默认pageSchema，初始化和重置设计器将以该数据为基础模板 | PageSchema | - | 0.9.6 |
+| lockDefaultSchemaEdit | 锁定defaultSchema中组件不可以复制或移除 | boolean | false | 0.9.7 |
+| disabledZoom | 是否禁止画布缩放 | boolean | false | - |
+| draggable | 是否允许拖拽画布 | boolean | false | 0.9.27 |
+| canvasMode | 设置默认画布模式 | `'desktop'`, `'mobile'`, `'tablet'` | `'desktop'` | 1.0.2 |
+| hiddenHeader | 隐藏头部 | boolean | false | - |
+| formMode | 单表单模式，开启后不可再拖入表单，根节点默认切换为表单组件 | boolean | false | 0.9.19 |
+| sourceCodeReadOnly | 设置`源码`面板为只读状态 | boolean | false | 0.9.20 |
+| hidePreviewConfirm | 隐藏预览页面`表单数据`按钮 | boolean | false | 0.9.26 |
+| showHiddenItems | 控制设计区隐藏组件的是否保持显示状态 | boolean | true | 1.1.0 |
+| canvasPadding | 画布内边距 | number \| string | 16 | 1.1.10 |
+
+## 函数
+
+| 函数名称 | 说明 | 参数 | 回调参数 | 版本 |
+| --- | --- | --- | --- | --- |
+| setData | 导入 json 数据，继续编辑 | json | Boolean | 0.0.36 |
+| getData | 获取 json 数据 | - | Object | 0.0.36 |
+| reset | 清除表单 | - | Boolean | 0.0.36 |
+| preview | 预览组件，与点击设计器头部预览按钮效果一致 | - | x ​// 设置 name 字段禁用  const fieldStates = [ {    field: 'name',    state: 'DISABLED' }]​// 当 name 字段的值为 '张三' 时，将 name 字段设为必填并禁用const fieldStates = [ {    field: 'name',    condition: (data) => data.name === '张三',    state: 'DISABLED' }]javascript | 0.9.15 |
+| save | 触发保存事件，与点击设计器头部保存按钮效果一致 | - | - | 0.9.29 |
+
+## 事件
+
+| 事件名称 | 说明 | 参数 | 版本 |
+| --- | --- | --- | --- |
+| save | 点击保存按钮时回调 | json | 0.0.35 |
+| reset | 点击清空重置按钮时触发 | PageSchema | 0.9.6 |
+| toggleDeviceMode | 点击切换设备模式时触发 | String | 0.9.7 |
+| ready | 组件（包含异步组件）加载完成后触发 | { pageManager } | - |
+| imported | 导入数据完成后触发 | PageSchema | 0.9.30 |
+
+## 插槽
+
+| 插槽名称            | 说明                       | 参数 | 版本   |
+| ------------------- | -------------------------- | ---- | ------ |
+| header-prefix       | 顶部左侧插槽（logo，标题） |      | 0.8.1  |
+| header-title        | 顶部标题                   |      |        |
+| header-right-prefix | 顶部右侧区域前置插槽       |      | 0.8.10 |
+| header-right-suffix | 顶部右侧区域后置插槽       |      | 0.8.10 |

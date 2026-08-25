@@ -1,8 +1,6 @@
 # AigenBuilder 生成器
 
-:::tip 生成器
-`AigenBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，功能包括组件渲染、事件绑定和数据回显等。
-:::
+:::tip 生成器 `AigenBuilder` 是一个页面构建组件，它可以将设计器生成的 JSON 配置构建成页面，功能包括组件渲染、事件绑定和数据回显等。:::
 
 ## 基础用法
 
@@ -19,29 +17,29 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { AigenBuilder } from "aigen-designer";
+import { AigenBuilder } from 'aigen-designer';
 
 const pageSchema = {
   schemas: [
     {
-      type: "page",
-      id: "root",
+      type: 'page',
+      id: 'root',
       children: [
         {
-          label: "输入框",
-          type: "input",
-          field: "input",
-          icon: "aigen-icon-write",
+          label: '输入框',
+          type: 'input',
+          field: 'input',
+          icon: 'aigen-icon-write',
           input: true,
           props: {
-            defaultValue: "",
-            placeholder: "请输入",
-            size: "default",
-            type: "text",
+            defaultValue: '',
+            placeholder: '请输入',
+            size: 'default',
+            type: 'text',
           },
-          id: "gbm1xhrrj5s00",
+          id: 'gbm1xhrrj5s00',
         },
-      ]
+      ],
     },
   ],
 };
@@ -49,6 +47,7 @@ const pageSchema = {
 ```
 
 ## 校验表单并获取数据
+
 <div>
 	<AigenBuilder ref="ebForm" :pageSchema="pageSchemaForm" />
   <button @click="handleValidate">获取数据</button>
@@ -59,29 +58,29 @@ const pageSchema = {
 
 ```vue
 <template>
-	<div>
-		<AigenBuilder ref="ebForm" :pageSchema="pageSchema" />
-  		<button @click="handleValidate">获取数据</button>
-  	<div>
-  {{formData}}
+  <div>
+    <AigenBuilder ref="ebForm" :pageSchema="pageSchema" />
+    <button @click="handleValidate">获取数据</button>
+    <div>
+      {{ formData }}
+    </div>
   </div>
-</div>
 </template>
 <script lang="ts" setup>
-import { ref } from "vue";
-import { AigenBuilder } from "aigen-designer";
+import { ref } from 'vue';
+import { AigenBuilder } from 'aigen-designer';
 
 const pageSchema = {
   schemas: [
     {
-      type: "page",
-      id: "root",
+      type: 'page',
+      id: 'root',
       children: [
         {
-          label: "表单",
-          type: "form",
-          icon: "aigen-icon-qiapian",
-          name: "default",
+          label: '表单',
+          type: 'form',
+          icon: 'aigen-icon-qiapian',
+          name: 'default',
           props: {
             labelWidth: 100,
             labelCol: {
@@ -91,103 +90,102 @@ const pageSchema = {
               span: 19,
             },
             hideRequiredMark: false,
-            labelPosition: "right",
-            size: "default",
-            requireAsteriskPosition: "left",
+            labelPosition: 'right',
+            size: 'default',
+            requireAsteriskPosition: 'left',
           },
           children: [
             {
-              label: "输入框",
-              type: "input",
-              field: "input",
-              icon: "aigen-icon-write",
+              label: '输入框',
+              type: 'input',
+              field: 'input',
+              icon: 'aigen-icon-write',
               input: true,
               props: {
-                defaultValue: "",
-                placeholder: "请输入",
-                size: "default",
-                type: "text",
+                defaultValue: '',
+                placeholder: '请输入',
+                size: 'default',
+                type: 'text',
               },
-              id: "7k6ajqpxhl000",
+              id: '7k6ajqpxhl000',
             },
             {
-              label: "数字输入框",
-              type: "number",
-              icon: "aigen-icon-number",
-              field: "number",
+              label: '数字输入框',
+              type: 'number',
+              icon: 'aigen-icon-number',
+              field: 'number',
               input: true,
               props: {
-                placeholder: "请输入",
-                size: "default",
-                controlsPosition: "default",
+                placeholder: '请输入',
+                size: 'default',
+                controlsPosition: 'default',
               },
-              id: "i6x0mqlm6js00",
+              id: 'i6x0mqlm6js00',
             },
             {
-              label: "选择框",
-              type: "select",
-              icon: "aigen-icon-xiala",
-              field: "select",
+              label: '选择框',
+              type: 'select',
+              icon: 'aigen-icon-xiala',
+              field: 'select',
               input: true,
               props: {
                 options: [
                   {
-                    label: "选项1",
-                    value: "选项1",
+                    label: '选项1',
+                    value: '选项1',
                   },
                   {
-                    label: "选项2",
-                    value: "选项2",
+                    label: '选项2',
+                    value: '选项2',
                   },
                 ],
-                placeholder: "请选择",
-                size: "default",
-                effect: "light",
-                placement: "bottom-start",
+                placeholder: '请选择',
+                size: 'default',
+                effect: 'light',
+                placement: 'bottom-start',
               },
-              id: "80gl3fnca3g00",
+              id: '80gl3fnca3g00',
             },
             {
-              label: "单选框",
-              type: "radio",
-              icon: "aigen-icon-danxuan-cuxiantiao",
-              field: "radio",
+              label: '单选框',
+              type: 'radio',
+              icon: 'aigen-icon-danxuan-cuxiantiao',
+              field: 'radio',
               input: true,
               props: {
                 options: [
                   {
-                    label: "选项1",
-                    value: "选项1",
+                    label: '选项1',
+                    value: '选项1',
                   },
                   {
-                    label: "选项2",
-                    value: "选项2",
+                    label: '选项2',
+                    value: '选项2',
                   },
                 ],
-                size: "default",
+                size: 'default',
               },
-              id: "2ggd4l3i109w0",
+              id: '2ggd4l3i109w0',
             },
           ],
-          id: "eqf5rtg2ohc00",
+          id: 'eqf5rtg2ohc00',
         },
-      ]
+      ],
     },
   ],
 };
-    
-const ebForm = ref(null)
-const formData = ref(null)
 
-async function handleValidate(){
-  formData.value = {...(await ebForm.value.validate())}
+const ebForm = ref(null);
+const formData = ref(null);
+
+async function handleValidate() {
+  formData.value = { ...(await ebForm.value.validate()) };
 }
 </script>
 ```
 
-
-
 ## 重置表单
+
   <div>
     <AigenBuilder ref="ebRef2" :pageSchema="pageSchema2">
     </AigenBuilder>
@@ -205,8 +203,8 @@ async function handleValidate(){
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
-import { AigenBuilder, PageSchema } from "aigen-designer";
+import { ref, onMounted } from 'vue';
+import { AigenBuilder, PageSchema } from 'aigen-designer';
 
 const ebRef = ref<any>(null);
 
@@ -219,16 +217,16 @@ async function handleReset() {
 const pageSchema = ref<PageSchema>({
   schemas: [
     {
-      type: "page",
-      id: "root",
-      label: "页面",
+      type: 'page',
+      id: 'root',
+      label: '页面',
       children: [
         {
-          label: "表单",
-          type: "form",
-          icon: "aigen-icon-daibanshixiang",
+          label: '表单',
+          type: 'form',
+          icon: 'aigen-icon-daibanshixiang',
           props: {
-            name: "default",
+            name: 'default',
             labelWidth: 100,
             labelCol: {
               span: 5,
@@ -237,31 +235,31 @@ const pageSchema = ref<PageSchema>({
               span: 19,
             },
             hideRequiredMark: false,
-            labelPlacement: "left",
-            labelAlign: "right",
-            requireMarkPlacement: "right",
-            size: "medium",
+            labelPlacement: 'left',
+            labelAlign: 'right',
+            requireMarkPlacement: 'right',
+            size: 'medium',
           },
           children: [
             {
-              label: "姓名",
-              type: "input",
-              field: "input_sb6jhfb8",
-              icon: "aigen-icon-write",
+              label: '姓名',
+              type: 'input',
+              field: 'input_sb6jhfb8',
+              icon: 'aigen-icon-write',
               input: true,
               props: {
-                defaultValue: "",
-                placeholder: "请输入",
-                type: "text",
-                size: "medium",
+                defaultValue: '',
+                placeholder: '请输入',
+                type: 'text',
+                size: 'medium',
                 disabled: false,
               },
-              id: "input_sb6jhfb8",
+              id: 'input_sb6jhfb8',
             },
           ],
-          id: "form_18vemlk8",
+          id: 'form_18vemlk8',
         },
-      ]
+      ],
     },
   ],
 });
@@ -270,9 +268,9 @@ const pageSchema = ref<PageSchema>({
 onMounted(async () => {
   setTimeout(() => {
     ebRef.value?.setData({
-      input_sb6jhfb8: "自动填写的内容",
+      input_sb6jhfb8: '自动填写的内容',
     });
-  },200);
+  }, 200);
 });
 </script>
 ```
@@ -491,26 +489,25 @@ onMounted(async () => {
 
 </script>
 
-
 ## API
 
-| 参数       | 说明                             | 类型    | 默认值 | 版本  |
-| ---------- | -------------------------------- | ------- | ------ | ----- |
-| pageSchema | AigenDesigner 设计器生成的 json 数据 | json    | -      | -     |
-| formData   | 表单数据，用于数据回显(仅用于name为default的表单)           | FormDataModel | -  | 0.9.15 |
-| disabled   | 禁用AigenBuilder所有输入项           | boolean | false  | 0.9.4 |
+| 参数 | 说明 | 类型 | 默认值 | 版本 |
+| --- | --- | --- | --- | --- |
+| pageSchema | AigenDesigner 设计器生成的 json 数据 | json | - | - |
+| formData | 表单数据，用于数据回显(仅用于name为default的表单) | FormDataModel | - | 0.9.15 |
+| disabled | 禁用AigenBuilder所有输入项 | boolean | false | 0.9.4 |
 | readonly | 设置表单为只读 | boolean | false | 1.1.9 |
 | fieldStates | 控制表单字段状态 | FieldStates | - | 1.1.0 |
 
 ## 函数
 
-| 函数名称        | 说明                       | 参数          | 回调参数                   | 版本   |
-| --------------- | -------------------------- | ------------- | -------------------------- | ------ |
-| setData         | 设置表单数据，用于数据回显 | FormDataModel |                            | 0.0.36 |
-| getData         | 跳过验证直接获取表单数据   | -             | Promise<br /><Object \| false>   | 0.0.36 |
-| validate        | 验证表单并获取表单数据     | -             | Promise<br /><Object \| false>   | 0.0.36 |
-| getFormInstance | 获取表单实例               |               | Promise<br /><Form \| false> | 0.9.4 |
-| resetData | 重置所有表单项，将其值重置为初始值，并移除校验结果 | |  | 1.1.3 |
+| 函数名称 | 说明 | 参数 | 回调参数 | 版本 |
+| --- | --- | --- | --- | --- |
+| setData | 设置表单数据，用于数据回显 | FormDataModel |  | 0.0.36 |
+| getData | 跳过验证直接获取表单数据 | - | Promise<br /><Object \| false> | 0.0.36 |
+| validate | 验证表单并获取表单数据 | - | Promise<br /><Object \| false> | 0.0.36 |
+| getFormInstance | 获取表单实例 |  | Promise<br /><Form \| false> | 0.9.4 |
+| resetData | 重置所有表单项，将其值重置为初始值，并移除校验结果 |  |  | 1.1.3 |
 
 ## 事件
 
@@ -519,8 +516,8 @@ onMounted(async () => {
 | ready    | 页面渲染完时触发   | { pageManager }          |       |
 | change   | 输入组件更新数据时 | {field, value, formData} | 1.1.5 |
 
-
 ## fieldStates 属性说明
+
 - fieldStates 用于控制表单字段状态，如禁用、必填等
 - 每个对象表示一个字段状态，包含以下属性
   - field: 字段名称
@@ -529,22 +526,22 @@ onMounted(async () => {
   - state: 字段状态，可选值为 'DISABLED' | 'HIDE' | 'READ' | 'WRITE'
 
   示例：
+
   ```javascript
-  
   // 设置 name 字段禁用
-    const fieldStates = [
+  const fieldStates = [
     {
       field: 'name',
-      state: 'DISABLED'
-    }
-  ]
-  
+      state: 'DISABLED',
+    },
+  ];
+
   // 当 name 字段的值为 '张三' 时，将 name 字段设为必填并禁用
   const fieldStates = [
     {
       field: 'name',
       condition: (data) => data.name === '张三',
-      state: 'DISABLED'
-    }
-  ]
+      state: 'DISABLED',
+    },
+  ];
   ```
