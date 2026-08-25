@@ -1,35 +1,52 @@
 ## 1.1.13（2026-06-14）
+
 【注意】更新版本请同步更新@aigen-designer/element-plus、@aigen-designer/antd、@aigen-designer/naive-ui依赖
+
 ### ✨ Feat
+
 - 栅格布局列编辑支持更多属性
 - 补充各类组件默认占位提示文本
+
 ### ✨ Refactor
+
 - 优化表单项与内部组件的样式处理逻辑
 - 移除 attributeItem placeholder 默认值
 - 重构antd级联选择器组件
+
 ### 🐛 Bug Fixes
+
 - 修复组件库面板拖拽第二个组件无法放入画布问题
 
 ## 1.1.12（2026-06-05）
+
 ### ✨ Feat
+
 - 组件注册配置新增内联元素inline属性
 - 输入组件样式默认附加到formItem组件上
+
 ### ✨ Refactor
+
 - 调整背景色为默认白色
+
 ### 🐛 Bug Fixes
+
 - 修复嵌套组件拖拽后出现多个相同元素
 - 修复组件节点出现null或重复节点问题
 - 修复重复节点处理异常删除节点问题
 - 修复布局组件渲染异常问题
 
 ## 1.1.10（2026-05-31）
+
 ### ✨ Feat
+
 - 表单组件 disabled 支持向下传递
 - 为大纲树添加事件绑定状态的提示
 - 新增自定义函数编辑时的异常提醒
 - 修复表单组件无法在设计面板选中问题
 - 设计器新增画布内边距canvasPadding属性配置
+
 ### ✨ Refactor
+
 - 统一颜色与样式规范
 - 优化面板编辑器组件样式与布局
 - 重构 deepEqual，支持特殊类型
@@ -37,26 +54,39 @@
 - 调整designer组件ready事件参数为直接传递 pageManager
 
 ## 1.1.9（2026-05-06）
+
 ### ✨ Feat
+
 - 大纲面板新增组件显示/隐藏、锁定/解锁、复制、删除操作
 - 新增表单readonly只读模式
 - 表单项自定义校验（checkPayload）
+
 ### ✨ Refactor
+
 - 替换拖拽依赖，将 vuedraggable 全面迁移为 vue-draggable-plus
+
 ### 🐛 Bug Fixes
+
 - 修复elementPlus对话框嵌套渲染异常问题
-- 修复活动栏与右侧边栏通过id隐藏显示无效问题 
+- 修复活动栏与右侧边栏通过id隐藏显示无效问题
 - 修复antdv栅格布局设置栅格间距值为string类型导致警告问题
 - 修复动作配置面板错误显示暂无配置的问题
+
 ## 1.1.8（2026-03-14）
+
 【注意】更新版本请同步更新@aigen-designer/element-plus、@aigen-designer/antd、@aigen-designer/naive-ui依赖
+
 ### 🐛 Bug Fixes
+
 - 修复隐藏组件没有mounted事件，导致builder组件一直处于未就绪状态问题
 - 修复builder组件未完成异步组件加载就切换pageSchema数据导致组件一直处于未就绪状态问题
 
 ## 1.1.6（2026-03-13）
+
 【注意】更新版本请同步更新@aigen-designer/element-plus、@aigen-designer/antd、@aigen-designer/naive-ui依赖
+
 ### ✨ Feat
+
 - 优化异步组件挂载追踪机制，确保 epicReady 事件触发时机准确
 - 组件动作参数添加公式解析功能
 - 新增 useEventBus hook 函数，使用 Symbol 替换字符串注入键
@@ -64,36 +94,50 @@
 - 新增 useDesignerContext、usePageManager hook 函数
 - 新增 useForm hook 函数
 - 新增 useFormItem hook 函数
+
 ### ✨ Refactor
+
 - 支持 setupUI 配置上传组件默认上传地址，通过 pluginManager 可以统一管理上传组件地址
 - 重构 Loader，优化设计器启动加载体验
 - 重构选中组件滚动到对应位置逻辑
 - 移除未使用的 resetFormData 相关代码
 - 增加组件实例作用域支持
 - 将 tree、collapse 组件使用依赖注入统一修改为 Symbol 类型 key
+
 ### 🐛 Bug Fixes
+
 - 修复文件上传组件无文件参数名导致上传失败问题
 - 修复 setValueByPath 路径字段传入空值导致异常问题
 - 修复 antd UI 时 inputSize 组件不显示单位选择器问题
 
 ## 1.1.4（2026-01-20）
+
 ### ✨ Feat
+
 - 新增change事件以监听表单输入变化
+
 ### ✨ Refactor
+
 - 拖拽插入组件后，自动选中对应组件节点
+
 ### 🐛 Bug Fixes
+
 - 修复tooltip提示placement为top时定位显示错误问题
 - 修复ElementPlus与Antd弹窗样式冲突问题
 - 修复在 Monaco 编辑器中编辑内容误触发全局快捷键的问题
 
 ## 1.1.3（2026-01-02）
+
 ### ✨ Feat
+
 - 新增事件总线管理
 - 组件注册配置新增locked约束（组件不可选中编辑，不可复制）
 - 新增标签页组件
 - 新增resetData重置表单方法
 - NaiveUi新增文本域组件
+
 ### ✨ Refactor
+
 - 重构插件管理器设计器状态管理
 - 重构组件面板样式
 - 重构活动栏面板样式
@@ -103,43 +147,55 @@
 - 选中根节点时取消自动滚动到画布顶部，防止误点击导致频繁自动滚动到顶部
 - 避免根节点触发hover高亮效果，导致频繁切换hover目标
 - 标准化组件属性字段命名，重命名 componentProps 为 props
+
 ### 🐛 Bug Fixes
+
 - 修复单表单模式下还可以添加表单组件文件
 - 修复选中高亮边界切换画布模式时出现定位错位问题
 
 ## 1.1.1（2025-12-07）
+
 ### 🐛 Bug Fixes
+
 - 修复deepToRaw无法处理Ref对象类型问题
 - 修复组件绑定数据为对象类型时，更新数据导致组件重新渲染问题
 - 修复element-plus属性编辑器输入框光标异常跳转问题
 
 ## 1.1.0（2025-11-27）
+
 【重要】为提供更灵活的按需引入能力，UI 组件包现已独立编译发布：
+
 ```
 @aigen-designer/antd
 @aigen-designer/element-plus
 @aigen-designer/naive-ui
 ```
->请参考[快速上手文档](/guide/start/quick-start.html#选择-ui-组件库)了解新的组件引入方式
+
+> 请参考[快速上手文档](/guide/start/quick-start.html#选择-ui-组件库)了解新的组件引入方式
 
 pluginManager 插件管理器已全面重构，功能模块更加清晰：
+
 ```
 pluginManager.component.*      // 组件相关功能
-pluginManager.panel.*         // 面板相关功能  
+pluginManager.panel.*         // 面板相关功能
 pluginManager.publicMethods.* // 公共方法集合
 ```
+
 > 详细了解请参阅[pluginManager 插件管理器文档](/guide/utils/pluginManager.html#主要变更内容)
 
 ### ✨ Feat
+
 - 支持通过pluginManager对象修改默认图片上传、文件上传组件的默认上传地址
 - 支持通过pluginManager对象传入请求的headers参数
 - 新增showHiddenItems属性控制设计区隐藏组件的显示状态
 
 ### ✨ Refactor
+
 - 重构 UI 组件包发布策略
 - 优化插件管理器，将相关功能分别被组织到 component、panel、publicMethods 对象中
 
 ### 🐛 Bug Fixes
+
 - 修复注册扩展组件缺少config配置时，导致设计器报错问题
 - 修复表单name值不等于default时回显数据异常问题
 - 修复在EpicNode、form组件使用designerProps变量导致的警告问题
@@ -153,14 +209,18 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复组件属性配置组件中存在函数时，使用deepClone函数深拷贝componentSchema数据异常报错问题
 
 ## 1.0.4（2025-10-15）
+
 ### ✨ Feat
+
 - MonacoEditor组件添加 allowFullscreen 属性控制全屏按钮显示
 - 在pluginManager中添加全局状态管理功能
 - 新增UI全局提示函数
 - EActionEditor 为所有组件添加修改属性动作
 - EColEditor 添加 Col 拖拽排序功能
 - 新增历史操作导出导入
+
 ### ✨ Refactor
+
 - 汉化monaco-editor编辑器
 - 重构setFormData函数
 - 升级VueDraggable实现设计时组件节点减少div标签包裹优化
@@ -169,7 +229,9 @@ pluginManager.publicMethods.* // 公共方法集合
 - 优化revoke添加记录逻辑
 - 优化深拷贝和获取UUID的代码
 - 优化表单组件高度自适应能力
+
 ### 🐛 Bug Fixes
+
 - 修复禁止拖拽元素渲染异常问题
 - EColEditor 删除图标 name 错误无法正常显示
 - 修复deepClone中structuredClone处理Proxy对象的兼容性问题
@@ -177,17 +239,23 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复Config拼写错误问题，将Confings修改为Configs
 
 ## 1.0.2（2025-07-03）
+
 ### ✨ Feat
+
 - 新增快捷键操作
 - 新增canvasMode属性设置默认画布模式
 - 新增usePanel面板状态管理函数
 - 新增setFormSchema函数
+
 ### ✨ Refactor
+
 - findAllInstance函数修改为findInstanceAll
 - 重构EDesigner组件，使用hooks封装逻辑函数
 - 重构findSchemaById函数
 - 重构useRevoke函数
+
 ### 🐛 Bug Fixes
+
 - 修复在弹窗组件加载EDesigner组件时，画布初始化异常问题
 - 修复组件初始化前调用隐藏显示侧边栏活动栏方法无效问题
 - 修复EBuilder组件pageSchema默认值设置为null报错问题
@@ -201,24 +269,34 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复属性标签被输入内容挤压的布局问题
 
 ## 1.0.1（2025-03-17）
+
 ### ✨ Feat
+
 - 组件暴露schema对象,可通过find函数获取并修改组件的schema属性
 - 新增findInstance、findAllInstance函数，用于获取组件实例
+
 ### ✨ Refactor
+
 - 公共函数注册使用废弃属性时抛出警告提示
 - 组件注册配置类型标注describe属性废弃,请使用description属性代替
+
 ### 🐛 Bug Fixes
+
 - 修复执行组件方法异常问题
 
 ## 1.0.0（2025-03-17）
+
 ### ✨ Feat
+
 - 新增支持Antd form组件 scrollToFirstError校验失败滚动到对应位置
 - 动作配置大纲组件添加隐藏状态标识
 - 动作配置大纲组件新增复制ID按钮
 - 新增支持嵌套字段，数据字段支持user.age点分隔形式
 - 新增ready生命周期,所有异步组件挂载完成后执行
 - 活动栏和侧边栏新增sort排序字段
+
 ### ✨ Refactor
+
 - 变量`checkedNode`修改为`selectedNode`
 - 公共函数及组件注册配置中的变量`describe`修改为`description`
 - 变量`disableHover`修改为`disabledHover`
@@ -226,7 +304,9 @@ pluginManager.publicMethods.* // 公共方法集合
 - 默认文件上传组件返回字符串类型,多文件以逗号分割
 - 重构hover状态计算逻辑
 - 重构设计区域拖拽禁用逻辑
+
 ### 🐛 Bug Fixes
+
 - 修复组件无法绑定事件问题
 - 修复依赖嵌套问题
 - 修复校验编辑组件内存溢出问题
@@ -242,30 +322,43 @@ pluginManager.publicMethods.* // 公共方法集合
 ## 0.9.30（2025-01-15）
 
 ### ✨ Feat
+
 - 新增样式隔离容器类名 `epic-scoped`，用于限定 UnoCSS 生成的样式
 - 选中组件后的小按钮物件新增选中当前组件的父组件功能
 - find函数支持通过组件属性字段查找
 - 新增findAll方法，可查询所有匹配组件实例，返回数组
 - 设计器隐藏头部时，在工具栏添加预览及保存按钮
 - 新增imported导入数据事件
+
 ### ✨ Refactor
+
 - 重构pageSchema初始化方式
 - 优化find查找功能，只要匹配到一个组件就结束查找并返回数据
+
 ### 🐛 Bug Fixes
+
 - 修复设计界面page组件高度未占满画布高度问题
 
 ## 0.9.28（2024-12-25）
+
 ### 🐛 Bug Fixes
+
 - 修复设计界面无法使用鼠标滚动问题
 - 修复事件配置中，由于组件相同导致没有重新渲染的问题
 
 ## 0.9.27（2024-12-23）
+
 ### ✨ Feat
+
 - 自定义组件可以通过注册配置扩展样式面板
 - 新增draggable属性，设置是否允许拖拽画布，默认为true
+
 ### ✨ Refactor
+
 - 移除setDateLocale函数,设置antd组件国际化不再依赖该函数
+
 ### 🐛 Bug Fixes
+
 - 修复getData数据后添加数据并重新setData数据，只更新数据但是设计区域无渲染更新
 - 修复未页面未获取焦点时，按ctrl键+鼠标滚轮缩放画布异常问题
 - 修复画布切换为mode、pad时，无法正常回显数据问题
@@ -274,28 +367,45 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复设置禁止拖拽画布时底部滚动条未隐藏问题
 
 ## 0.9.26（2024-11-27）
+
 ### ✨ Feat
+
 - EDesigner组件新增hidePreviewConfirm属性，隐藏预览表单数据按钮
 - 设计界面新增节点遮罩，防止误触发节点事件
+
 ### 🐛 Bug Fixes
+
 - 解决dynamicFormItem组件属性透传警告问题
 
 ## 0.9.25（2024-10-16）
+
 ### 🐛 Bug Fixes
+
 - 修复antd组件校验异常问题
 
 ## 0.9.24（2024-10-16）
+
 ### ✨ Refactor
+
 - unocss基础单位由rem转px
+
 ### 🐛 Bug Fixes
+
 - 修复表单校验规则编辑内存溢出问题
+
 ## 0.9.23（2024-09-21）
+
 ### ✨ Feat
+
 - EBuilder组件新增getForms、setForms、validateAll函数
+
 ### ✨ Refactor
+
 - 重构EBuilder组件
 - 重构ENode组件，减少重复代码
+
 ### 🐛 Bug Fixes
+
 - 修复加载数据里面包含未注册组件时报错问题
 - 修复属性编辑输入中文时光标自动跳到输入字段的末尾
 - 修复ts类型引入路径错误
@@ -304,12 +414,18 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复数据回显时未进行深拷贝，导致源数据被修改问题
 
 ## 0.9.22（2024-09-07）
+
 ### ✨ Feat
+
 - 右侧属性窗口，没有设置label的将不显示label
 - 大纲组件添加隐藏状态标识
+
 ### ✨ Refactor
+
 - 调整toolbar样式
+
 ### 🐛 Bug Fixes
+
 - lint 样式重复定义
 - 修正 Safari 下拖拽组件和画布失效问题、Chrome 下鼠标出现地球的问题、Safari 下拖拽阴影问题
 - formMode 为 true 的时候，大纲tree 拖拽到外部导致节点丢失问题
@@ -317,10 +433,14 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复禁止缩放时切换设备无效问题
 
 ## 0.9.21（2024-08-21）
+
 ### ✨ Refactor
+
 - 大纲显示组件id
 - 重构预览组件,查看数据时验证所有表单组件
+
 ### 🐛 Bug Fixes
+
 - 修复getUUID函数无法通过生成长度测试问题
 - 修复重新加载组件，历史记录未清空问题
 - 修复设计器组件切换表单模式时导致其他非表单模式的表单组件也被隐藏问题
@@ -328,33 +448,51 @@ pluginManager.publicMethods.* // 公共方法集合
 - 解决项目中也使用monaco-editor，导致monaco-editor打包两次问题
 
 ## 0.9.20（2024-08-04）
+
 ### ✨ Feat
+
 - EDesigner新增sourceCodeReadOnly属性设置源码面板为只读状态
+
 ### ✨ Refactor
+
 - 优化画布自动缩放功能
+
 ### 🐛 Bug Fixes
+
 - 修复在属性面板编辑后再使用源码面板编辑，属性面板无法正常回显数据
 
 ## 0.9.19（2024-07-23）
+
 ### ✨ Feat
+
 - EDesigner新增切换单表单模式属性formMode
 - 组件注册配置新增sort排序字段
 - 组件Icon支持iconify图标库扩展
+
 ### ✨ Refactor
+
 - 切换内置图标
+
 ### 🐛 Bug Fixes
+
 - 修复文档搜索功能无法使用问题
 
 ## 0.9.18（2024-07-13）
+
 ### 🐛 Bug Fixes
+
 - 修复点击清空按钮按钮无法正常重置设计器数据问题
 - 修复公共函数和组件函数逻辑异常导致页面卡主问题
 - 修复setAttr函数组件componentProps属性undefined导致异常报错问题
 
 ## 0.9.17（2024-07-11）
+
 ### ✨ Refactor
+
 - EBuilder组件setData仅修改传入的字段值
+
 ### 🐛 Bug Fixes
+
 - 修复表单组件调整表单布局为vertical时参数类型警告问题
 - 修复动作配置弹出框icon显示异常问题
 - 修复表单存在校验信息时,数据回显后校验信息保持校验失败状态
@@ -363,14 +501,20 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复自定义函数逻辑异常导致页面卡主问题
 
 ## 0.9.16（2024-06-14）
+
 ### 🐛 Bug Fixes
+
 - 修复elementPlus/naiveUi表单数据回显无效问题
 
 ## 0.9.15（2024-06-14）
+
 ### ✨ Feat
+
 - EDesigner组件暴露预览方法
 - EBuilder组件新增formData属性用于表单数据回显
+
 ### 🐛 Bug Fixes
+
 - 修复选项管理拖拽后无法新增选项问题
 - 修复级联选项管理，子选项拖拽后数据重复问题
 - 修复扩展iconfont无效问题
@@ -378,36 +522,47 @@ pluginManager.publicMethods.* // 公共方法集合
 - 修复预览时点击组件label会切换选中组件问题
 
 ## 0.9.14（2024-05-25）
+
 ### ✨ Refactor
+
 - 组件label统一修改为标题
+
 ### 🐛 Bug Fixes
+
 - 修复弹出builder组件图标异常问题
 
 ## 0.9.13（2024-05-23）
+
 ### 🐛 Bug Fixes
+
 - 修复弹出窗口内组件图标异常问题
 
 ## 0.9.12（2024-05-20）
 
 ### ✨ Feat
+
 - 重构注册配置接口，新增editConstraints约束配置对象
 - antd日期选择器新增更多日期类型
 - antd组件属性补充
 - elementPlus组件属性补充
+
 ### ✨ Refactor
+
 - 重构注册配置接口，新增editConstraints约束配置对象
 - 调整图标font-class影响范围,防止与项目其他的icon冲突
 - 将page组件name属性移至componentProps内
+
 ### 🐛 Bug Fixes
+
 - 修复暗黑主题在组件渲染之前设置，导致异常问题
 - 修复isDark状态错误问题
 
 ## 0.9.11（2024-05-13）
 
-调整注册配置，将’icon‘属性移至 ComponentConfigModel 接口的‘defaultSchema’对象之外
-影响：自定义组件，请自行调整注册配置中icon位置
+调整注册配置，将’icon‘属性移至 ComponentConfigModel 接口的‘defaultSchema’对象之外影响：自定义组件，请自行调整注册配置中icon位置
 
 ### ✨ Feat
+
 - 新增暗黑主题,添加css变量
 
 ### 🐛 Bug Fixes
@@ -419,11 +574,13 @@ pluginManager.publicMethods.* // 公共方法集合
 ## 0.9.10（2024-05-03）
 
 ### ✨ Feat
+
 - 日期选择器调整类型时自动调整数据格式
 
 ## 0.9.9（2024-04-27）
 
 ### ✨ Feat
+
 - 注册配置新增fixedField字段锁定表单项field不添加UUID
 - 选中元素不在可视区时自动滚动到相应位置
 - 新增hideActivitybar、hideRightSidebar方法
@@ -480,9 +637,9 @@ pluginManager.publicMethods.* // 公共方法集合
 
 ### ✨ Feat
 
-- [pageManager对象添加find方法](https://github.com/Kchengz/epic-designer/commit/c7355ad981c644e8fa51e628ceec35fcb3065be5)
-- [EBuilder新增disabled属性，禁用所有输入项](https://github.com/Kchengz/epic-designer/commit/f57204f66243d0bfa80f84002570df9e7cf9c8a8)
-- [builder组件新增getFormInstance方法函数](https://github.com/Kchengz/epic-designer/commit/b54e679d7311d335169f60fa93a6d7a375124616)
+- [pageManager对象添加find方法](https://github.com/haoguodong09-svg/aigen-designer/commit/c7355ad981c644e8fa51e628ceec35fcb3065be5)
+- [EBuilder新增disabled属性，禁用所有输入项](https://github.com/haoguodong09-svg/aigen-designer/commit/f57204f66243d0bfa80f84002570df9e7cf9c8a8)
+- [builder组件新增getFormInstance方法函数](https://github.com/haoguodong09-svg/aigen-designer/commit/b54e679d7311d335169f60fa93a6d7a375124616)
 
 ### ✨ refactor
 
@@ -490,87 +647,86 @@ pluginManager.publicMethods.* // 公共方法集合
 
 ### 🐛 Bug Fixes
 
-- [修复setAttr方法设置组件属性时会直接修改componentSchema问题](https://github.com/Kchengz/epic-designer/commit/b94a30e802e8730a6dc238cad0a52e0e0c3bb0eb)
-- [修复同时两个designer时，第二个设计器选择异常问题](https://github.com/Kchengz/epic-designer/commit/127e107beebaaa8c65fe44d5cf95e192700bce9b)
-- [修复缩放计算出现Infinity问题](https://github.com/Kchengz/epic-designer/commit/f3d2954a9e1e669b35d44cfb692e1f7ac8e00181)
-- [Antd(input)没有显示最大字符数](https://github.com/Kchengz/epic-designer/commit/88d63bbaecd371ab67884c64f7b6f6eaf30e3039)
+- [修复setAttr方法设置组件属性时会直接修改componentSchema问题](https://github.com/haoguodong09-svg/aigen-designer/commit/b94a30e802e8730a6dc238cad0a52e0e0c3bb0eb)
+- [修复同时两个designer时，第二个设计器选择异常问题](https://github.com/haoguodong09-svg/aigen-designer/commit/127e107beebaaa8c65fe44d5cf95e192700bce9b)
+- [修复缩放计算出现Infinity问题](https://github.com/haoguodong09-svg/aigen-designer/commit/f3d2954a9e1e669b35d44cfb692e1f7ac8e00181)
+- [Antd(input)没有显示最大字符数](https://github.com/haoguodong09-svg/aigen-designer/commit/88d63bbaecd371ab67884c64f7b6f6eaf30e3039)
 
 ## 0.9.3（2024-03-14）
 
 ### 🐛 Bug Fixes
 
-- [修复使用AigenDesigner时，提示缺少不必要的依赖问题](https://github.com/Kchengz/epic-designer/commit/c17c5c58bdb3e61d2a0a7b8d021b27a1399dd956)
-- [修复ui组件初始化未完成就渲染页面的异常问题](https://github.com/Kchengz/epic-designer/commit/f4e711ef82809ab60fc6e1a7dc6f31f976dbcb52)
+- [修复使用AigenDesigner时，提示缺少不必要的依赖问题](https://github.com/haoguodong09-svg/aigen-designer/commit/c17c5c58bdb3e61d2a0a7b8d021b27a1399dd956)
+- [修复ui组件初始化未完成就渲染页面的异常问题](https://github.com/haoguodong09-svg/aigen-designer/commit/f4e711ef82809ab60fc6e1a7dc6f31f976dbcb52)
 
 ## 0.9.1（2024-03-13）
 
 本次更新重做了组件分组、ui设置及内部变量名称修改
 
-pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法，
-新增`setComponentGroupNameMap`、`clearComponentGroupNameMap`、`setSortedGroups`、`clearSortedGroups`、`hideComponent`、`showComponent`等方法
+pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法，新增`setComponentGroupNameMap`、`clearComponentGroupNameMap`、`setSortedGroups`、`clearSortedGroups`、`hideComponent`、`showComponent`等方法
 
 ### ✨ Feat
 
-- [新增element plus组件国际化支持](https://github.com/Kchengz/epic-designer/commit/b34a4ba6697e796f7dcd74b414d029eb406a2da5)
-- [新增antdv国际化方案](https://github.com/Kchengz/epic-designer/commit/e6350ed0531cad040cb885fe10628515653c7325)
-- [事件编辑折叠面板自动展开已配置动作的面板](https://github.com/Kchengz/epic-designer/commit/17fe46a4cbf14a8bc06e2eebcb19b18ec0334481) [#7](https://github.com/Kchengz/epic-designer/issues/7)
-- [新增分组排序设置函数setSortedGroups](https://github.com/Kchengz/epic-designer/commit/25d67af7c3f4d8631bf50093bf037216dc0ac495)
+- [新增element plus组件国际化支持](https://github.com/haoguodong09-svg/aigen-designer/commit/b34a4ba6697e796f7dcd74b414d029eb406a2da5)
+- [新增antdv国际化方案](https://github.com/haoguodong09-svg/aigen-designer/commit/e6350ed0531cad040cb885fe10628515653c7325)
+- [事件编辑折叠面板自动展开已配置动作的面板](https://github.com/haoguodong09-svg/aigen-designer/commit/17fe46a4cbf14a8bc06e2eebcb19b18ec0334481) [#7](https://github.com/haoguodong09-svg/aigen-designer/issues/7)
+- [新增分组排序设置函数setSortedGroups](https://github.com/haoguodong09-svg/aigen-designer/commit/25d67af7c3f4d8631bf50093bf037216dc0ac495)
 
 ### ✨ refactor
 
-- [组件配置添加groupName 属性](https://github.com/Kchengz/epic-designer/commit/0e2abe80e22903d69e5268e41e1eab24129269e1)
-- [重构组件分组管理，组件注册配置可设置分组](https://github.com/Kchengz/epic-designer/commit/2e6a5e4f2496edc9f45d1d4b2a43a94e700abe85)
-- [将record字段重命名为componentSchema](https://github.com/Kchengz/epic-designer/commit/b9def1bee0374f1a56cc360d4697633c5feac8fb)
-- [将NodeItem类型重命名为ComponentSchema并添加类型注释](https://github.com/Kchengz/epic-designer/commit/af1f5bbcfb783f75d0beb9d5a1ed4e7701fc2c63)
-- [调整表单组件name至componentProps属性内](https://github.com/Kchengz/epic-designer/commit/6b18519df7832a7a7798e5e9dacefff13fb80e27)
+- [组件配置添加groupName 属性](https://github.com/haoguodong09-svg/aigen-designer/commit/0e2abe80e22903d69e5268e41e1eab24129269e1)
+- [重构组件分组管理，组件注册配置可设置分组](https://github.com/haoguodong09-svg/aigen-designer/commit/2e6a5e4f2496edc9f45d1d4b2a43a94e700abe85)
+- [将record字段重命名为componentSchema](https://github.com/haoguodong09-svg/aigen-designer/commit/b9def1bee0374f1a56cc360d4697633c5feac8fb)
+- [将NodeItem类型重命名为ComponentSchema并添加类型注释](https://github.com/haoguodong09-svg/aigen-designer/commit/af1f5bbcfb783f75d0beb9d5a1ed4e7701fc2c63)
+- [调整表单组件name至componentProps属性内](https://github.com/haoguodong09-svg/aigen-designer/commit/6b18519df7832a7a7798e5e9dacefff13fb80e27)
 
 ### 🐛 Bug Fixes
 
-- [修复AntdV3安装无效问题](https://github.com/Kchengz/epic-designer/commit/0af6a102cb3413a32e65a729a4bcf22124d9b42f)
-- [修复element-plus组件无法正常渲染问题](https://github.com/Kchengz/epic-designer/commit/4b3238b140dbc67c162a85e9996839d3921315c2)
+- [修复AntdV3安装无效问题](https://github.com/haoguodong09-svg/aigen-designer/commit/0af6a102cb3413a32e65a729a4bcf22124d9b42f)
+- [修复element-plus组件无法正常渲染问题](https://github.com/haoguodong09-svg/aigen-designer/commit/4b3238b140dbc67c162a85e9996839d3921315c2)
 
 ## 0.8.15（2024-01-11）
 
 ### ✨ Feat
 
-- [新增数据查看面板](https://github.com/Kchengz/epic-designer/commit/18c0199ceaf4016b2dc70580ed28f84c03bef5ff)
+- [新增数据查看面板](https://github.com/haoguodong09-svg/aigen-designer/commit/18c0199ceaf4016b2dc70580ed28f84c03bef5ff)
 
 ### 🐛 Bug Fixes
 
-- [修复画布宽高设置为px以外的单位不会生效的问题](https://github.com/Kchengz/epic-designer/commit/79d502c37b83247713bb203dc7f7706e12adb1f0)
-- [修复校验不通过是外部的Promise保持pedding的bug](https://github.com/Kchengz/epic-designer/commit/00160a3d7ea00f7b9415c3cdff789fdced06b443)
-- [修复编译后types类型文件不存在问题](https://github.com/Kchengz/epic-designer/commit/4a996ae396a39761fda6970e79cdd7fb4d6487c6)
+- [修复画布宽高设置为px以外的单位不会生效的问题](https://github.com/haoguodong09-svg/aigen-designer/commit/79d502c37b83247713bb203dc7f7706e12adb1f0)
+- [修复校验不通过是外部的Promise保持pedding的bug](https://github.com/haoguodong09-svg/aigen-designer/commit/00160a3d7ea00f7b9415c3cdff789fdced06b443)
+- [修复编译后types类型文件不存在问题](https://github.com/haoguodong09-svg/aigen-designer/commit/4a996ae396a39761fda6970e79cdd7fb4d6487c6)
 
 ## 0.8.13（2023-11-21）
 
 ### ✨ Feat
 
-- [新增隐藏头部属性](https://github.com/Kchengz/epic-designer/commit/de558e9b0693508cec3d9bb9634a176053b12708)
-- [新增header插槽](https://github.com/Kchengz/epic-designer/commit/8c9295ec5aa6f73b13898b9b7e005deac6ef8953)
+- [新增隐藏头部属性](https://github.com/haoguodong09-svg/aigen-designer/commit/de558e9b0693508cec3d9bb9634a176053b12708)
+- [新增header插槽](https://github.com/haoguodong09-svg/aigen-designer/commit/8c9295ec5aa6f73b13898b9b7e005deac6ef8953)
 
 ### 🐛 Bug Fixes
 
-- [修复上传图片图标不显示问题](https://github.com/Kchengz/epic-designer/commit/08f16cfff58adc4a09aa8489d1a48e91af0138b9)
-- [修复用户扩展icon无法正常显示问题](https://github.com/Kchengz/epic-designer/commit/f3288745b694318cd0d6cfb0dbabbb1aa00e41ca)
-- [修复组件ts类型缺失问题](https://github.com/Kchengz/epic-designer/commit/b91bd0e13c5e5ba3fa3c11ff7992a85ac0ca7727)
+- [修复上传图片图标不显示问题](https://github.com/haoguodong09-svg/aigen-designer/commit/08f16cfff58adc4a09aa8489d1a48e91af0138b9)
+- [修复用户扩展icon无法正常显示问题](https://github.com/haoguodong09-svg/aigen-designer/commit/f3288745b694318cd0d6cfb0dbabbb1aa00e41ca)
+- [修复组件ts类型缺失问题](https://github.com/haoguodong09-svg/aigen-designer/commit/b91bd0e13c5e5ba3fa3c11ff7992a85ac0ca7727)
 
 ## 0.8.12（2023-11-16）
 
 ### ✨ Feat
 
-- [新增find方法用于查找组件示例，替换getComponent](https://github.com/Kchengz/epic-designer/commit/8463a8a4e9fda261a7f42717db0a4b2da993c153)
-- [导入新增简单k-form数据处理，可导入k-form数据](https://github.com/Kchengz/epic-designer/commit/1729ea0188d33cdb38243364b86c0fc533cd2d9d)
+- [新增find方法用于查找组件示例，替换getComponent](https://github.com/haoguodong09-svg/aigen-designer/commit/8463a8a4e9fda261a7f42717db0a4b2da993c153)
+- [导入新增简单k-form数据处理，可导入k-form数据](https://github.com/haoguodong09-svg/aigen-designer/commit/1729ea0188d33cdb38243364b86c0fc533cd2d9d)
 
 ### 🐛 Bug Fixes
 
-- [大纲树挤占动作选区](https://github.com/Kchengz/epic-designer/commit/243766ee2abdcc3a8264bc3932901b4c88ad5723)
+- [大纲树挤占动作选区](https://github.com/haoguodong09-svg/aigen-designer/commit/243766ee2abdcc3a8264bc3932901b4c88ad5723)
 
 ## 0.8.10（2023-11-09）
 
 ### ✨ Feat
 
 - 新增antdv4版本
--  新增header-right-prefix插槽
+- 新增header-right-prefix插槽
 
 ### 🐛 Bug Fixes
 
@@ -594,8 +750,7 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 - 修复表单赋值提示表单不存在问题
 - 修复mounted生命周期无法set/get表单数据问题
 - 修复属性编辑组件在切换组件时无法显示数据异常问题
-- 修复大纲树拖拽操作异常问题
-......
+- 修复大纲树拖拽操作异常问题 ......
 
 ## 0.8.8（2023-10-08）
 
@@ -634,7 +789,6 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 
 - 补充输入类型组件事件及动作
 
-
 ## 0.8.4（2023-08-03）
 
 ### 🐛 Bug Fixes
@@ -642,7 +796,6 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 - 修复modal组件抛出警告问题
 
 - 修复非根节点使用指令警告问题
-
 
 ## 0.8.3（2023-08-03）
 
@@ -653,7 +806,7 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 
 ### ✨ refactor
 
-  - 更新图标
+- 更新图标
 
 ### 🐛 Bug Fixes
 
@@ -661,15 +814,14 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 
 - 修复拖拽elementPlus/number组件警告问题
 
-  
-
 ## 0.0.82（2023-07-25）
 
-###  (破坏性更新) Breaking changes
+### (破坏性更新) Breaking changes
 
 - 组件名称修改为aigen-designer，项目架构使用monorepo（单仓库多项目）形式
 
 ### ✨ Feat
+
 - header新增插槽
 - monacoEditor添加json编辑功能
 - 动作配置区域添加自定义函数编辑区域
@@ -724,16 +876,21 @@ pluginManager管理器移除~~setComponentGroup~~、~~addComponentGroup~~方法�
 - 新增NaiveUI
 
 ## 0.0.36（2023-05-08）
+
 ### ✨ Feat
+
 - designer组件新增setData方法
 - designer组件新增getData方法
 - designer组件新增reset方法
+
 ### 🐛 Bug Fixes
+
 - 修复deepCompareAndModify更改数组时导致数据修改不完全问题
 
-
 ## 0.0.35（2023-04-29）
+
 ### 🐛 Bug Fixes
+
 - 修复撤销重做失效bug
 - 编译ts类型无法自动推断类型
 - 修复element plus 编译后异步组件无法加载问题

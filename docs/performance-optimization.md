@@ -1,9 +1,6 @@
-# epic-designer 性能优化修复开发文档
+# AigenDesigner 性能优化修复开发文档
 
-> 生成日期：2026-08-24
-> 依据：7 个并行分析 agent + 主线程代码审查
-> 目标：解决复杂表单（100+ 节点）渲染卡顿问题
-> 策略：优先非 Worker 优化，仅在明确 CPU 密集且无 DOM 依赖时使用 Web Worker
+> 生成日期：2026-08-24 依据：7 个并行分析 agent + 主线程代码审查目标：解决复杂表单（100+ 节点）渲染卡顿问题策略：优先非 Worker 优化，仅在明确 CPU 密集且无 DOM 依赖时使用 Web Worker
 
 ---
 
@@ -17,12 +14,13 @@
 
 **并行策略**
 
-| 批次 | 工作包 | 可并行？ |
-|------|--------|----------|
-| 批次 1 | W1, W2, W3, W4, W5, W6 | 全部可同时进行 |
-| 批次 2 | W7 | 依赖批次 1 的 Worker 基础设施 |
+| 批次   | 工作包                 | 可并行？                      |
+| ------ | ---------------------- | ----------------------------- |
+| 批次 1 | W1, W2, W3, W4, W5, W6 | 全部可同时进行                |
+| 批次 2 | W7                     | 依赖批次 1 的 Worker 基础设施 |
 
 **排除项**（不纳入本报告）：
+
 - FormulaEngine Web Worker：当前为事件驱动（1-5 表达式/事件），Worker 消息开销 > 解析收益。仅做 AST 缓存即可。
 - Tree Search Web Worker：当前节点数 < 50，debounce 已足够。
 - Virtual Scrolling：改动范围极大（涉及 VueDraggable 嵌套递归），收益虽高但属于架构重构，建议单独立项。
@@ -38,7 +36,7 @@
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1.1 | `watch(() => props.componentSchema, ..., { deep: true })` — 任意子节点变化时，N 个 AigenNode 实例同时触发 deep watcher，每个执行 `deepEqual` + `deepClone` + `deepCompareAndModify` | `node.vue:101-114` | O(n²×m) 全量 diff |
 | 1.2 | `watch(() => innerSchema, ..., { deep: true, immediate: true })` — 对 `innerSchema` 做 `JSON.stringify` 序列化检测变化，触发 `initComponent()` | `node.vue:473-488` | O(n×m) 序列化 |
 | 1.3 | `watchEffect` 订阅 `fieldStateMap` — 当选中节点变化时，所有 N 个节点重新执行 condition 函数 | `node.vue:159-177` | O(n) 级联 |
@@ -84,12 +82,16 @@ children 的变化由 AigenNode 的递归模板自然处理，无需在此 watch
 ```typescript
 // 在父组件（editContainer/nodes.vue）中维护版本计数器
 const schemaVersion = ref(0);
-watch(() => pageSchema.schemas, () => schemaVersion.value++, { deep: false });
+watch(
+  () => pageSchema.schemas,
+  () => schemaVersion.value++,
+  { deep: false },
+);
 
 // 在 node.vue 中：
 const props = defineProps<{
   componentSchema: ComponentSchema;
-  schemaVersion?: number;  // 新增
+  schemaVersion?: number; // 新增
 }>();
 
 watch(
@@ -134,9 +136,11 @@ markRaw(innerSchema.icon);
 ```
 
 ### 涉及文件
+
 - `packages/ui-kit/base-ui/src/node/node.vue`（唯一修改文件）
 
 ### 验收标准
+
 - `watch(() => props.componentSchema, ...)` 不再使用 `deep: true`
 - 属性面板修改单个字段时，Performance tab 中 `deepEqual` 调用次数从 N 次降至 1 次
 - 100 节点表单属性编辑帧耗时 < 16ms
@@ -150,7 +154,7 @@ markRaw(innerSchema.icon);
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 2.1 | `watch([() => props.pageSchema, () => props.tableView], ..., { deep: true })` 触发时依次执行 `deepClone` + `migrateComponentProps` + `reorganizeSchemasForTableView` + `deepCompareAndModify` — 4 次全树遍历 | `builder.vue:92-100` | 5-30ms 主线程阻塞 |
 | 2.2 | `suspenseKey.value++` + `ready.value = false` — 强制所有 100+ AigenNode 全量 Suspense 重挂载 | `builder.vue:101-103` | 50-200ms DOM 重建 |
 | 2.3 | `watch(() => props.formData, ..., { deep: true })` — 整个 formData 对象的深层 watch | `builder.vue:112-123` | 每次嵌套字段变化触发 |
@@ -163,7 +167,12 @@ markRaw(innerSchema.icon);
 
 ```typescript
 // schema.worker.ts
-import { deepClone, deepCompareAndModify, migrateComponentProps, reorganizeSchemasForTableView } from '@aigen-designer/utils';
+import {
+  deepClone,
+  deepCompareAndModify,
+  migrateComponentProps,
+  reorganizeSchemasForTableView,
+} from '@aigen-designer/utils';
 
 self.onmessage = (e: MessageEvent) => {
   const { type, payload } = e.data;
@@ -187,7 +196,7 @@ self.onmessage = (e: MessageEvent) => {
 // 预创建 Worker 实例
 const schemaWorker = new Worker(
   new URL('../manager/src/schema.worker.ts', import.meta.url),
-  { type: 'module' }
+  { type: 'module' },
 );
 
 // watch 改为异步
@@ -233,24 +242,30 @@ ready.value = false;
 // Before:
 watch(
   () => props.formData,
-  (data) => { setData(data); },
+  (data) => {
+    setData(data);
+  },
   { deep: true, immediate: true },
 );
 
 // After:
 watch(
   () => props.formData,
-  (data) => { setData(data); },
-  { immediate: true },  // 移除 deep: true
+  (data) => {
+    setData(data);
+  },
+  { immediate: true }, // 移除 deep: true
 );
 // setData 内部已有合并逻辑，无需 deep watch
 ```
 
 ### 涉及文件
+
 - `packages/core/src/components/builder/src/builder.vue`
 - 新建：`packages/manager/src/schema.worker.ts`
 
 ### 验收标准
+
 - `builder.vue` 的 watch 回调中不再有同步的全量 `deepClone` + `deepCompareAndModify`
 - 页面加载帧耗时从 50-200ms 降至 < 30ms
 - Worker 通信开销 < 2ms
@@ -264,7 +279,7 @@ watch(
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 3.1 | `commitCurrentState` 中 `createPatch(prevState, raw)` 递归 diff 整个 schema 树 | `revoke.ts:264` | 3-15ms |
 | 3.2 | `JSON.stringify(raw)` 全量序列化 | `revoke.ts:155,158` | 1-8ms |
 | 3.3 | `cloneCurrentState` 内部调用 `deepClone` → `deepToRaw` 双重遍历 | `revoke.ts:131-134` | 冗余 1-3ms |
@@ -324,11 +339,12 @@ const cloneCurrentState = (
   alreadyRaw = false,
 ): Record<string, unknown> =>
   alreadyRaw
-    ? deepClone(raw as any)  // raw 已经是剥离 Proxy 的普通对象
+    ? deepClone(raw as any) // raw 已经是剥离 Proxy 的普通对象
     : deepClone(raw ?? rawPageSchema());
 ```
 
 调用处传入 `alreadyRaw = true`：
+
 ```typescript
 const nextPrev = cloneCurrentState(raw, true);
 ```
@@ -336,26 +352,30 @@ const nextPrev = cloneCurrentState(raw, true);
 **3.4 — materializeState 移入 Worker**
 
 ```typescript
-const materializeState = async (record: RecordModel): Promise<Record<string, unknown>> => {
+const materializeState = async (
+  record: RecordModel,
+): Promise<Record<string, unknown>> => {
   // 发送到 Worker 回放 diff 链
   const chain = getChain();
   const index = chain.indexOf(record);
-  const records = chain.slice(0, index + 1).map(r => ({
+  const records = chain.slice(0, index + 1).map((r) => ({
     diff: r.diff,
     snapshot: r.snapshot,
   }));
 
-  const state = await new Promise<Record<string, unknown>>((resolve, reject) => {
-    schemaWorker.postMessage({
-      type: 'materialize',
-      records,
-      targetIndex: index,
-    });
-    schemaWorker.onmessage = (e) => {
-      if (e.data.type === 'materialized') resolve(e.data.state);
-      if (e.data.type === 'error') reject(new Error(e.data.error));
-    };
-  });
+  const state = await new Promise<Record<string, unknown>>(
+    (resolve, reject) => {
+      schemaWorker.postMessage({
+        type: 'materialize',
+        records,
+        targetIndex: index,
+      });
+      schemaWorker.onmessage = (e) => {
+        if (e.data.type === 'materialized') resolve(e.data.state);
+        if (e.data.type === 'error') reject(new Error(e.data.error));
+      };
+    },
+  );
   return state;
 };
 ```
@@ -388,15 +408,18 @@ const importHistory = async (historyData: { ... }): Promise<void> => {
 ```
 
 ### 涉及文件
+
 - `packages/manager/src/revoke.ts`
 - `packages/manager/src/schema.worker.ts`（与 W2 共享）
 
 ### 验收标准
+
 - `commitCurrentState` 主线程耗时从 6-31ms 降至 < 3ms
 - `materializeState` 主线程耗时从 11-58ms 降至 < 5ms
 - `importHistory` 校验不阻塞 UI
 
 ### 注意
+
 - `push()` 的 200ms debounce 与 async Worker 存在竞态。需在 Worker 响应回调中校验是否还是最新的 edit。
 - `deepCompareAndModify` 必须留在主线程（操作 Vue 响应式对象）。
 
@@ -409,7 +432,7 @@ const importHistory = async (historyData: { ... }): Promise<void> => {
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 4.1 | `registerComponent` 每次调用后无条件触发 `computedComponentSchemaGroups()` | `useComponentManager.ts:355` | 25 次全量重算 |
 | 4.2 | `computedComponentSchemaGroups` 内 O(n×m) 排序 + O(n) findIndex | `useComponentManager.ts:116-189` | 每次 ~1-3ms |
 | 4.3 | `pluginManager` Proxy 包装每次属性访问都经过 get trap | `pluginManager.ts:211-236` | 累积开销 |
@@ -439,7 +462,7 @@ function scheduleFlush() {
 function registerComponent(componentConfig: ComponentConfigModel): void {
   // ... 现有注册逻辑 ...
   _dirty = true;
-  scheduleFlush();  // 替换原来的直接调用
+  scheduleFlush(); // 替换原来的直接调用
 }
 
 function hideComponent(type: string) {
@@ -458,19 +481,21 @@ function hideComponent(type: string) {
 ```typescript
 // 在 createPluginManager 内部，供内部模块使用
 const component = {
-  get: getComponent,               // 直接函数引用
+  get: getComponent, // 直接函数引用
   getConfigByType: getComponentConfigByType,
   // ... 其他高频方法
 };
 
-export { component as _component };  // 内部模块从此导入，绕过 Proxy
+export { component as _component }; // 内部模块从此导入，绕过 Proxy
 ```
 
 ### 涉及文件
+
 - `packages/hooks/src/plugin/useComponentManager.ts`
 - `packages/manager/src/pluginManager.ts`（可选）
 
 ### 验收标准
+
 - 启动时 `computedComponentSchemaGroups` 执行次数从 25+ 降至 1
 - `setupAntd` + `setupPanel` 总耗时减少 ~20-50ms
 
@@ -563,13 +588,25 @@ self.onmessage = (e: MessageEvent<SchemaWorkerRequest>) => {
         const { records } = payload;
         for (const record of records) {
           if (record.snapshot) {
-            try { JSON.parse(record.snapshot); } catch { throw new Error('invalid snapshot'); }
+            try {
+              JSON.parse(record.snapshot);
+            } catch {
+              throw new Error('invalid snapshot');
+            }
           }
           if (record.diff) {
-            try { JSON.parse(record.diff); } catch { throw new Error('invalid diff'); }
+            try {
+              JSON.parse(record.diff);
+            } catch {
+              throw new Error('invalid diff');
+            }
           }
         }
-        self.postMessage({ id, type: 'validationResult', result: { valid: true } } as SchemaWorkerResponse);
+        self.postMessage({
+          id,
+          type: 'validationResult',
+          result: { valid: true },
+        } as SchemaWorkerResponse);
         break;
       }
     }
@@ -589,14 +626,16 @@ self.onmessage = (e: MessageEvent<SchemaWorkerRequest>) => {
 // schemaWorkerBridge.ts
 let worker: Worker | null = null;
 let requestId = 0;
-const pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }>();
+const pending = new Map<
+  number,
+  { resolve: (v: any) => void; reject: (e: Error) => void }
+>();
 
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(
-      new URL('./schema.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
+    worker = new Worker(new URL('./schema.worker.ts', import.meta.url), {
+      type: 'module',
+    });
     worker.onmessage = (e) => {
       const { id, type, result, error } = e.data;
       if (type === 'error') {
@@ -620,10 +659,12 @@ export function postToWorker(type: string, payload: any): Promise<any> {
 ```
 
 ### 涉及文件
+
 - 新建：`packages/manager/src/schema.worker.ts`
 - 新建：`packages/manager/src/schemaWorkerBridge.ts`
 
 ### 验收标准
+
 - `new Worker()` 创建成功，Worker 可正常处理所有 4 种消息类型
 - Vite build 产物中 Worker 文件被打包
 - 各工作包可通过 `postToWorker()` 调用
@@ -637,7 +678,7 @@ export function postToWorker(type: string, payload: any): Promise<any> {
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 6.1 | `jsep(expression)` 每次 `calculate()` 都重新解析，无缓存 | `formulaEngine.ts:59` | 重复解析相同表达式 |
 
 ### 修复方案
@@ -652,7 +693,10 @@ export class FormulaEngine {
     this.context = initialContext;
   }
 
-  public calculate(expression: string, runtimeContext: FormulaContext = {}): any {
+  public calculate(
+    expression: string,
+    runtimeContext: FormulaContext = {},
+  ): any {
     if (!expression || typeof expression !== 'string') return null;
 
     // Parse once, reuse forever
@@ -679,9 +723,11 @@ export class FormulaEngine {
 ```
 
 ### 涉及文件
+
 - `packages/utils/src/formula/formulaEngine.ts`
 
 ### 验收标准
+
 - 相同表达式第二次调用 `calculate` 不再触发 jsep 解析
 - 现有测试用例全部通过
 
@@ -694,7 +740,7 @@ export class FormulaEngine {
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 7.1 | `pageSchema` 被 `reactive()` 深度代理，整个 schema 树的每个属性访问都经过 Proxy trap | `usePageSchema.ts:49` | 数千个 Proxy 对象 |
 | 7.2 | `forms` 被 `reactive()` 深度代理 | `pageManager.ts:38` | 同上 |
 | 7.3 | `mountMonitor` 用 `ref<string[]>` + `filter` 做 pop，O(n) | `useMountMonitor.ts:5-29` | O(n) 每次 unmount |
@@ -716,7 +762,7 @@ const pageSchema = shallowRef<PageSchema>({
 function setPageSchema(schema: PageSchema) {
   const migratedSchema = migrateCanvasMode(schema);
   pageSchema.value = deepClone(migratedSchema);
-  triggerRef(pageSchema);  // 手动触发响应式更新
+  triggerRef(pageSchema); // 手动触发响应式更新
 }
 ```
 
@@ -780,11 +826,13 @@ watch(
 ```
 
 ### 涉及文件
+
 - `packages/hooks/src/plugin/usePageSchema.ts`
 - `packages/manager/src/pageManager.ts`
 - `packages/hooks/src/plugin/useMountMonitor.ts`
 
 ### 验收标准
+
 - `pageSchema` 不再创建深层 Proxy
 - `mountMonitor.pop` 从 O(n) 降至 O(1)
 - 脚本仅在 `script` 字段实际变化时重编译
@@ -798,7 +846,7 @@ watch(
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 8.1 | `keyword` ref 直接绑定 Input，无 debounce | `tree.vue:30` | 每次按键触发全树递归 |
 | 8.2 | 组件面板搜索同样无 debounce | `componentView/index.vue:18` | 同上 |
 
@@ -822,10 +870,12 @@ const getTreeData = computed(() => {
 ```
 
 ### 涉及文件
+
 - `packages/ui-kit/base-ui/src/tree/tree.vue`
 - `packages/ui-kit/panel-ui/src/activitybars/componentView/index.vue`
 
 ### 验收标准
+
 - 快速输入时过滤延迟不超过 150ms
 - 停止输入后 150ms 内完成过滤
 
@@ -838,7 +888,7 @@ const getTreeData = computed(() => {
 ### 问题清单
 
 | # | 问题 | 位置 | 影响 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 9.1 | `diffArrays` 中间区域按索引比较元素，拖拽重排时产生 N 次 remove + N 次 add | `diff.ts:216-218` | 本可用 O(1) move 解决 |
 
 ### 修复方案
@@ -869,7 +919,7 @@ for (let i = prefix; i < prefix + overlap; i++) {
 ### 批次 1 — 全部可并行（无文件冲突）
 
 | 工作包 | 负责文件 | 预计工期 | 预期收益 |
-|--------|----------|----------|----------|
+| --- | --- | --- | --- |
 | **W1** | `node.vue` | 1 天 | 属性编辑帧耗时 10-50ms → < 5ms |
 | **W2** | `builder.vue` + 新建 `schema.worker.ts` | 2 天 | 页面加载 50-200ms → < 30ms |
 | **W3** | `revoke.ts` + `schema.worker.ts` | 2 天 | 撤销/重做 11-58ms → < 5ms |
@@ -881,7 +931,7 @@ for (let i = prefix; i < prefix + overlap; i++) {
 ### 批次 2 — 依赖批次 1
 
 | 工作包 | 依赖 | 预计工期 |
-|--------|------|----------|
+| --- | --- | --- |
 | **W5** Worker 基础设施 | 需与 W2/W3 协调消息协议 | 1 天（可与 W2/W3 并行开发） |
 
 ### 总工期估算
@@ -895,7 +945,7 @@ for (let i = prefix; i < prefix + overlap; i++) {
 ## 附录 A：明确排除的优化项
 
 | 优化项 | 排除原因 |
-|--------|----------|
+| --- | --- |
 | FormulaEngine Web Worker | 事件驱动，1-5 表达式/事件；Worker 消息开销 > jsep 解析收益 |
 | Tree Search Web Worker | 节点数 < 50；debounce 已足够 |
 | Virtual Scrolling | 涉及 VueDraggable 嵌套递归，属于架构重构，建议单独立项 |
