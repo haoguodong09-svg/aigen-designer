@@ -42,7 +42,9 @@ const emit = defineEmits([
 ]);
 
 setupPanel(pluginManager);
-const AigenHeader = loadAsyncComponent(() => import('./modules/header/index.vue'));
+const AigenHeader = loadAsyncComponent(
+  () => import('./modules/header/index.vue'),
+);
 const AigenActivityBar = loadAsyncComponent(
   () => import('./modules/activityBar/index.vue'),
 );
@@ -198,7 +200,10 @@ defineExpose({
 });
 </script>
 <template>
-  <div v-if="!pluginManager.designer.initialized.value" class="aigen-loading-box">
+  <div
+    v-if="!pluginManager.designer.initialized.value"
+    class="aigen-loading-box"
+  >
     <AigenDesignerLoader />
   </div>
   <Suspense v-else @resolve="handleReady">
@@ -241,7 +246,10 @@ defineExpose({
           <AigenEditContainer />
           <AigenRightSidebar />
         </div>
-        <AigenPreview ref="previewRef" :hide-confirm="props.hidePreviewConfirm" />
+        <AigenPreview
+          ref="previewRef"
+          :hide-confirm="props.hidePreviewConfirm"
+        />
         <component v-if="AigenBuilderSlot" :is="AigenBuilderSlot" />
         <component v-if="AigenDesignerSlot" :is="AigenDesignerSlot" />
       </div>

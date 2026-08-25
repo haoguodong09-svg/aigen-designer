@@ -29,6 +29,8 @@ const modelSchemas = computed({
 });
 
 const isDragChange = ref(false);
+// 标记本次拖拽是否为从其他列表（侧边栏）拖入，用于避免 end 事件重复记录
+let isDragAdd = false;
 
 /**
  * 获取节点的schema
@@ -76,12 +78,16 @@ function setHoverNode(event: Event) {
 }
 
 /**
- * 从侧边栏拖入编辑区域，直接记录
- * 拖入也会导致 change 被触发，Add 应该设置 isDrageChange 标识为 false
+ * 从侧边栏拖入编辑区域，直接记录插入操作
+ * 拖入也会导致 change 被触发，Add 应重置 isDragChange 标识，避免 end 重复记录
  */
 function handleDragAdd(event: any) {
   designer.setSelectedNode(event.clonedData);
   isDragChange.value = false;
+  // 记录插入组件操作，支持撤销
+  revoke.push('插入组件', true);
+  // 标记本次拖拽为跨列表新增，end 事件不再重复记录
+  isDragAdd = true;
 }
 
 /**
@@ -93,12 +99,14 @@ function handleDragChange() {
 
 /**
  * 编辑区域内的拖拽结束事件，需判断是否 change，有可能拖拽并未修改顺序
+ * 拖入新增（handleDragAdd）已单独记录，此处仅记录编辑区域内的顺序变化
  */
 function handleDragEnd() {
-  if (isDragChange.value) {
+  if (isDragChange.value && !isDragAdd) {
     revoke.push('拖拽组件', true);
   }
   isDragChange.value = false;
+  isDragAdd = false;
 }
 
 function isInline(schema: ComponentSchema) {

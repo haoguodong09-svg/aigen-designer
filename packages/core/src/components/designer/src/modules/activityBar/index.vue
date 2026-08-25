@@ -20,7 +20,8 @@ const activityBars = computed(() => {
 const activityBarCheckedIndex = ref<null | number>(0);
 
 const sidebarComponent = shallowRef<any>(null);
-sidebarComponent.value = activityBars.value[0].component;
+// 空列表保护：无 activityBar 时不取第一个元素的 component，避免崩溃
+sidebarComponent.value = activityBars.value[0]?.component ?? null;
 
 function handleClick(item: ActivitybarModel, index: number) {
   if (activityBarCheckedIndex.value === index) {
@@ -55,6 +56,7 @@ function handleClick(item: ActivitybarModel, index: number) {
       </ul>
     </div>
     <div
+      v-if="sidebarComponent"
       class="aigen-left-sidebar"
       :class="{ hide: activityBarCheckedIndex === null }"
     >

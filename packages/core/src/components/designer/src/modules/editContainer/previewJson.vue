@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watchEffect } from 'vue';
+import { onUnmounted, ref, watchEffect } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
@@ -19,6 +19,12 @@ const monacoEditorRef = ref<any>(null);
 const visible = ref(false);
 const { pageSchema } = useDesignerContext();
 const { copied, copy } = useClipboard();
+
+// 编辑器组件未加载时的重试参数：有限次重试，避免加载失败时无限循环
+const RETRY_INTERVAL = 300;
+const MAX_RETRY_COUNT = 20;
+let retryCount = 0;
+let openTimer: null | number = null;
 watchEffect(() => {
   if (copied.value) {
     pluginManager.global.$message.success('复制成功');
@@ -26,6 +32,8 @@ watchEffect(() => {
 });
 
 function handleClose() {
+  // 关闭时重置重试计数，下次打开可重新尝试
+  retryCount = 0;
   // visible.value = false;
   const content = JSON.stringify(pageSchema, null, 2);
   copy(content);
@@ -36,13 +44,25 @@ function handleOpen() {
   visible.value = true;
   if (monacoEditorRef.value) {
     monacoEditorRef.value.setValue(JSON.stringify(pageSchema, null, 2));
-  } else {
-    // 编辑器组件未加载,延时重新调用函数
-    setTimeout(() => {
-      handleOpen();
-    }, 300);
+    return;
   }
+  // 编辑器组件未加载，延时重新调用函数（有限重试，防止加载失败时无限循环）
+  if (retryCount >= MAX_RETRY_COUNT) return;
+  retryCount++;
+  openTimer = window.setTimeout(() => {
+    if (visible.value) {
+      handleOpen();
+    }
+  }, RETRY_INTERVAL);
 }
+
+onUnmounted(() => {
+  // 卸载时清理重试定时器，避免泄漏
+  if (openTimer !== null) {
+    window.clearTimeout(openTimer);
+    openTimer = null;
+  }
+});
 
 /**
  * 导出数据

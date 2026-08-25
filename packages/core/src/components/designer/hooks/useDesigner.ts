@@ -22,18 +22,22 @@ import {
   getMatchedById,
 } from '@aigen-designer/utils';
 
-// 内部默认页面数据
-let innerDefaultSchema: PageSchema = {
-  schemas: [
-    {
-      id: 'root',
-      label: '页面',
-      props: {},
-      type: 'page',
-      children: [],
-    },
-  ],
-  script: `const { defineExpose, find } = aigen;
+/**
+ * 创建内部默认页面数据
+ * @description 每次调用返回全新对象，避免多实例共享模块级可变状态导致互相污染
+ */
+function createDefaultSchema(): PageSchema {
+  return {
+    schemas: [
+      {
+        id: 'root',
+        label: '页面',
+        props: {},
+        type: 'page',
+        children: [],
+      },
+    ],
+    script: `const { defineExpose, find } = aigen;
 
 function test (){
     console.log('test')
@@ -43,12 +47,16 @@ function test (){
 defineExpose({
  test
 })`,
-};
+  };
+}
 
 export function useDesigner(props, emit) {
   const ready = ref<boolean>(false);
   const pageManager = createPageManager();
   const pageSchema = pageManager.pageSchema;
+
+  // 实例作用域的内部默认页面数据，避免多实例共享模块级状态互相污染
+  let innerDefaultSchema = createDefaultSchema();
 
   const state = reactive<DesignerState>({
     disabledHover: false,
@@ -63,11 +71,20 @@ export function useDesigner(props, emit) {
     revoke.push(message),
   );
 
+  // 画布配置：与 toolbar.vue 中的定义保持一致（含旧模式兼容项）
   const canvasConfigs = {
     desktop: {},
     mobile: {
       mode: 'mobile',
       width: '390px',
+    },
+    // 保留旧配置以兼容旧数据
+    pad: {
+      mode: 'tablet',
+      width: '780px',
+    },
+    pc: {
+      mode: 'desktop',
     },
     tablet: {
       mode: 'tablet',

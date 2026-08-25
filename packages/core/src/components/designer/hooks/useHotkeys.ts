@@ -4,6 +4,7 @@ import type { DesignerState, PageSchema } from '@aigen-designer/types';
 import { onUnmounted } from 'vue';
 
 import { useClipboard } from '@aigen-designer/hooks';
+import { deepClone } from '@aigen-designer/utils';
 
 interface DesignerHotkeysDeps {
   emit: (event: string, ...args: any[]) => void;
@@ -48,15 +49,9 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
     return false;
   };
 
-  // 防抖处理
-  let lastHandledTime = 0;
-  const DEBOUNCE_TIME = 50;
-
   const handleKeydown = (e: KeyboardEvent) => {
-    const now = Date.now();
-
-    // 防抖检查
-    if (now - lastHandledTime < DEBOUNCE_TIME) {
+    // 长按按键会持续触发 keydown（e.repeat=true），直接忽略，避免 Delete 连删等副作用
+    if (e.repeat) {
       return;
     }
 
@@ -70,7 +65,6 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
     if ((key === 'delete' || key === 'backspace') && state.selectedNode) {
       e.preventDefault();
       handleDelete();
-      lastHandledTime = now;
       return;
     }
 
@@ -89,7 +83,6 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
         // 复制 (Ctrl+C 或 Cmd+C)
         if (state.selectedNode) {
           copy(state.selectedNode);
-          lastHandledTime = now;
         }
         break;
       }
@@ -98,22 +91,19 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
         // 复制并粘贴 (Ctrl+D 或 Cmd+D)
         if (state.selectedNode) {
           duplicate(state.selectedNode?.id);
-          lastHandledTime = now;
         }
         break;
       }
 
       case 's': {
-        // 保存 (Ctrl+S 或 Cmd+S)
-        emit('save', pageSchema);
-        lastHandledTime = now;
+        // 保存 (Ctrl+S 或 Cmd+S) —— 与按钮路径保持一致，传深拷贝数据
+        emit('save', deepClone(pageSchema));
         break;
       }
 
       case 'v': {
         // 粘贴 (Ctrl+V 或 Cmd+V)
         paste(state.selectedNode?.id);
-        lastHandledTime = now;
         break;
       }
 
@@ -121,7 +111,6 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
         // 剪切 (Ctrl+X 或 Cmd+X)
         if (state.selectedNode) {
           cut(state.selectedNode);
-          lastHandledTime = now;
         }
         break;
       }
@@ -129,7 +118,6 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
       case 'y': {
         // Ctrl+Y 重做
         revoke.redo();
-        lastHandledTime = now;
         break;
       }
 
@@ -140,7 +128,6 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
         } else {
           revoke.undo(); // 撤销
         }
-        lastHandledTime = now;
         break;
       }
     }

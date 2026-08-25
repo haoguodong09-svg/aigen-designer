@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import type { ComponentSchema } from '@aigen-designer/types';
+import type { ComponentSchema, PageSchema } from '@aigen-designer/types';
 
 import { computed, nextTick, ref } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import { findSchemas } from '@aigen-designer/utils';
+import { deepClone, findSchemas } from '@aigen-designer/utils';
 
 import { AigenBuilder } from '../../../../builder';
 
@@ -25,6 +25,9 @@ const monacoEditorRef = ref<any>(null);
 const visible = ref(false);
 const dataVisible = ref(false);
 const formValues = ref({});
+// 预览使用的页面数据快照：打开预览时深拷贝一次，避免直接引用设计器的响应式数据
+// 导致编辑页面时触发预览全量重建
+const previewSchema = ref<null | PageSchema>(null);
 
 const { pageSchema, props: designerProps } = useDesignerContext();
 const kb = ref<any>(null);
@@ -54,6 +57,8 @@ function handleClose() {
 
 function handleOpen() {
   visible.value = true;
+  // 传入深拷贝快照，预览与设计器数据解耦
+  previewSchema.value = deepClone(pageSchema);
 }
 
 async function handleOk() {
@@ -116,7 +121,7 @@ defineExpose({
       class="min-w-750px translate-y-0px h-full rounded"
       :style="{ padding: getCanvasPadding }"
     >
-      <AigenBuilder v-if="visible" ref="kb" :page-schema="pageSchema" />
+      <AigenBuilder v-if="visible" ref="kb" :page-schema="previewSchema" />
       <!-- 表单数据 start -->
       <Modal
         v-model="dataVisible"

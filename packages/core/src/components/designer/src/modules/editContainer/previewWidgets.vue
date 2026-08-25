@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import {
@@ -30,6 +30,27 @@ const selectorPosition = ref<'bottom' | 'center' | 'top'>('top');
 const { canvasScale, disabledZoom } = useStore();
 
 let aigenEditRange: HTMLDivElement | null = null;
+
+// 记录选中元素挂载的拖拽监听，便于切换选中或卸载时移除，避免监听器堆积
+let dragListenerParent: HTMLElement | null = null;
+let onDragStartHandler: (() => void) | null = null;
+let onDragEndHandler: (() => void) | null = null;
+// 记录编辑区滚动监听与选中元素 resize 延时句柄，便于卸载时清理
+let scrollHandler: (() => void) | null = null;
+let resizeStyleTimer: null | number = null;
+
+/**
+ * 移除上一次挂载的拖拽监听
+ */
+function clearDragListeners() {
+  if (dragListenerParent && onDragStartHandler && onDragEndHandler) {
+    dragListenerParent.removeEventListener('dragstart', onDragStartHandler);
+    dragListenerParent.removeEventListener('dragend', onDragEndHandler);
+  }
+  dragListenerParent = null;
+  onDragStartHandler = null;
+  onDragEndHandler = null;
+}
 
 /**
  * 判断组件是否可移动和可拖拽删除
@@ -105,23 +126,34 @@ watch(
   (selectComponentElement) => {
     if (selectComponentElement) {
       showSelector.value = true;
+      // 先断开旧元素的观察，避免持续观察已卸载的 DOM 造成监听器泄漏
+      mutationObserver.disconnect();
       // 监听DOM元素及子元素的变化
       mutationObserver.observe(selectComponentElement, DocumentObserverConfig);
 
+      // 切换选中节点时，先移除旧的拖拽监听，避免重复添加
+      clearDragListeners();
       const parentNode = selectComponentElement.parentNode as HTMLElement;
       if (parentNode) {
-        parentNode.addEventListener('dragstart', () => {
+        dragListenerParent = parentNode;
+        onDragStartHandler = () => {
           selectorTransition.value = false;
           startTimedQuery();
-        });
-        parentNode.addEventListener('dragend', () => {
+        };
+        onDragEndHandler = () => {
           selectorTransition.value = true;
           stopTimedQuery();
-        });
+        };
+        parentNode.addEventListener('dragstart', onDragStartHandler);
+        parentNode.addEventListener('dragend', onDragEndHandler);
       }
       setSeletorStyle();
     } else {
       showSelector.value = false;
+      // 取消选中时断开观察并清理监听
+      mutationObserver.disconnect();
+      clearDragListeners();
+      stopTimedQuery();
     }
   },
 );
@@ -136,6 +168,8 @@ watch(
   () => getHoverComponentElement.value,
   (hoverComponentElement) => {
     if (hoverComponentElement) {
+      // 先断开旧元素的观察，避免观察器持续观察已卸载的 DOM
+      hoverMutationObserver.disconnect();
       // 监听DOM元素及子元素的变化
       hoverMutationObserver.observe(hoverComponentElement, hoverObserverConfig);
       setHoverStyle();
@@ -152,7 +186,8 @@ function setSeletorStyle() {
   const element = getSelectComponentElement.value;
   if (!element || !aigenEditRange) return;
 
-  const { left: offsetX, top: offsetY } = aigenEditRange.getBoundingClientRect();
+  const { left: offsetX, top: offsetY } =
+    aigenEditRange.getBoundingClientRect();
 
   let rect = element.getBoundingClientRect?.();
   if (!rect && element.nextElementSibling) {
@@ -274,7 +309,8 @@ function setHoverStyle() {
   const element = getHoverComponentElement.value;
 
   if (!element || !aigenEditRange) return;
-  const { left: offsetX, top: offsetY } = aigenEditRange.getBoundingClientRect();
+  const { left: offsetX, top: offsetY } =
+    aigenEditRange.getBoundingClientRect();
 
   let rect = element.getBoundingClientRect?.();
   if (!rect && element.nextElementSibling) {
@@ -335,18 +371,39 @@ function handleSelectParentNode() {
 // 初始化函数，传入一个指向 Aigen 编辑范围的引用
 function handleInit(aigenEditRangeRef) {
   aigenEditRange = aigenEditRangeRef;
-  aigenEditRange?.addEventListener('scroll', () => {
+  scrollHandler = () => {
     setSeletorStyle();
-  });
+  };
+  aigenEditRange?.addEventListener('scroll', scrollHandler);
 
   // 监听选中元素视窗变化
   useResizeObserver(getSelectComponentElement, () => {
     // 延迟执行，确保在动画帧后更新样式
-    setTimeout(setSeletorStyle, 150);
+    if (resizeStyleTimer !== null) {
+      window.clearTimeout(resizeStyleTimer);
+    }
+    resizeStyleTimer = window.setTimeout(setSeletorStyle, 150);
   });
   // 监听悬停元素视窗变化
   useResizeObserver(getHoverComponentElement, setHoverStyle);
 }
+
+onUnmounted(() => {
+  // 统一清理观察者与事件监听，避免监听器泄漏
+  mutationObserver.disconnect();
+  hoverMutationObserver.disconnect();
+  clearDragListeners();
+  stopTimedQuery();
+  if (resizeStyleTimer !== null) {
+    window.clearTimeout(resizeStyleTimer);
+    resizeStyleTimer = null;
+  }
+  if (scrollHandler) {
+    aigenEditRange?.removeEventListener('scroll', scrollHandler);
+    scrollHandler = null;
+  }
+  aigenEditRange = null;
+});
 
 defineExpose({
   handleInit,

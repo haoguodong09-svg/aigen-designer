@@ -138,7 +138,8 @@ const selectedKey = computed({
   },
   set(type: string) {
     designer.handleToggleDeviceMode(type);
-    pageSchema.canvas = canvasConfigs[type];
+    // 展开为新对象后再赋值，避免直接引用共享配置对象造成相互污染
+    pageSchema.canvas = { ...canvasConfigs[type] };
   },
 });
 
@@ -255,6 +256,8 @@ function handleImportData(content?: string) {
 
     // 选中根节点
     designer.setSelectedNode(pageSchema.schemas[0]);
+    // 记录导入数据操作，支持撤销回退（与 designer.setData 的历史记录行为保持一致）
+    revoke.push('导入数据');
   } catch (error) {
     console.error(error);
   }
