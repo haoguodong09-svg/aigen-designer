@@ -1,4 +1,4 @@
-import type { FormDataModel } from '@aigen-designer/types';
+import type { ComponentSchema, FormDataModel } from '@aigen-designer/types';
 
 import { ref, watch } from 'vue';
 
@@ -78,7 +78,7 @@ export function useBuilder() {
     const formSchemas = findSchemas(
       pageManager.pageSchema.schemas,
       (schema) => schema.type === 'form',
-    );
+    ) as ComponentSchema[];
 
     // 如果只有一个表单，使用该表单的名称
     if (formSchemas && formSchemas.length === 1) {

@@ -34,8 +34,8 @@ const getEditRangestyle = computed(() => {
   };
 });
 
-function setSelectedNodeById(aigenId) {
-  const schema = findSchemaById(pageSchema.schemas, aigenId);
+function setSelectedNodeById(aigenId: string | undefined) {
+  const schema = findSchemaById(pageSchema.schemas, aigenId as string);
   setSelectedNode(schema);
   contextMenu.close();
 }

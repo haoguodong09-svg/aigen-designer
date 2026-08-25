@@ -222,17 +222,17 @@ function setSeletorStyle() {
   if (selectorTop < 45 && selectorRefHeight < 800) {
     actionBoxRef.value.style.top = '';
     actionBoxRef.value.style.bottom = '-32px';
-    actionBoxRef.value.style['border-radius'] = '4px';
+    actionBoxRef.value.style['border-radius' as any] = '4px';
     selectorPosition.value = 'bottom';
   } else if (selectorTop < 45) {
     // 判断actionBoxRef位置置于中间
     actionBoxRef.value.style.top = '0px';
-    actionBoxRef.value.style['border-radius'] = '0px 0px 4px 0';
+    actionBoxRef.value.style['border-radius' as any] = '0px 0px 4px 0';
     selectorPosition.value = 'center';
   } else {
     // actionBoxRef位置置于顶部
     actionBoxRef.value.style.top = '-32px';
-    actionBoxRef.value.style['border-radius'] = '4px';
+    actionBoxRef.value.style['border-radius' as any] = '4px';
     selectorPosition.value = 'top';
   }
   // 调整操作调位置 end
@@ -369,7 +369,7 @@ function handleSelectParentNode() {
 }
 
 // 初始化函数，传入一个指向 Aigen 编辑范围的引用
-function handleInit(aigenEditRangeRef) {
+function handleInit(aigenEditRangeRef: HTMLDivElement | null) {
   aigenEditRange = aigenEditRangeRef;
   scrollHandler = () => {
     setSeletorStyle();

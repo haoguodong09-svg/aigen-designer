@@ -7,7 +7,10 @@ import { useClipboard } from '@aigen-designer/hooks';
 import { deepClone } from '@aigen-designer/utils';
 
 interface DesignerHotkeysDeps {
-  emit: (event: string, ...args: any[]) => void;
+  emit: (
+    event: 'imported' | 'ready' | 'reset' | 'save' | 'toggleDeviceMode',
+    ...args: any[]
+  ) => void;
   handleDelete: () => false | undefined;
   pageSchema: PageSchema;
   revoke: Revoke;
@@ -135,14 +138,18 @@ export function useHotkeys(deps: DesignerHotkeysDeps) {
 
   // 清理函数
   const cleanup = () => {
-    target.removeEventListener('keydown', handleKeydown, { capture: true });
+    target.removeEventListener('keydown', handleKeydown as EventListener, {
+      capture: true,
+    });
   };
 
   // 添加事件监听
   const setTarget = (newTarget: Document | HTMLElement) => {
     cleanup();
     target = newTarget;
-    target.addEventListener('keydown', handleKeydown, { capture: true });
+    target.addEventListener('keydown', handleKeydown as EventListener, {
+      capture: true,
+    });
   };
 
   onUnmounted(cleanup);

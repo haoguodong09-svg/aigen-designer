@@ -91,7 +91,10 @@ const legacyModeMap = {
   pc: 'desktop',
 } as const;
 
-const canvasConfigs = {
+const canvasConfigs: Record<
+  'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet',
+  { mode?: 'desktop' | 'mobile' | 'tablet'; width?: string }
+> = {
   desktop: {},
   mobile: {
     mode: 'mobile',
@@ -139,7 +142,9 @@ const selectedKey = computed({
   set(type: string) {
     designer.handleToggleDeviceMode(type);
     // 展开为新对象后再赋值，避免直接引用共享配置对象造成相互污染
-    pageSchema.canvas = { ...canvasConfigs[type] };
+    pageSchema.canvas = {
+      ...canvasConfigs[type as keyof typeof canvasConfigs],
+    };
   },
 });
 
@@ -213,10 +218,11 @@ function handleOpenFileSelector() {
 }
 
 // 选择文件
-function handleFileSelected(e) {
-  const file = e.target.files?.[0];
+function handleFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file) return;
-  e.target.value = null;
+  input.value = null as unknown as string;
 
   // 通过json文件导入
   const reader = new FileReader();

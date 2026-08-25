@@ -37,7 +37,7 @@ let isDragAdd = false;
  * @param {Element} target 节点元素
  * @returns {ComponentSchema | null} 节点的schema
  */
-function getNodeSchema(target) {
+function getNodeSchema(target: HTMLElement | null) {
   if (!target?.closest) return null;
 
   // 优先检查当前元素
@@ -47,14 +47,16 @@ function getNodeSchema(target) {
 
   // 检查直接子元素（只向下查询一级）
   if (!target.classList.contains('aigen-draggable-range')) {
-    const directChild = target.querySelector(':scope > [data-aigen-id]');
+    const directChild = target.querySelector(
+      ':scope > [data-aigen-id]',
+    ) as HTMLElement | null;
     if (directChild?.dataset?.aigenId) {
       return getSchemaByAigenId(directChild.dataset.aigenId);
     }
   }
 
   // 向父级查找
-  const parentElement = target.closest('[data-aigen-id]');
+  const parentElement = target.closest('[data-aigen-id]') as HTMLElement | null;
   if (parentElement?.dataset?.aigenId) {
     return getSchemaByAigenId(parentElement.dataset.aigenId);
   }
@@ -66,13 +68,13 @@ function getNodeSchema(target) {
  * 根据aigenId获取schema的辅助函数
  * @param {string} aigenId
  */
-function getSchemaByAigenId(aigenId) {
+function getSchemaByAigenId(aigenId: string) {
   const instance = pageManager.findInstance(aigenId);
   return instance?.exposed?.schema || null;
 }
 
 function setHoverNode(event: Event) {
-  const schema = getNodeSchema(event.target);
+  const schema = getNodeSchema(event.target as HTMLElement | null);
   event.stopPropagation();
   designer.setHoverNode(schema);
 }

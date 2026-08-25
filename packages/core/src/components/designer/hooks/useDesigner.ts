@@ -1,5 +1,6 @@
 import type {
   ComponentSchema,
+  DesignerProps,
   DesignerState,
   PageSchema,
 } from '@aigen-designer/types';
@@ -50,7 +51,10 @@ defineExpose({
   };
 }
 
-export function useDesigner(props, emit) {
+export function useDesigner(
+  props: DesignerProps,
+  emit: (event: 'reset', ...args: any[]) => void,
+) {
   const ready = ref<boolean>(false);
   const pageManager = createPageManager();
   const pageSchema = pageManager.pageSchema;
@@ -72,7 +76,10 @@ export function useDesigner(props, emit) {
   );
 
   // 画布配置：与 toolbar.vue 中的定义保持一致（含旧模式兼容项）
-  const canvasConfigs = {
+  const canvasConfigs: Record<
+    'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet',
+    { mode?: 'desktop' | 'mobile' | 'tablet'; width?: string }
+  > = {
     desktop: {},
     mobile: {
       mode: 'mobile',
