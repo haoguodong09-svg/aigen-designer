@@ -4,7 +4,6 @@ pnpm-lock.yaml
 *.map
 *.html
 index.ts
-uno.config.ts
 .eslintrc.cjs
 .babelrc
 
