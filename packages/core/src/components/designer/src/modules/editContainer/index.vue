@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, inject, onMounted, ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { findSchemaById } from '@aigen-designer/utils';
@@ -40,31 +40,39 @@ function setSelectedNodeById(aigenId) {
   contextMenu.close();
 }
 
+function handleEditRangeClick(event: MouseEvent) {
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+  event.stopPropagation();
+  let aigenId = target.dataset?.aigenId;
+  if (!aigenId) {
+    // 查询其父级的 aigenId
+    let parent = target.parentElement;
+    while (parent) {
+      if (parent.dataset?.aigenId) {
+        aigenId = parent.dataset.aigenId;
+        break;
+      }
+      parent = parent.parentElement;
+
+      // 如果是点击操作栏，不处理
+      if (parent?.classList?.contains('aigen-selected-widget')) {
+        return;
+      }
+    }
+  }
+  setSelectedNodeById(aigenId);
+}
+
 onMounted(() => {
   aigenPreviewWidgetsRef.value?.handleInit(aigenEditRangeRef.value);
 
-  // 监听 aigenEditRangeRef 点击事件
-  aigenEditRangeRef.value?.addEventListener('click', (event: any) => {
-    event.stopPropagation();
-    let aigenId = event.target.dataset?.aigenId;
-    if (!aigenId) {
-      // 查询其父级的 aigenId
-      let parent = event.target.parentElement;
-      while (parent) {
-        if (parent.dataset?.aigenId) {
-          aigenId = parent.dataset.aigenId;
-          break;
-        }
-        parent = parent.parentElement;
+  // 监听 aigenEditRangeRef 点击事件（命名函数便于卸载时移除，避免监听器残留）
+  aigenEditRangeRef.value?.addEventListener('click', handleEditRangeClick);
+});
 
-        // 如果是点击操作栏，不处理
-        if (parent?.classList?.contains('aigen-selected-widget')) {
-          return;
-        }
-      }
-    }
-    setSelectedNodeById(aigenId);
-  });
+onUnmounted(() => {
+  aigenEditRangeRef.value?.removeEventListener('click', handleEditRangeClick);
 });
 </script>
 <template>
