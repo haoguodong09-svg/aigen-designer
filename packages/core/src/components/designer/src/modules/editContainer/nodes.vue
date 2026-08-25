@@ -1,12 +1,18 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, inject, ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
+import {
+  useDesignerContext,
+  useLinkMode,
+  usePageManager,
+} from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
+import { findSchemaById } from '@aigen-designer/utils';
 
+import EventBadge from './EventBadge.vue';
 import AigenNodeItem from './nodeItem.vue';
 
 defineOptions({
@@ -19,6 +25,7 @@ const emit = defineEmits(['update:schemas']);
 const designer = useDesignerContext();
 const revoke = designer.revoke;
 const pageManager = usePageManager();
+const linkMode = useLinkMode();
 const contextMenu = inject('contextMenu', {
   close: () => {},
   open: (_event: Event, _schema: ComponentSchema) => {},
@@ -65,12 +72,18 @@ function getNodeSchema(target: HTMLElement | null) {
 }
 
 /**
- * 根据aigenId获取schema的辅助函数
+ * 根据aigenId获取schema的辅助函数（悬停走组件实例 exposed；
+ * 关联模式点选需写回页面 schema，因此直接按 id 查 pageSchema）
  * @param {string} aigenId
  */
 function getSchemaByAigenId(aigenId: string) {
   const instance = pageManager.findInstance(aigenId);
   return instance?.exposed?.schema || null;
+}
+
+/** 关联模式点选：按 id 解析页面 schema（可写回的实时引用） */
+function getSchemaForLinkPick(aigenId: string) {
+  return findSchemaById(designer.pageSchema.schemas, aigenId);
 }
 
 function setHoverNode(event: Event) {
@@ -115,6 +128,52 @@ function isInline(schema: ComponentSchema) {
   const config = pluginManager.component.getComponentConfigByType(schema.type);
   return config?.editConstraints?.inline || false;
 }
+
+// 关联模式画布点选：nodes.vue 为递归组件，模块级计数保证 document 委托监听只注册一次
+let linkPickerCount = 0;
+
+/**
+ * document 委托监听（捕获阶段，先于画布选中/拖拽逻辑）：
+ * - 命中 [data-aigen-id] 元素 → 按阶段选择源/目标（源=蓝、目标=绿 outline）；
+ * - 点击画布空白 → 取消当前选择（不退出模式），再点一次空白退出；
+ * - 角标/选中操作条等控件点击保持正常交互（不拦截）。
+ */
+function handleLinkModeClick(event: MouseEvent) {
+  if (!linkMode.isActive.value) return;
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+  // 仅处理画布编辑区内的点击（工具栏/侧边栏/气泡等均不参与点选）
+  if (!target.closest('.aigen-edit-range')) return;
+  // 角标与选中操作条等控件保持正常交互
+  if (target.closest('.aigen-event-badge, .aigen-selected-widget')) return;
+  const nodeElement = target.closest('[data-aigen-id]') as HTMLElement | null;
+  const aigenId = nodeElement?.dataset.aigenId;
+  if (aigenId) {
+    const schema = getSchemaForLinkPick(aigenId);
+    if (schema) {
+      event.stopPropagation();
+      linkMode.pick(schema);
+      return;
+    }
+  }
+  // 点击画布空白：取消当前选择（不退出模式），再点一次空白退出
+  event.stopPropagation();
+  linkMode.handleBlankClick();
+}
+
+onMounted(() => {
+  linkPickerCount++;
+  if (linkPickerCount === 1) {
+    document.addEventListener('click', handleLinkModeClick, true);
+  }
+});
+
+onUnmounted(() => {
+  linkPickerCount--;
+  if (linkPickerCount === 0) {
+    document.removeEventListener('click', handleLinkModeClick, true);
+  }
+});
 </script>
 
 <template>
@@ -122,6 +181,7 @@ function isInline(schema: ComponentSchema) {
     v-model="modelSchemas"
     class="aigen-draggable-range"
     :animation="200"
+    :disabled="linkMode.isActive.value"
     group="edit-draggable"
     ghost-class="aigen-moveing"
     @mouseover.stop="setHoverNode"
@@ -137,7 +197,22 @@ function isInline(schema: ComponentSchema) {
       @contextmenu.stop="contextMenu.open($event, element)"
       :data-aigen-id="element.id"
     >
-      <AigenNodeItem :schema="element" />
+      <div class="aigen-node-badge-wrap">
+        <AigenNodeItem :schema="element" />
+        <EventBadge :schema="element" />
+      </div>
     </div>
   </VueDraggable>
 </template>
+
+<style scoped>
+/* 角标叠加层定位容器：仅提供相对定位，不影响节点自身布局 */
+.aigen-node-badge-wrap {
+  position: relative;
+}
+
+/* 内联组件（如按钮）保持行内布局 */
+.aigen-node-item.aigen-inline > .aigen-node-badge-wrap {
+  display: inline-block;
+}
+</style>

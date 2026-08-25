@@ -30,7 +30,7 @@ const argsEditorKey = computed(() => {
 const state = reactive({
   actionItem: {
     componentId: null,
-    methodName: 'test',
+    methodName: '',
     type: 'custom',
   } as FormDataModel,
   cacheData: {} as Record<string, any>,

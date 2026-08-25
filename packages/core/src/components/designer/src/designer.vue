@@ -7,6 +7,7 @@ import { AigenDesignerLoader } from '@aigen-designer/base-ui';
 import {
   createEventBus,
   DESIGNER_CONTEXT_KEY,
+  provideLinkMode,
   providePageManager,
   useStore,
 } from '@aigen-designer/hooks';
@@ -107,6 +108,8 @@ provide(DESIGNER_CONTEXT_KEY, {
   state,
 });
 providePageManager(pageManager);
+// 顶层 provide 关联模式实例（画布/工具栏/气泡共享同一状态；Esc/快捷键 L 在 hooks 内监听）
+provideLinkMode();
 const designerRef = ref<HTMLElement | null>(null);
 
 /**

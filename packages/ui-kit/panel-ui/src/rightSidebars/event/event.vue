@@ -221,12 +221,28 @@ function handleSetValue(value: any, field: string) {
         @update:model-value="handleSetValue($event, `on`)"
       />
     </div>
+    <!-- 联动能力引导：更多跨元素联动（字段联动 / 计算字段 / 事件总线）在「关联与计算」面板 -->
+    <div class="aigen-event-link-hint">
+      更多联动能力：切换到右侧『关联与计算』页签
+    </div>
   </div>
 </template>
 
 <style scoped>
 .aigen-event-view {
   padding: 4px 0;
+}
+
+/* 底部引导：更多联动能力见「关联与计算」页签 */
+.aigen-event-link-hint {
+  margin: 8px 12px 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--aigen-text-helper);
+  background: var(--aigen-secondary, #f5f6f8);
+  border: 1px dashed var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
 }
 
 /* 快捷上手模板（事件列表上方，仅无动作时展示） */

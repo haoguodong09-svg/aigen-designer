@@ -7,11 +7,13 @@ import type {
 import { reactive, ref, shallowRef, watch } from 'vue';
 
 import {
+  createEventBus,
   useHookManager,
   useMountMonitor,
   usePageSchema,
 } from '@aigen-designer/hooks';
 import {
+  evaluateCondition,
   findSchemas,
   FormulaEngine,
   getValueByPath,
@@ -46,6 +48,13 @@ export function createPageManager() {
   // 初始化
   const { pageSchema, setPageSchema } = usePageSchema();
   const hook = useHookManager();
+
+  // P3 页面事件总线（页面级通道）：元素之间解耦通信（B4.4）。
+  // createEventBus 为 hooks 包纯函数（内部提供/清理与组件生命周期相关，
+  // 在非组件上下文调用仅产生告警不影响功能），不引入 hooks ↔ manager 新循环依赖。
+  const pageEventBus = createEventBus('page');
+  // P3 全局变量：公式 $vars 上下文与 setVar/getVar 的存储，初值取 pageSchema.vars
+  const vars = ref<Record<string, unknown>>(pageSchema.vars ?? {});
 
   /**
    * 查找组件的exposed属性
@@ -276,6 +285,28 @@ export function createPageManager() {
         return;
       }
 
+      const formNames = Object.keys(forms.value);
+      // 处理数据参数（表单数据 + 触发事件参数 + 全局变量，供条件求值与表达式计算使用）
+      const context = {
+        event: args,
+        formData: (formNames.length === 1
+          ? forms.value[formNames[0]]
+          : forms.value) as Record<string, any>,
+        // P3：全局变量注入公式上下文（$vars.xxx）
+        vars: vars.value,
+      };
+
+      // P3：动作条件求值——不满足时跳过该动作，不中断整条动作链。
+      // evaluateCondition 内部 fail-safe（求值异常返回 false 并告警）
+      if (
+        !evaluateCondition(action.condition, {
+          event: args,
+          formData: context.formData,
+        })
+      ) {
+        return;
+      }
+
       // 尝试解析操作参数，如果没有提供，则使用传入的参数。
       // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
       let methodArgs: unknown[];
@@ -295,15 +326,6 @@ export function createPageManager() {
         methodArgs = args;
       }
 
-      const formNames = Object.keys(forms.value);
-      // 处理数据参数
-      const context = {
-        event: args,
-        formData: (formNames.length === 1
-          ? forms.value[formNames[0]]
-          : forms.value) as Record<string, any>,
-      };
-
       methodArgs = methodArgs.map((arg: any) => {
         // 如果是对象且标记为表达式，调用 jsep 计算
         if (arg && typeof arg === 'object' && arg.__isExpression__) {
@@ -313,31 +335,48 @@ export function createPageManager() {
         // 否则（字符串、数字等），直接返回原值（兼容旧数据）
         return arg;
       });
-      // 根据操作的类型，调用不同的执行函数
-      switch (action.type) {
-        case 'component': {
-          // 执行组件方法
-          executeComponentMethod(action, scopeName, methodArgs);
-          break;
-        }
 
-        case 'custom': {
-          // 执行自定义方法
-          executeCustomMethod(action, methodArgs);
-          break;
-        }
+      // 实际执行体：按动作类型分发到对应执行函数（各执行函数内部均有 try/catch，
+      // 此处兜底保证单动作异常不中断动作链）
+      const executeAction = (): void => {
+        try {
+          // 根据操作的类型，调用不同的执行函数
+          switch (action.type) {
+            case 'component': {
+              // 执行组件方法
+              executeComponentMethod(action, scopeName, methodArgs);
+              break;
+            }
 
-        case 'public': {
-          // 执行公共方法
-          executePublicMethod(action, methodArgs);
-          break;
-        }
+            case 'custom': {
+              // 执行自定义方法
+              executeCustomMethod(action, methodArgs);
+              break;
+            }
 
-        default: {
-          // 如果遇到未知的操作类型，发出警告
-          console.warn(`未知的动作类型: ${action.type}`);
-          break;
+            case 'public': {
+              // 执行公共方法
+              executePublicMethod(action, methodArgs);
+              break;
+            }
+
+            default: {
+              // 如果遇到未知的操作类型，发出警告
+              console.warn(`未知的动作类型: ${action.type}`);
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`[Aigen：动作(${action.methodName})]执行异常:`, error);
         }
+      };
+
+      // P3：延迟执行——仅该动作延迟，动作链其他动作不受影响（动作参数已在
+      // 调用前完成解析与表达式求值，延迟体内直接执行）
+      if (typeof action.delay === 'number' && action.delay > 0) {
+        setTimeout(executeAction, action.delay);
+      } else {
+        executeAction();
       }
     });
   }
@@ -456,6 +495,76 @@ export function createPageManager() {
     return reactiveFormData; // 返回新创建的响应式数据
   }
 
+  /**
+   * 触发页面事件（P3 页面事件总线，B4.4）：元素之间解耦通信。
+   * @param eventName 事件名
+   * @param payload 事件载荷，可选
+   */
+  function emitEvent(eventName: string, payload?: unknown): void {
+    pageEventBus.emit(eventName, payload);
+  }
+
+  /**
+   * 监听页面事件（P3）：注册后收到 emitEvent 触发的同名校验载荷。
+   * @param eventName 事件名
+   * @param handler 处理函数
+   */
+  function onEvent(
+    eventName: string,
+    handler: (payload: unknown) => void,
+  ): void {
+    pageEventBus.on(eventName, handler);
+  }
+
+  /**
+   * 设置全局变量（P3）：写入 vars，公式 $vars.xxx 与 getVar 可读取。
+   * @param key 变量名
+   * @param value 变量值
+   */
+  function setVar(key: string, value: unknown): void {
+    vars.value[key] = value;
+  }
+
+  /**
+   * 读取全局变量（P3）。
+   * @param key 变量名
+   * @returns 变量值，未设置时为 undefined
+   */
+  function getVar(key: string): unknown {
+    return vars.value[key];
+  }
+
+  // P3：把页面事件与全局变量方法注册为公共方法（methodsMap），
+  // 供「公共函数」类型动作选择与自定义脚本（setMethods 编译时快照 methodsMap）调用。
+  // 注意：pluginManager.publicMethods 为模块级单例（多设计器实例共享，见
+  // pluginManager.ts 文档化限制），多实例场景下后创建的 pageManager 覆盖前者。
+  pluginManager.publicMethods.methodsMap.emitEvent = {
+    description: '触发页面事件（emitEvent）',
+    handler: (eventName: unknown, payload?: unknown) => {
+      emitEvent(String(eventName), payload);
+    },
+    name: 'emitEvent',
+  };
+  pluginManager.publicMethods.methodsMap.onEvent = {
+    description: '监听页面事件（onEvent）',
+    handler: (eventName: unknown, handler: unknown) => {
+      onEvent(String(eventName), handler as (payload: unknown) => void);
+    },
+    name: 'onEvent',
+  };
+  pluginManager.publicMethods.methodsMap.setVar = {
+    description: '设置全局变量（setVar）',
+    handler: (key: unknown, value: unknown) => {
+      setVar(String(key), value);
+    },
+    name: 'setVar',
+  };
+  pluginManager.publicMethods.methodsMap.getVar = {
+    description: '读取全局变量（getVar）',
+    handler: (key: unknown) => getVar(String(key)),
+    name: 'getVar',
+  };
+
   // 监听自定义函数：收窄响应式追踪范围（性能文档 P-W7），
   // 原 watchEffect 会追踪 script 读取路径上的所有依赖，现改为仅在 pageSchema.script
   // 字段变化时重编译（immediate 保留初始化即编译的行为）
@@ -474,6 +583,7 @@ export function createPageManager() {
     componentInstances,
     defaultComponentIds,
     doActions,
+    emitEvent,
     find,
     findAll,
     findInstance,
@@ -482,9 +592,11 @@ export function createPageManager() {
     funcs,
     // 兼容处理, 后续版本可能会移除
     getComponentInstance: find,
+    getVar,
     hook,
     isDesignMode,
     mountMonitor,
+    onEvent,
     pageSchema,
     removeComponentInstance,
     scriptError,
@@ -493,6 +605,8 @@ export function createPageManager() {
     setFormData,
     setMethods,
     setPageSchema,
+    setVar,
+    vars,
   };
 }
 

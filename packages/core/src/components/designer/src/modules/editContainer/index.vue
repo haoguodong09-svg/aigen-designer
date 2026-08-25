@@ -3,17 +3,19 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 
-import { useDesignerContext } from '@aigen-designer/hooks';
+import { useDesignerContext, useLinkMode } from '@aigen-designer/hooks';
 import { findSchemaById } from '@aigen-designer/utils';
 
 import AigenEditScreenContainer from './editScreenContainer.vue';
 import AigenNodeItem from './nodeItem.vue';
 import AigenPreviewWidgets from './previewWidgets.vue';
+import AigenQuickLinkPopover from './QuickLinkPopover.vue';
 
 const aigenEditRangeRef = ref<HTMLDivElement | null>(null);
 const aigenPreviewWidgetsRef = ref<null | typeof AigenPreviewWidgets>(null);
 
 const { pageSchema, props, setSelectedNode } = useDesignerContext();
+const linkMode = useLinkMode();
 const contextMenu = inject('contextMenu', {
   close: () => {},
   open: (_event: Event, _schema: ComponentSchema) => {},
@@ -38,6 +40,16 @@ function setSelectedNodeById(aigenId: string | undefined) {
   const schema = findSchemaById(pageSchema.schemas, aigenId as string);
   setSelectedNode(schema);
   contextMenu.close();
+}
+
+/**
+ * 关联模式激活期间禁止画布拖拽（防御守卫；拖拽本体已在 nodes.vue 通过
+ * VueDraggable :disabled 禁用，此处兜底阻止 dragstart 冒泡）
+ */
+function handleRangeDragStart(event: DragEvent) {
+  if (linkMode.isActive.value) {
+    event.preventDefault();
+  }
 }
 
 function handleEditRangeClick(event: MouseEvent) {
@@ -82,10 +94,13 @@ onUnmounted(() => {
         ref="aigenEditRangeRef"
         class="aigen-edit-range relative overflow-auto rounded-md"
         :style="getEditRangestyle"
+        @dragstart="handleRangeDragStart"
       >
         <AigenNodeItem :schema="rootSchema" />
         <AigenPreviewWidgets ref="aigenPreviewWidgetsRef" />
       </div>
     </AigenEditScreenContainer>
+    <!-- 快速关联气泡：Teleport 到 body，锚定目标元素（随模式退出自动隐藏） -->
+    <AigenQuickLinkPopover />
   </section>
 </template>

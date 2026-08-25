@@ -17,6 +17,7 @@ export {
 } from './useBuilderReadonly';
 export * from './useDesignerContext';
 export * from './useFieldPathPrefix';
+export * from './useLinkMode';
 export * from './useNodeAttrs';
 export * from './usePageManager';
 export * from './useTableMeta';

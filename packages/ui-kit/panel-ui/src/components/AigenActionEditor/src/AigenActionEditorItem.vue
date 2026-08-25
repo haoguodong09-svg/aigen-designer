@@ -69,6 +69,46 @@ function handleDelete(index: number | string, type: string) {
   emit('update:modelValue', newEvents);
 }
 
+/** 拖拽开始前该事件动作的顺序快照（用于 @end 判断顺序是否真正变化，null 表示无进行中的拖拽） */
+let dragStartOrder: null | string[] = null;
+
+/**
+ * 拖拽排序开始：记录该事件动作的原始顺序快照
+ * @param type 事件类型
+ */
+function handleDragStart(type: string) {
+  dragStartOrder = getEventActions(type).map((action: any, index: number) =>
+    String(action.id ?? index),
+  );
+}
+
+/**
+ * 拖拽排序结束：VueDraggable 的 v-model 绑定 props.events[item.type] 为原地变更，
+ * 不触发 update:modelValue，排序因此不进撤销栈。此处补发 update:modelValue
+ * （参照 handleDelete 的 getNewEvents 构造完整事件对象，深拷贝后 emit），
+ * 复用 event.vue handleSetValue → revoke.push 链路入撤销栈。
+ * 仅当顺序确实变化时触发（与拖拽开始前的顺序快照对比），避免与新增/删除动作的
+ * update:modelValue 链路重复入栈。
+ * @param type 事件类型
+ */
+function handleDragEnd(type: string) {
+  const snapshot = dragStartOrder;
+  dragStartOrder = null;
+  // 快照缺失（异常路径）或顺序未变化（拖回原位/取消拖拽）不入撤销栈
+  if (!snapshot) return;
+  const currentOrder = getEventActions(type).map((action: any, index: number) =>
+    String(action.id ?? index),
+  );
+  const orderChanged =
+    snapshot.length !== currentOrder.length ||
+    snapshot.some((id, i) => id !== currentOrder[i]);
+  if (!orderChanged) return;
+
+  const newEvents = getNewEvents(type);
+  newEvents[type] = getEventActions(type);
+  emit('update:modelValue', deepClone(newEvents));
+}
+
 /**
  * 修改动作
  * @param index 动作下标
@@ -307,6 +347,8 @@ function isActionVisible(item: any, action: any): boolean {
         group="option-list"
         handle=".handle"
         :animation="200"
+        @start="handleDragStart(item.type)"
+        @end="handleDragEnd(item.type)"
       >
         <div
           v-for="(action, index) in getEventActions(item.type)"

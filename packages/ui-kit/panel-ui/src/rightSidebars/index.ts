@@ -20,6 +20,13 @@ export function setupRightSidebar(pluginManager: PluginManager): void {
     sort: 200,
     title: '样式',
   });
+  // 关联与计算面板（B4 / WP-B）：字段联动 / 计算字段 / 事件总线
+  pluginManager.panel.registerRightSidebar({
+    component: async () => await import('./link/link.vue'),
+    id: 'link_view',
+    sort: 250,
+    title: '关联与计算',
+  });
   pluginManager.panel.registerRightSidebar({
     component: async () => await import('./event/event.vue'),
     id: 'event_view',

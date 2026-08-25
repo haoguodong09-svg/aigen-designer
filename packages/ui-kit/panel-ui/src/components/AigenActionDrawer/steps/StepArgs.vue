@@ -604,6 +604,13 @@ const delayText = computed({
   min-width: 0;
 }
 
+/* setAttr 参数区：选择属性 / 提示文字 / 属性值 之间保持垂直间距 */
+.aigen-step-args-setattr {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* 表达式值 chip：参数为表达式对象时的展示与编辑入口 */
 .aigen-step-args-expr-chip {
   display: flex;

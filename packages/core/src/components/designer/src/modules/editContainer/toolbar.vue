@@ -2,7 +2,11 @@
 import { computed, ref } from 'vue';
 
 import { AigenIcon, AigenTooltip } from '@aigen-designer/base-ui';
-import { useDesignerContext, useStore } from '@aigen-designer/hooks';
+import {
+  useDesignerContext,
+  useLinkMode,
+  useStore,
+} from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import {
   convertKFormData,
@@ -16,6 +20,7 @@ const Select = pluginManager.component.get('select');
 
 const { canvasScale, disabledZoom } = useStore();
 const designer = useDesignerContext();
+const linkMode = useLinkMode();
 const pageSchema = designer.pageSchema;
 const revoke = designer.revoke;
 const previewJson = ref<InstanceType<typeof AigenPreviewJson> | null>(null);
@@ -67,6 +72,13 @@ const actionOptions = computed(() => {
       icon: 'icon--aigen--redo',
       on: handleRedo,
       title: '重做',
+    },
+    {
+      active: true,
+      divider: true,
+      icon: 'icon--aigen--account-tree-outline-rounded',
+      on: () => linkMode.toggle(),
+      title: '关联模式（快捷键 L）',
     },
     {
       divider: true,
@@ -292,7 +304,11 @@ function handleSetCanvas(type: string) {
           <div
             v-if="isShow(action.show)"
             class="aigen-action-item h-90% px-10px flex cursor-pointer items-center text-base"
-            :class="{ disabled: action.disabled }"
+            :class="{
+              disabled: action.disabled,
+              'aigen-action-item--active':
+                action.active && linkMode.isActive.value,
+            }"
             @click="action.on"
           >
             <AigenIcon :name="action.icon" />
@@ -343,3 +359,10 @@ function handleSetCanvas(type: string) {
   <AigenPreviewJson ref="previewJson" />
   <!-- 工具条 end  -->
 </template>
+<style scoped>
+/* 「关联」开关激活态高亮 */
+.aigen-action-item--active {
+  color: var(--aigen-primary);
+  background: var(--aigen-primary-faded);
+}
+</style>

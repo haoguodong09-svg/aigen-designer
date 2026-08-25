@@ -19,6 +19,8 @@ export interface ActionsModel {
   group?: string;
   /** 稳定身份：拖拽 key、复制、条件引用、日志定位；旧数据缺省，读取层（normalizeAction）补 UUID */
   id?: string;
+  /** 字段联动编译标识（P3）：linkCompiler 编译 FieldLink 时写入，供联动规则删除/更新的精确定位，可选 */
+  linkId?: string;
   methodName: string;
   /** 动作命名（人话，用于摘要/搜索/下拉展示），可选 */
   name?: string;
@@ -49,6 +51,53 @@ export interface ConditionGroup {
   logic: 'AND' | 'OR';
 }
 
+/**
+ * 表达式模型（运行时 doActions 表达式参数对象，与 pageManager 的 __isExpression__ 约定一致）。
+ * 设计态仅存储，运行时由表达式引擎识别并求值后替换为实际值。
+ */
+export interface ExpressionModel {
+  /** 表达式标记，与 pageManager 约定一致：值为 true 时按表达式处理而非常量 */
+  __isExpression__: true;
+  /** 表达式内容（jsep 公式，如 "$formData.name"） */
+  content: string;
+}
+
+/**
+ * 设计态字段联动视图模型（P2 画布关联模式）。
+ * 运行时经 linkCompiler 编译到目标元素的 on 事件，不新增运行时机制。
+ */
+export interface FieldLink {
+  /** 联动行为：显示 / 隐藏 / 禁用 / 只读 / 赋值 / 清空 */
+  behavior: 'CLEAR' | 'DISABLE' | 'HIDE' | 'READ' | 'SET_VALUE' | 'SHOW';
+  /** 启停用，缺省视为 true（undefined 视为启用），可选 */
+  enabled?: boolean;
+  /** 稳定身份：拖拽 key、复制、引用定位 */
+  id: string;
+  /** 源字段（formData 路径），联动触发源 */
+  sourceField: string;
+  /** 目标元素 id，联动作用对象 */
+  targetId: string;
+  /** SET_VALUE 时的赋值内容；可为常量或表达式模型（{ __isExpression__: true, content }），可选 */
+  value?: unknown;
+  /** 可选条件，P3 运行时求值，满足时才触发联动 */
+  when?: ConditionGroup;
+}
+
+/**
+ * 计算字段（P3 关联/计算面板）。
+ * expression 为 jsep 公式，以 $formData.* 引用表单字段值。
+ */
+export interface ComputedField {
+  /** 启停用，缺省视为 true（undefined 视为启用），可选 */
+  enabled?: boolean;
+  /** 计算表达式（jsep 公式，$formData.* 引用表单字段，$vars 引用全局状态） */
+  expression: string;
+  /** 稳定身份：拖拽 key、复制、引用定位 */
+  id: string;
+  /** 目标字段（formData 路径），计算结果写入该字段 */
+  targetField: string;
+}
+
 export interface RenderCallbackParams {
   tableMeta?: TableMeta;
   // TODO: 第二期收敛为 Record<string, unknown>。
@@ -75,6 +124,8 @@ export interface ComponentSchema {
   input?: boolean;
   // 节点标签，可选
   label?: string;
+  // 设计态字段联动视图模型，运行时按需编译到 on，不新增运行时机制，可选
+  links?: FieldLink[];
   // 是否无需表单项，可选
   noFormItem?: boolean;
   // 事件绑定
@@ -126,8 +177,12 @@ export interface PageSchema {
     mode?: 'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet'; // 支持新旧模式  'pad' | 'pc' 为旧数据
     width?: string;
   };
+  // 计算字段列表（P3 关联/计算面板），可选
+  computed?: ComputedField[];
   schemas: ComponentSchema[];
   script?: string;
+  // 全局状态初值（公式 $vars 上下文，P3 运行时），可选
+  vars?: Record<string, unknown>;
 }
 
 export interface Designer {
