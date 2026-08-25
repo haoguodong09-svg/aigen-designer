@@ -6,16 +6,20 @@ import 'element-plus/es/components/select/style/css';
 
 // 二次封装组件
 export default defineComponent({
-  emits: ['update:modelValue'],
+  // 同时支持两种 v-model 协议：value（antd/naiveUi 的 bindModel 约定，core toolbar 使用）
+  // 与 modelValue（element-plus 原生约定），保证设计器内 v-model:value 跨 UI 库生效
+  emits: ['update:modelValue', 'update:value'],
   setup(_, { attrs, emit }) {
     function handleUpdate(e = null): void {
       emit('update:modelValue', e);
+      emit('update:value', e);
     }
 
     return () => {
       const props: Record<string, any> = {
         ...attrs,
         key: String(attrs.multiple),
+        modelValue: attrs.modelValue ?? attrs.value,
         'onUpdate:modelValue': handleUpdate,
         placeholder: attrs.placeholder ?? '请选择',
       };

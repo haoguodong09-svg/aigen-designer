@@ -60,4 +60,38 @@ describe('elementPlus select 适配层', () => {
     wrapper.unmount();
     await nextTick();
   });
+
+  it('支持 value 协议（v-model:value，与 antd/naiveUi 的 bindModel 约定对齐）', async () => {
+    const Host = defineComponent({
+      setup() {
+        const value = ref('a');
+        return () =>
+          h(SelectWrapper, {
+            value: value.value,
+            'onUpdate:value': (v: unknown) => {
+              value.value = v as string;
+            },
+            options: [
+              { label: 'A', value: 'a' },
+              { label: 'B', value: 'b' },
+            ],
+          });
+      },
+    });
+
+    const wrapper = mount(Host, { attachTo: document.body });
+    await nextTick();
+
+    // value 协议下 modelValue 应正确透传给 ElSelect
+    const elSelect = wrapper.findComponent(ElSelect);
+    expect(elSelect.props('modelValue')).toBe('a');
+
+    // 选择变更时 update:value 事件应被发出
+    elSelect.vm.$emit('update:modelValue', 'b');
+    await nextTick();
+    expect(wrapper.findComponent(ElSelect).props('modelValue')).toBe('b');
+
+    wrapper.unmount();
+    await nextTick();
+  });
 });
