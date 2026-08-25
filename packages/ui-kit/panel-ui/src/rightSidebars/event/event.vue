@@ -3,7 +3,6 @@ import type { EventModel } from '@aigen-designer/types';
 
 import { computed, ref } from 'vue';
 
-import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { getValueByPath, setValueByPath } from '@aigen-designer/utils';
@@ -152,12 +151,28 @@ const hasAnyAction = computed(() => {
   );
 });
 
-// 空状态引导模板：点击后直达对应事件的添加流程（设计态仅打开动作配置，不触发运行时事件）
+// 当前元素实际可用的事件类型（组件事件 ∪ 生命周期），用于过滤快捷模板，
+// 避免出现"模板配完后面板无对应事件行"的困惑（如 switch 没有 click 事件）
+const availableEventTypes = computed(() => {
+  const nodeType = designer.state.selectedNode?.type;
+  const configEvents = componentConfigs[nodeType ?? '']?.config?.event ?? [];
+  const types = new Set<string>(configEvents.map((event) => event.type));
+  LIFECYCLE_EVENTS.forEach((event) => types.add(event.type));
+  return types;
+});
+
+// 快捷上手模板：点击后直达对应事件的添加流程（设计态仅打开动作配置，不触发运行时事件）
 const emptyTemplates = [
   { eventType: 'click', text: '点击时显示/隐藏其他元素' },
   { eventType: 'change', text: '值变化时计算合计' },
   { eventType: 'aigenReady', text: '页面加载时填充默认值' },
 ] as const;
+
+const filteredTemplates = computed(() =>
+  emptyTemplates.filter((template) =>
+    availableEventTypes.value.has(template.eventType),
+  ),
+);
 
 /**
  * 点击空状态模板：触发 AigenActionEditor 的添加流程（打开动作配置抽屉）
@@ -180,17 +195,17 @@ function handleSetValue(value: any, field: string) {
 <template>
   <div class="aigen-event-view">
     <div v-if="selectedNode">
-      <!-- 空状态引导：选中元素没有任何事件动作时展示 -->
-      <div v-if="!hasAnyAction" class="aigen-event-empty">
-        <div class="aigen-event-empty__icon">
-          <AigenIcon name="icon--aigen--event-available-rounded" />
-        </div>
-        <div class="aigen-event-empty__title">让这个元素「动」起来</div>
+      <!-- 快捷上手模板：仅当没有任何动作时作为辅助入口展示（事件列表始终可见） -->
+      <div
+        v-if="!hasAnyAction && filteredTemplates.length"
+        class="aigen-event-empty"
+      >
+        <div class="aigen-event-empty__title">快捷上手</div>
         <div class="aigen-event-empty__desc">
-          从常用场景开始，快速添加第一条行为
+          从常用场景开始，或点击下方事件旁的 ＋ 手动添加
         </div>
         <div
-          v-for="template in emptyTemplates"
+          v-for="template in filteredTemplates"
           :key="template.eventType"
           class="aigen-event-empty__item"
           @click="handleEmptyTemplateClick(template.eventType)"
@@ -203,7 +218,6 @@ function handleSetValue(value: any, field: string) {
         :key="selectedNode.id"
         :event-list="eventList"
         :model-value="getValueByPath(selectedNode!, `on`)"
-        v-show="hasAnyAction"
         @update:model-value="handleSetValue($event, `on`)"
       />
     </div>
@@ -215,45 +229,28 @@ function handleSetValue(value: any, field: string) {
   padding: 4px 0;
 }
 
-/* 空状态引导 */
+/* 快捷上手模板（事件列表上方，仅无动作时展示） */
 .aigen-event-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 32px 20px;
-  text-align: center;
-}
-
-.aigen-event-empty__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 12px;
-  border-radius: 50%;
-  color: var(--aigen-primary);
-  background-color: var(--aigen-primary-faded);
-  font-size: 24px;
+  padding: 12px 12px 4px;
 }
 
 .aigen-event-empty__title {
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   color: var(--aigen-text-main);
-  font-size: var(--aigen-text-md);
+  font-size: var(--aigen-text-sm);
   font-weight: 500;
 }
 
 .aigen-event-empty__desc {
-  margin-bottom: 16px;
+  margin-bottom: 4px;
   color: var(--aigen-text-helper);
-  font-size: var(--aigen-text-sm);
+  font-size: var(--aigen-text-xs);
 }
 
 .aigen-event-empty__item {
   width: 100%;
-  margin-top: 8px;
-  padding: 10px 12px;
+  margin-top: 6px;
+  padding: 8px 12px;
   border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius);
   color: var(--aigen-text-main);
