@@ -12,7 +12,7 @@ import { findSchemas, getUUID } from '@aigen-designer/utils';
 
 import aigenScriptEdit from '../../aigenActionModal/aigenScriptEdit.vue';
 import ExpressionInsert from '../../ExpressionInsert/index.vue';
-import { getArgsArray, stringifyArgs } from '../helper';
+import { getArgsArray, isExpressionValue, stringifyArgs } from '../helper';
 
 /**
  * Step4 · 参数配置：
@@ -52,6 +52,17 @@ function setArg(index: number, value: unknown) {
   values[index] = value;
   argsArray.value = values;
   emit('change', { args: stringifyArgs(values) });
+}
+
+/** 指定下标参数是否为表达式对象 */
+function isExprValue(index: number): boolean {
+  return isExpressionValue(argsArray.value[index]);
+}
+
+/** 表达式内容展示文本 */
+function getExpressionContent(index: number): string {
+  const value = argsArray.value[index];
+  return isExpressionValue(value) ? value.content : '';
 }
 
 /** 组件动作参数配置（逻辑迁移自旧 modal:97-122，含「设置数据」特殊替换） */
@@ -182,6 +193,21 @@ const selectedAttrSchema = computed(() => {
     ) ?? null
   );
 });
+
+/**
+ * 清除表达式，恢复为直接值编辑。
+ * 按对应属性的控件类型给合理默认值（switch/checkbox → false，其余 → 空字符串），
+ * 避免回退到 undefined/null 造成"保存后静默不生效"。
+ */
+function clearExpression(index: number, schema: ComponentSchema | null = null) {
+  const attrSchema = schema ?? (index === 1 ? selectedAttrSchema.value : null);
+  const fallback =
+    attrSchema &&
+    (attrSchema.type === 'switch' || attrSchema.type === 'checkbox')
+      ? false
+      : '';
+  setArg(index, fallback);
+}
 
 // 进入 setAttr 且无缓存参数时，初始化参数结构 [属性名, 属性值]
 watch(
@@ -319,7 +345,31 @@ const delayText = computed({
         <div v-if="selectedAttrSchema" class="aigen-step-args-row">
           <span class="aigen-step-args-row-label">属性值</span>
           <div class="aigen-step-args-row-input">
+            <!-- 表达式值：展示为 chip（编辑/改为直接值），避免把表达式对象传给控件触发类型告警 -->
+            <div v-if="isExprValue(1)" class="aigen-step-args-expr-chip">
+              <span
+                class="aigen-step-args-expr-chip-code"
+                :title="getExpressionContent(1)"
+              >
+                {{ getExpressionContent(1) }}
+              </span>
+              <button
+                type="button"
+                class="aigen-step-args-expr-chip-btn"
+                @click="openExpression(1)"
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                class="aigen-step-args-expr-chip-btn"
+                @click="clearExpression(1, selectedAttrSchema)"
+              >
+                改为直接值
+              </button>
+            </div>
             <AigenNode
+              v-else
               is-property
               :component-schema="buildPropertySchema(selectedAttrSchema)"
               :model-value="argsArray[1]"
@@ -350,7 +400,34 @@ const delayText = computed({
             {{ item.label }}
           </span>
           <div class="aigen-step-args-row-input">
+            <!-- 表达式值：展示为 chip，避免把表达式对象传给控件触发类型告警 -->
+            <div
+              v-if="isExprValue(Number(item.field))"
+              class="aigen-step-args-expr-chip"
+            >
+              <span
+                class="aigen-step-args-expr-chip-code"
+                :title="getExpressionContent(Number(item.field))"
+              >
+                {{ getExpressionContent(Number(item.field)) }}
+              </span>
+              <button
+                type="button"
+                class="aigen-step-args-expr-chip-btn"
+                @click="openExpression(Number(item.field))"
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                class="aigen-step-args-expr-chip-btn"
+                @click="clearExpression(Number(item.field), item)"
+              >
+                改为直接值
+              </button>
+            </div>
             <AigenNode
+              v-else
               is-property
               :component-schema="buildPropertySchema(item)"
               :model-value="argsArray[Number(item.field)]"
@@ -507,6 +584,43 @@ const delayText = computed({
 .aigen-step-args-row-input {
   flex: 1;
   min-width: 0;
+}
+
+/* 表达式值 chip：参数为表达式对象时的展示与编辑入口 */
+.aigen-step-args-expr-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px dashed var(--aigen-primary);
+  border-radius: var(--aigen-radius);
+  color: var(--aigen-primary);
+  background-color: var(--aigen-primary-faded);
+}
+
+.aigen-step-args-expr-chip-code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aigen-step-args-expr-chip-btn {
+  flex-shrink: 0;
+  padding: 0 2px;
+  border: none;
+  color: inherit;
+  background-color: transparent;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .aigen-step-args-fx {
