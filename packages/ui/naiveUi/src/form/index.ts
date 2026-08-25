@@ -24,8 +24,28 @@ export default {
         type: 'input',
       },
       {
+        field: 'props.labelLayout',
+        label: '标签布局',
+        props: {
+          'option-type': 'button',
+          options: [
+            {
+              label: '固定宽度',
+              value: 'fixed',
+            },
+            {
+              label: '自适应宽度',
+              value: 'flex',
+            },
+          ],
+        },
+        type: 'radio',
+      },
+      {
         field: 'props.labelWidth',
         label: '标签宽度',
+        // 兼容旧 schema 未配置 labelLayout 的情况（默认按固定宽度处理）
+        show: ({ values }) => values.props?.labelLayout !== 'flex',
         type: 'AigenInputSize',
       },
       {
@@ -128,6 +148,7 @@ export default {
       labelCol: {
         span: 5,
       },
+      labelLayout: 'fixed',
       labelWidth: 100,
       name: 'default',
       wrapperCol: {

@@ -1,8 +1,8 @@
 import type { ComponentConfigModel } from '@aigen-designer/types';
 
 export default {
-  bindModel: 'value',
-  component: () => import('./input-number.vue'),
+  bindModel: 'formatted-value',
+  component: () => import('./time-picker.vue'),
   config: {
     attribute: [
       {
@@ -18,11 +18,21 @@ export default {
       {
         field: 'props.defaultValue',
         label: '默认值',
-        type: 'number',
+        type: 'time',
       },
       {
         field: 'props.placeholder',
         label: '占位内容',
+        type: 'input',
+      },
+      {
+        field: 'props.format',
+        label: '显示格式',
+        type: 'input',
+      },
+      {
+        field: 'props.valueFormat',
+        label: '数据格式',
         type: 'input',
       },
       {
@@ -32,62 +42,50 @@ export default {
           clearable: true,
           options: [
             {
-              label: '极小',
-              value: 'tiny',
-            },
-            {
-              label: '小型',
-              value: 'small',
+              label: '大号',
+              value: 'large',
             },
             {
               label: '中等',
               value: 'medium',
             },
             {
-              label: '大号',
-              value: 'large',
+              label: '小型',
+              value: 'small',
             },
           ],
         },
         type: 'select',
       },
       {
-        field: 'props.buttonPlacement',
-        label: '控制按钮位置',
+        changeSync: true,
+        field: 'props.use12Hours',
+        label: '12小时制',
+        onChange({ value, values }) {
+          values.props.defaultValue = null;
+          if (value) {
+            values.props.format = 'h:mm:ss a';
+            values.props.valueFormat = 'h:mm:ss a';
+          } else {
+            values.props.format = 'HH:mm:ss';
+            values.props.valueFormat = 'HH:mm:ss';
+          }
+        },
+        type: 'switch',
+      },
+      {
+        field: 'props.bordered',
+        label: '无边框',
         props: {
-          clearable: true,
-          options: [
-            {
-              label: 'both',
-              value: 'both',
-            },
-            {
-              label: 'right',
-              value: 'right',
-            },
-          ],
+          checkedValue: false,
+          unCheckedValue: true,
         },
-        type: 'select',
+        type: 'switch',
       },
       {
-        field: 'props.max',
-        label: '最大值',
-        type: 'number',
-      },
-      {
-        field: 'props.min',
-        label: '最小值',
-        type: 'number',
-      },
-      {
-        field: 'props.step',
-        label: '步长',
-        type: 'number',
-      },
-      {
-        field: 'props.precision',
-        label: '精度',
-        type: 'number',
+        field: 'props.inputReadonly',
+        label: '禁止键盘输入',
+        type: 'switch',
       },
       {
         field: 'props.clearable',
@@ -109,29 +107,28 @@ export default {
         field: 'rules',
         label: '表单校验',
         layout: 'vertical',
-        props: {
-          ruleType: 'number',
-        },
         type: 'AigenRuleEditor',
       },
     ],
     event: [
       {
-        description: '值改变时触发',
+        description: '值变化时',
         type: 'change',
       },
     ],
   },
   defaultSchema: {
-    field: 'number',
+    field: 'time',
     input: true,
-    label: '数字输入框',
+    label: '时间选择器',
     props: {
-      placeholder: '请输入',
+      format: 'HH:mm:ss',
+      placeholder: '请选择',
+      valueFormat: 'HH:mm:ss',
     },
-    type: 'number',
+    type: 'time',
   },
   groupName: '表单',
-  icon: 'icon--aigen--123-rounded',
-  sort: 710,
+  icon: 'icon--aigen--time-line',
+  sort: 920,
 } as ComponentConfigModel;

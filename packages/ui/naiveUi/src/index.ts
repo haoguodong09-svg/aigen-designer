@@ -29,6 +29,7 @@ import Switch from './switch';
 import TabsPane from './tab-pane';
 import Tabs from './tabs';
 import Textarea from './textarea';
+import TimePicker from './time-picker';
 import UploadFile from './upload-file';
 import UploadImage from './upload-image';
 
@@ -79,6 +80,7 @@ export function setupNaiveUi(
     Tabs,
     TabsPane,
     Textarea,
+    TimePicker,
   ];
 
   const { uploadFile, uploadImage } = config;

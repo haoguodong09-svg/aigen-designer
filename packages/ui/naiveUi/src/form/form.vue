@@ -5,7 +5,7 @@ import type { FormInst } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
 
 import { provideBuilderDisabled, useForm } from '@aigen-designer/hooks';
-import { findSchemas } from '@aigen-designer/utils';
+import { deepClone, findSchemas } from '@aigen-designer/utils';
 import { NForm } from 'naive-ui/lib/form';
 
 interface FormInstance extends InstanceType<typeof NForm> {
@@ -53,22 +53,22 @@ function setData(data: FormDataModel) {
 
 /**
  * 重置表单数据
+ * 语义与 antd/elementPlus 的 resetFields 对齐：将各字段重置为 schema 默认值，
+ * 无默认值时置空；默认值深拷贝赋值，避免与 schema 共享引用
  */
 function resetData() {
   form.value?.restoreValidation();
 
-  const inputSchemas = findSchemas(props.componentSchema.children!, (schema) =>
-    Boolean(schema.input),
+  const inputSchemas = findSchemas(
+    props.componentSchema.children ?? [],
+    (schema) => Boolean(schema.input),
   );
 
   if (Array.isArray(inputSchemas)) {
     inputSchemas.forEach((schema) => {
       const defaultValue = schema.props?.defaultValue;
-      if (defaultValue === undefined) {
-        formData[schema.field!] = null;
-      } else {
-        formData[schema.field!] = defaultValue;
-      }
+      formData[schema.field!] =
+        defaultValue === undefined ? undefined : deepClone(defaultValue);
     });
   }
 }
@@ -108,6 +108,14 @@ onMounted(async (): Promise<void> => {
 
 const formProps = computed(() => {
   const recordProps = props.componentSchema!.props;
+  // labelLayout 对齐 antd 语义：fixed 固定标签宽度 / flex 自适应标签宽度
+  // naive-ui 通过 label-width 控制：fixed 使用配置的 labelWidth，flex 使用 auto 自适应
+  if (recordProps.labelLayout === 'flex') {
+    return {
+      ...recordProps,
+      labelWidth: 'auto',
+    };
+  }
   return recordProps;
 });
 
