@@ -1,14 +1,15 @@
 packages:
-  - "packages/*"
-  - "packages/ui-kit/*"
-  - "packages/ui/*"
-  - "internal/*"
-  - "scripts"
-  - "docs"
-  - "examples"
+  - 'packages/*'
+  - 'packages/ui-kit/*'
+  - 'packages/ui/*'
+  - 'internal/*'
+  - 'scripts'
+  - 'docs'
+  - 'examples'
 
 catalog:
   'vue': ^3.5.13
+  'jsep': ^1.4.0
   '@vueuse/core': ^12.2.0
   '@turbo/gen': ^2.3.3
   '@vitejs/plugin-vue': ^5.2.1
@@ -25,7 +26,7 @@ catalog:
   'unocss': ^0.65.3
   'vite': ^6.0.6
   'vite-plugin-dts': ^4.4.0
-  'vitepress': 1.5.0
+  'vitepress': ^1.6.0
   'vitest': ^2.1.8
   'vue-tsc': ^2.2.0
   'ant-design-vue': ^4.2.6

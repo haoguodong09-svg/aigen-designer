@@ -1,6 +1,6 @@
 {
   "name": "@aigen-designer/eslint-config",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -9,21 +9,12 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
     "eslint-config-turbo": "catalog:",
     "eslint-plugin-command": "catalog:",
     "eslint-plugin-import-x": "catalog:",
-    "typescript-eslint": "catalog:"
-  },
-  "devDependencies": {
+    "typescript-eslint": "catalog:",
     "@eslint/js": "catalog:",
-    "@types/eslint": "catalog:",
-    "@typescript-eslint/eslint-plugin": "catalog:",
-    "@typescript-eslint/parser": "catalog:",
-    "eslint": "catalog:",
     "eslint-plugin-eslint-comments": "catalog:",
     "eslint-plugin-jsdoc": "catalog:",
     "eslint-plugin-jsonc": "catalog:",
@@ -38,7 +29,17 @@
     "eslint-plugin-vue": "catalog:",
     "globals": "catalog:",
     "jsonc-eslint-parser": "catalog:",
-    "unbuild": "catalog:",
-    "vue-eslint-parser": "catalog:"
+    "vue-eslint-parser": "catalog:",
+    "eslint": "catalog:"
+  },
+  "devDependencies": {
+    "@types/eslint": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
+    "unbuild": "catalog:"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -1,11 +1,8 @@
 {
   "name": "@aigen-designer/antd",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "description": "aigen-designer base antd ui",
   "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
   "author": "hao-gd",
   "type": "module",
   "scripts": {
@@ -26,9 +23,12 @@
       "require": "./dist/index.cjs"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
-    "ant-design-vue": ">=3.2.20",
     "aigen-designer": ">=1.0.0",
+    "ant-design-vue": ">=3.2.20",
     "vue": ">=3.1.0"
   },
   "devDependencies": {
@@ -38,5 +38,8 @@
     "rollup-plugin-postcss": "catalog:",
     "tsx": "catalog:",
     "unbuild": "catalog:"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

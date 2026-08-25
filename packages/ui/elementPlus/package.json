@@ -1,11 +1,8 @@
 {
   "name": "@aigen-designer/element-plus",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "description": "aigen-designer base ui",
   "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
   "author": "hao-gd",
   "type": "module",
   "scripts": {
@@ -26,9 +23,12 @@
       "require": "./dist/index.cjs"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
-    "element-plus": ">=2.11.9",
     "aigen-designer": ">=1.0.0",
+    "element-plus": ">=2.11.9",
     "vue": ">=3.1.0"
   },
   "devDependencies": {
@@ -38,5 +38,8 @@
     "rollup-plugin-postcss": "catalog:",
     "tsx": "catalog:",
     "unbuild": "catalog:"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

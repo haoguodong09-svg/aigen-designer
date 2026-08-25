@@ -1,11 +1,8 @@
 {
   "name": "@aigen-designer/core",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "description": "基于vue3的设计器,可视化开发页面表单",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
+  "private": true,
   "keywords": [
     "form",
     "aigen-designer",
@@ -30,11 +27,15 @@
   },
   "main": "src/index.ts",
   "dependencies": {
+    "@vueuse/core": "catalog:",
     "monaco-editor": "catalog:",
     "vue-draggable-plus": "catalog:"
   },
   "devDependencies": {
     "unocss": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

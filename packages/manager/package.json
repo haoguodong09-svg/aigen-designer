@@ -1,26 +1,23 @@
 {
   "name": "@aigen-designer/manager",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "description": "Aigen Designer 管理器模块，提供页面管理、插件管理、撤销重做等功能",
-  "private": false,
+  "private": true,
   "author": "hao-gd",
   "type": "module",
-  "files": [
-    "dist"
-  ],
   "main": "src/index.ts",
   "module": "src/index.ts",
   "typings": "src/index.ts",
-  "publishConfig": {
-    "access": "public"
-  },
   "peerDependencies": {
-    "vue": "catalog:"
+    "vue": "^3.5.13"
   },
   "dependencies": {
     "@aigen-designer/hooks": "workspace:*",
     "@aigen-designer/types": "workspace:*",
     "@aigen-designer/utils": "workspace:*",
     "rollup-plugin-node-externals": "catalog:"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
