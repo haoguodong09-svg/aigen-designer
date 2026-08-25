@@ -2,18 +2,22 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
+    // 构建任务：产物统一输出到 dist，开启缓存
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "cache": false
+      "outputs": ["dist/**"],
+      "cache": true
     },
+    // dev 任务常驻运行，不参与缓存
     "dev": {
       "cache": false,
       "persistent": true
     },
+    // stub 任务仅生成开发期占位产物，不做缓存
     "stub": {
       "cache": false
     },
+    // examples 开发模式依赖三个 UI 包的 stub（无需先完整构建）
     "aigen-examples#dev": {
       "dependsOn": [
         "@aigen-designer/antd#stub",
@@ -23,7 +27,9 @@
       "cache": false,
       "persistent": true
     },
+    // examples 构建产物输出到 dist（继承 build 任务的 cache: true）
     "aigen-examples#build": {
+      "outputs": ["dist/**"],
       "cache": true
     }
   }

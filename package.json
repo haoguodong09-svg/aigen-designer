@@ -1,19 +1,22 @@
 {
   "name": "aigen-designer-project",
-  "version": "1.0.0",
+  "version": "1.1.13",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "pnpm i && turbo run build -F aigen-examples && turbo run build",
     "dev": "turbo run dev",
     "lib": "vitest run && turbo run build -F aigen-designer",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "vue-tsc --noEmit -p packages/aigen-designer/tsconfig.json",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
     "examples:build": "pnpm run build -F aigen-examples",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "eslint packages/ --fix",
+    "lint": "eslint packages/",
+    "prepare": "husky",
     "postinstall": "pnpm -r run stub --if-present"
   },
   "dependencies": {
@@ -32,13 +35,17 @@
     "@aigen-designer/scripts": "workspace:*",
     "@aigen-designer/types": "workspace:*",
     "@aigen-designer/utils": "workspace:*",
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
     "@turbo/gen": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "@vue/test-utils": "catalog:",
     "aigen-designer": "workspace:*",
     "eslint": "catalog:",
+    "husky": "^9.1.7",
     "jsdom": "catalog:",
     "less": "catalog:",
+    "lint-staged": "^15.2.10",
     "naive-ui": "catalog:",
     "prettier": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
@@ -50,7 +57,11 @@
     "vitepress": "catalog:",
     "vitest": "catalog:",
     "vue": "catalog:",
-    "vue-tsc": "catalog:"
+    "vue-tsc": "catalog:",
+    "@changesets/cli": "^2.27.9"
   },
-  "packageManager": "pnpm@9.10.0"
+  "packageManager": "pnpm@9.10.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
