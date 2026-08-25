@@ -1,3 +1,5 @@
+import type { ComponentSchema } from '@aigen-designer/types';
+
 import { describe, expect, it } from 'vitest';
 
 import { findSchemas } from '../../';
@@ -5,9 +7,7 @@ import { findSchemas } from '../../';
 describe('findSchemas 函数测试', () => {
   const schemas = [
     {
-      props: {
-        
-      },
+      props: {},
       id: 'root',
       label: '页面',
       type: 'page',
@@ -60,7 +60,7 @@ describe('findSchemas 函数测试', () => {
   it('应该返回所有符合条件的节点', () => {
     const result = findSchemas(schemas, (item) => item.type === 'input');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('input_ttuyobv9');
+    expect((result as ComponentSchema[])[0].id).toBe('input_ttuyobv9');
   });
 
   it('应该在 once 为 true 时返回一个符合条件的节点', () => {

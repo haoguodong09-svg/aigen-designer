@@ -51,7 +51,7 @@ export default {
         changeSync: true,
         field: 'props.range',
         label: '范围选择',
-        onChange: ({ value, values }) => {
+        onChange: ({ value, values }: { value: any; values: any }) => {
           values.props.defaultValue = value ? [0, 100] : 0;
         },
         type: 'switch',

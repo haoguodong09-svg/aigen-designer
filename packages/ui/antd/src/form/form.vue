@@ -58,7 +58,7 @@ async function validate() {
   } catch (error) {
     if (props.scrollToFirstError) {
       // 滚动到第一个错误字段
-      form.value?.scrollToField(error.errorFields[0].name.toString());
+      form.value?.scrollToField((error as any).errorFields[0].name.toString());
     }
     throw error;
   }

@@ -102,7 +102,7 @@ export default {
         changeSync: true,
         field: 'props.use12Hours',
         label: '12小时制',
-        onChange({ value, values }) {
+        onChange({ value, values }: { value: any; values: any }) {
           values.props.defaultValue = null;
           if (value) {
             values.props.format = 'h:mm:ss a';

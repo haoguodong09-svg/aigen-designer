@@ -87,7 +87,7 @@ export default {
       {
         field: 'props.props.multiple',
         label: '可多选',
-        onChange: ({ value, values }) => {
+        onChange: ({ value, values }: { value: any; values: any }) => {
           values.props.defaultValue = value ? [] : null;
         },
         type: 'switch',

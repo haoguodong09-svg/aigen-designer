@@ -23,7 +23,7 @@ export default {
       {
         field: 'props.checkedValue',
         label: 'ON状态值',
-        onChange(e) {
+        onChange(e: any) {
           setTimeout(() => setDefaultValue(e));
         },
         type: 'input',
@@ -31,7 +31,7 @@ export default {
       {
         field: 'props.uncheckedValue',
         label: 'OFF状态值',
-        onChange(e) {
+        onChange(e: any) {
           setTimeout(() => setDefaultValue(e));
         },
         type: 'input',
@@ -106,7 +106,7 @@ export default {
   sort: 930,
 } as ComponentConfigModel;
 
-function setDefaultValue(e) {
+function setDefaultValue(e: any) {
   const defaultValue = e.values.props?.uncheckedValue || false;
   // 如果uncheckedValue === ''，则在下一个事件循环中删除 uncheckedValue 属性
   if (e.values.props.uncheckedValue === '') {

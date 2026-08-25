@@ -50,7 +50,7 @@ export default {
       {
         field: 'props.type',
         label: '日期类型',
-        onChange({ value, values }) {
+        onChange({ value, values }: { value: any; values: any }) {
           values.props.defaultValue = null;
           if (['date', 'daterange', 'dates'].includes(value)) {
             values.props.format = 'yyyy-MM-dd';

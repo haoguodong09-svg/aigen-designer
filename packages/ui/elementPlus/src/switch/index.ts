@@ -22,7 +22,7 @@ export default {
       {
         field: 'props.activeValue',
         label: 'ON状态值',
-        onChange(e) {
+        onChange(e: any) {
           setTimeout(() => setDefaultValue(e));
         },
         type: 'input',
@@ -30,7 +30,7 @@ export default {
       {
         field: 'props.inactiveValue',
         label: 'OFF状态值',
-        onChange(e) {
+        onChange(e: any) {
           setTimeout(() => setDefaultValue(e));
         },
         type: 'input',
@@ -123,7 +123,7 @@ export default {
 } as ComponentConfigModel;
 
 // 设置默认值
-function setDefaultValue(e) {
+function setDefaultValue(e: any) {
   const defaultValue = e.values.props?.inactiveValue || false;
   // 如果inactiveValue === ''，则在下一个事件循环中删除 inactiveValue 属性
   if (e.values.props.inactiveValue === '') {

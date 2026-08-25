@@ -24,7 +24,7 @@ export default {
         changeSync: true,
         field: 'props.type',
         label: '日期类型',
-        onChange({ value, values }) {
+        onChange({ value, values }: { value: any; values: any }) {
           values.props.defaultValue = null;
           values.props.placeholder = [
             'daterange',
@@ -102,7 +102,7 @@ export default {
       {
         field: 'props.showTime',
         label: '增加时间选择',
-        onChange: ({ value, values }) => {
+        onChange: ({ value, values }: { value: any; values: any }) => {
           if (value) {
             values.props.valueFormat = 'YYYY-MM-DD HH:mm:ss';
             values.props.format = 'YYYY-MM-DD HH:mm:ss';

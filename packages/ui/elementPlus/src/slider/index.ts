@@ -45,9 +45,17 @@ export default {
       {
         field: 'props.min',
         label: '最小值',
-        onChange: ({ componentAttributes, value, values }) => {
+        onChange: ({
+          componentAttributes,
+          value,
+          values,
+        }: {
+          componentAttributes: any;
+          value: any;
+          values: any;
+        }) => {
           const componentIndex = componentAttributes.value.findIndex(
-            (item) => item.field === 'props.max',
+            (item: any) => item.field === 'props.max',
           );
           const componentConfig = componentAttributes.value[componentIndex];
           componentConfig.props = {
@@ -62,9 +70,17 @@ export default {
       {
         field: 'props.max',
         label: '最大值',
-        onChange: ({ componentAttributes, value, values }) => {
+        onChange: ({
+          componentAttributes,
+          value,
+          values,
+        }: {
+          componentAttributes: any;
+          value: any;
+          values: any;
+        }) => {
           const componentIndex = componentAttributes.value.findIndex(
-            (item) => item.field === 'props.min',
+            (item: any) => item.field === 'props.min',
           );
           const componentConfig = componentAttributes.value[componentIndex];
           componentConfig.props = {
@@ -112,7 +128,7 @@ export default {
       {
         field: 'props.showInput',
         label: '显示数字框',
-        onChange: ({ value, values }) => {
+        onChange: ({ value, values }: { value: any; values: any }) => {
           value ? (values.props.showInputControls = true) : null;
         },
         type: 'switch',

@@ -73,7 +73,7 @@ export default {
         defaultValue: 'text',
         field: 'props.type',
         label: '输入类型',
-        onChange: ({ value, values }) => {
+        onChange: ({ value, values }: { value: any; values: any }) => {
           if (value !== 'text') values.props.pair = false;
         },
         props: {

@@ -35,7 +35,7 @@ export default defineComponent({
     const componentSchema = computed(() => {
       return {
         ...props.componentSchema?.props,
-        'onUpdate:value': (e) => {
+        'onUpdate:value': (e: any) => {
           modelValue.value = e;
         },
         value: modelValue.value,
@@ -50,12 +50,14 @@ export default defineComponent({
           const defaultSlotList = slots['edit-node']?.()[0].children;
           // 设计区渲染
           if (defaultSlotList?.length) {
-            const list = defaultSlotList[0].children?.map((item) => {
-              item.props.name = item.props.schema.label;
-              item.props.tab = item.props.schema.label;
-              item.type.__TAB_PANE__ = true;
-              return item;
-            });
+            const list = (defaultSlotList as any[])[0].children?.map(
+              (item: any) => {
+                item.props.name = item.props.schema.label;
+                item.props.tab = item.props.schema.label;
+                item.type.__TAB_PANE__ = true;
+                return item;
+              },
+            );
 
             return list;
           }

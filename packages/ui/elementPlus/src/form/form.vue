@@ -9,7 +9,7 @@ import { ElForm } from 'element-plus';
 interface FormInstance extends InstanceType<typeof ElForm> {
   getData?: () => FormDataModel;
   resetData: () => void;
-  setData?: (FormDataModel) => void;
+  setData?: (data: FormDataModel) => void;
 }
 
 defineOptions({

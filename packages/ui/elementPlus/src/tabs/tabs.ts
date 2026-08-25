@@ -36,7 +36,7 @@ export default defineComponent({
       return {
         ...props.componentSchema?.props,
         modelValue: modelValue.value,
-        'onUpdate:modelValue': (e) => {
+        'onUpdate:modelValue': (e: any) => {
           modelValue.value = e;
         },
       };
@@ -49,10 +49,12 @@ export default defineComponent({
           const defaultSlotList = slots['edit-node']?.()[0].children;
           // 设计区渲染
           if (defaultSlotList?.length) {
-            const list = defaultSlotList[0].children?.map((item) => {
-              item.props.name = item.props.schema.label;
-              return item;
-            });
+            const list = (defaultSlotList as any[])[0].children?.map(
+              (item: any) => {
+                item.props.name = item.props.schema.label;
+                return item;
+              },
+            );
 
             return list;
           }

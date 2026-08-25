@@ -28,13 +28,13 @@ const handleDataSelector = () => {
   eventBus?.emit('openDataSelector', props.componentSchema, props.options);
 };
 
-eventBus?.on('dataSelector:selected', (data) => {
+eventBus?.on('dataSelector:selected', (data: any) => {
   if (data.nodeId !== props.componentSchema.id) {
     return;
   }
 
   const dataFieldMap = props.componentSchema.props?.dataFieldMap ?? [];
-  dataFieldMap.forEach((item) => {
+  dataFieldMap.forEach((item: any) => {
     formData[item.formField] = data.record[item.dataField];
   });
 });
