@@ -56,4 +56,39 @@ describe('FormulaEngine', () => {
     engine.calculate('2 + 2');
     expect(jsep).toHaveBeenCalledTimes(2);
   });
+
+  it('逻辑运算符 && 应正确计算（jsep 输出为 BinaryExpression）', () => {
+    const engine = new FormulaEngine({ formData: { a: 3, b: 5 } });
+    expect(engine.calculate('$formData.a > 0 && $formData.b > 0')).toBe(true);
+    expect(engine.calculate('$formData.a > 10 && $formData.b > 0')).toBe(false);
+  });
+
+  it('逻辑运算符 || 应正确计算（jsep 输出为 BinaryExpression）', () => {
+    const engine = new FormulaEngine({ formData: { a: 3, b: 5 } });
+    expect(engine.calculate('$formData.a > 10 || $formData.b > 0')).toBe(true);
+    expect(engine.calculate('$formData.a > 10 || $formData.b > 10')).toBe(
+      false,
+    );
+  });
+
+  it('混合优先级 &&/|| 与比较运算应正确计算', () => {
+    const engine = new FormulaEngine({ formData: { a: 3, b: 5 } });
+    expect(
+      engine.calculate(
+        '$formData.a > 0 && $formData.b > 10 || $formData.a > 0',
+      ),
+    ).toBe(true);
+    expect(
+      engine.calculate(
+        '$formData.a > 10 || $formData.b > 10 && $formData.a > 0',
+      ),
+    ).toBe(false);
+  });
+
+  it('一元运算符 ! 应正确取反', () => {
+    const engine = new FormulaEngine({ formData: { a: 0, b: 2 } });
+    expect(engine.calculate('!$formData.a')).toBe(true);
+    expect(engine.calculate('!$formData.b')).toBe(false);
+    expect(engine.calculate('-$formData.b')).toBe(-2);
+  });
 });

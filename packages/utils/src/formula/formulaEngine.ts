@@ -87,6 +87,11 @@ export class FormulaEngine {
       case '!==': {
         return l !== r;
       }
+      // jsep 将 &&/|| 输出为 BinaryExpression（operator 为 '&&'/'||'），
+      // 与 +、> 等走同一执行路径，这里保持 JS 原生语义（返回操作数本身）
+      case '&&': {
+        return l && r;
+      }
       case '*': {
         return (l as number) * (r as number);
       }
@@ -114,6 +119,9 @@ export class FormulaEngine {
       }
       case '>=': {
         return l >= r;
+      }
+      case '||': {
+        return l || r;
       }
       default: {
         return 0;
@@ -153,16 +161,6 @@ export class FormulaEngine {
       // 常量: 123, "abc"
       case 'Literal': {
         return (node as jsep.Literal).value;
-      }
-
-      // 逻辑表达式: &&, ||
-      case 'LogicalExpression': {
-        // jsep 类型未显式声明 LogicalExpression，left/right 经索引签名推断为
-        // 联合类型（含 undefined），这里按 BinaryExpression 形状断言保证类型安全
-        const logNode = node as jsep.BinaryExpression;
-        const left = this._execute(logNode.left, ctx);
-        const right = this._execute(logNode.right, ctx);
-        return logNode.operator === '&&' ? left && right : left || right;
       }
 
       // 带前缀的变量: $formData.qty 或 $formData.user.address.city
@@ -217,7 +215,13 @@ export class FormulaEngine {
       case 'UnaryExpression': {
         const unaryNode = node as jsep.UnaryExpression;
         const arg = this._execute(unaryNode.argument, ctx);
-        return unaryNode.operator === '-' ? -arg : arg;
+        if (unaryNode.operator === '-') {
+          return -arg;
+        }
+        if (unaryNode.operator === '!') {
+          return !arg;
+        }
+        return arg;
       }
 
       default: {
