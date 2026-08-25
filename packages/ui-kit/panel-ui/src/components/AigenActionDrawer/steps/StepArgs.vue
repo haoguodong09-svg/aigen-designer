@@ -5,7 +5,7 @@ import type { ActionDraft, ExpressionField, ExpressionModel } from '../helper';
 
 import { computed, ref, watch } from 'vue';
 
-import { AigenNode } from '@aigen-designer/base-ui';
+import { AigenNode, useBindModel } from '@aigen-designer/base-ui';
 import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { findSchemas, getUUID } from '@aigen-designer/utils';
@@ -33,6 +33,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'change', patch: Partial<ActionDraft>): void;
 }>();
+
+/** 组件下拉（随当前 UI 库：antd Select / elementPlus Select / naiveUi Select）。
+ * options 经 attrs fallthrough 由各适配组件透传给 UI 库组件；
+ * 弹层遮挡由抽屉遮罩 z-index（1000 < 各库弹层）解决。 */
+const SelectComponent = pluginManager.component.get('select');
+const { bindModel } = useBindModel('select');
 
 const { pageSchema } = useDesignerContext();
 const pageManager = usePageManager();
@@ -233,6 +239,11 @@ const customFuncs = computed(() =>
   ),
 );
 
+/** 自定义函数下拉选项（函数名列表 → {label, value}） */
+const customFuncOptions = computed(() =>
+  customFuncs.value.map((name) => ({ label: name, value: name })),
+);
+
 const customMethodName = computed({
   get: () => props.actionItem.methodName,
   set: (value: string) => emit('change', { methodName: value }),
@@ -334,16 +345,15 @@ const delayText = computed({
       <div v-if="isSetAttr" class="aigen-step-args-setattr">
         <div class="aigen-step-args-row">
           <span class="aigen-step-args-row-label">选择属性</span>
-          <select v-model="selectedAttr" class="aigen-step-args-select">
-            <option value="" disabled>请选择属性</option>
-            <option
-              v-for="opt in attrOptions"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
+          <div class="aigen-step-args-row-input">
+            <component
+              :is="SelectComponent"
+              v-model:[bindModel]="selectedAttr"
+              :options="attrOptions"
+              placeholder="请选择属性"
+              style="width: 100%"
+            />
+          </div>
         </div>
         <p v-if="selectedAttr === 'defaultValue'" class="aigen-step-args-tip">
           默认值属于初始化属性：动作触发时会立即把该值应用到目标元素的当前值。
@@ -456,12 +466,15 @@ const delayText = computed({
     <div v-else-if="isCustom" class="aigen-step-args-body">
       <div class="aigen-step-args-row">
         <span class="aigen-step-args-row-label">自定义函数</span>
-        <select v-model="customMethodName" class="aigen-step-args-select">
-          <option value="" disabled>请选择函数</option>
-          <option v-for="name in customFuncs" :key="name" :value="name">
-            {{ name }}
-          </option>
-        </select>
+        <div class="aigen-step-args-row-input">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="customMethodName"
+            :options="customFuncOptions"
+            placeholder="请选择函数"
+            style="width: 100%"
+          />
+        </div>
       </div>
       <p class="aigen-step-args-tip">
         自定义函数来自页面脚本，通过 defineExpose
