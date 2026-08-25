@@ -8,14 +8,7 @@ import type {
   PageSchema,
 } from '@aigen-designer/types';
 
-import {
-  computed,
-  getCurrentInstance,
-  provide,
-  ref,
-  useSlots,
-  watch,
-} from 'vue';
+import { computed, getCurrentInstance, provide, useSlots, watch } from 'vue';
 
 import { AigenBaseLoader, AigenNode } from '@aigen-designer/base-ui';
 import {
@@ -82,9 +75,11 @@ const {
   validateAll,
 } = useBuilder();
 
-const suspenseKey = ref(0);
-
 // 监听 pageSchema 的变化，并更新 pageManager.pageSchema
+// 注：采用浅层 watch + 显式依赖列表，pageSchema 需按引用整体替换，
+// 避免深层次变化触发 4 次全树遍历（deepClone + migrate + reorganize + diff）；
+// Worker 化（postToWorker('processSchema', ...)）为批次 2 联调项，依赖
+// packages/manager/src/schemaWorkerBridge.ts（W16），当前保持同步流水线。
 watch(
   [() => props.pageSchema, () => props.tableView],
   () => {
@@ -98,17 +93,18 @@ watch(
     }
 
     deepCompareAndModify(pageManager.pageSchema, newSchema);
+    // 依赖 Vue 响应式系统按变更局部更新，不再强制全量 Suspense 重挂载；
+    // 确需重置挂载状态时仅重置挂载监视器即可
     pageManager.mountMonitor.reset();
-    suspenseKey.value++;
-    ready.value = false;
   },
   {
-    deep: true,
     immediate: true,
   },
 );
 
 // 监听 formData 的变化，并设置表单数据
+// 注：去掉 deep watch，formData 按引用整体替换即可——setData 内部已有合并逻辑，
+// 深层次 watch 会在每次嵌套字段变化时触发，造成无谓开销
 watch(
   () => props.formData,
   (data) => {
@@ -117,7 +113,6 @@ watch(
     }
   },
   {
-    deep: true,
     immediate: true,
   },
 );
@@ -142,7 +137,8 @@ providePageManager(pageManager);
 provide(FORM_INSTANCES_KEY, formInstances);
 
 /**
- * 组件加载完成后的处理函数，注: pageSchema更新会触发组件重新加载
+ * 组件加载完成后的处理函数（Suspense 首次 resolve 时执行）
+ * 注: pageSchema 更新不再触发全量重挂载，依赖 Vue 响应式系统按变更局部更新
  * @returns {void}
  */
 function handleReady() {
@@ -204,7 +200,7 @@ defineExpose({
   >
     <AigenBaseLoader />
   </div>
-  <Suspense v-else :key="suspenseKey" @resolve="handleReady">
+  <Suspense v-else @resolve="handleReady">
     <template #default>
       <div
         class="aigen-builder-main aigen-scoped"
