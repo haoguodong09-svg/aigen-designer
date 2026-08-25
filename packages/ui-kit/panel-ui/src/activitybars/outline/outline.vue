@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { ComponentSchema } from '@aigen-designer/types';
+
 import { computed } from 'vue';
 
 import { AigenIcon, AigenTree } from '@aigen-designer/base-ui';
@@ -30,12 +32,12 @@ function handleNodeClick(e: any) {
   designer.setSelectedNode(e.componentSchema);
 }
 
-function handleShow(schema) {
+function handleShow(schema: ComponentSchema) {
   schema.props || (schema.props = {});
   schema.props.hidden = !schema.props.hidden;
 }
 
-function handleLock(schema) {
+function handleLock(schema: ComponentSchema) {
   schema.status || (schema.status = { lock: false });
   schema.status.lock = !schema.status.lock;
 }
@@ -43,9 +45,9 @@ function handleLock(schema) {
 /**
  * 复制选中节点元素
  */
-function handleCopy(schema) {
+function handleCopy(schema: ComponentSchema) {
   if (!schema) return;
-  const data = findSchemaInfoById(pageSchema.schemas, schema.id);
+  const data = findSchemaInfoById(pageSchema.schemas, schema.id!);
   if (!data) {
     return false;
   }
@@ -60,9 +62,9 @@ function handleCopy(schema) {
 /**
  * 删除元素
  */
-function handleDelete(schema) {
+function handleDelete(schema: ComponentSchema) {
   if (!schema) return;
-  const data = findSchemaInfoById(pageSchema.schemas, schema.id);
+  const data = findSchemaInfoById(pageSchema.schemas, schema.id!);
   if (!data) {
     return false;
   }

@@ -33,7 +33,7 @@ const state = reactive({
     methodName: 'test',
     type: 'custom',
   } as FormDataModel,
-  cacheData: {},
+  cacheData: {} as Record<string, any>,
 });
 
 const actionTypeText = computed(() => {
@@ -52,7 +52,10 @@ const actionTypeText = computed(() => {
     return `${label}`;
   }
 
-  return typeMap[state.actionItem.type] || state.actionItem.type;
+  return (
+    typeMap[state.actionItem.type as keyof typeof typeMap] ||
+    state.actionItem.type
+  );
 });
 
 const methodOptions = computed(() => {

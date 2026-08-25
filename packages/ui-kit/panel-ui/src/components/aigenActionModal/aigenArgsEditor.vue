@@ -36,7 +36,7 @@ function isShow(item: ComponentSchema) {
  */
 function handleSetValue(value: any, field: string) {
   const values = [...JSON.parse(props.modelValue ?? '[]')];
-  values[field] = value;
+  values[Number(field)] = value;
   emits('update:modelValue', JSON.stringify(values));
   // 将修改过的组件属性推入撤销操作的栈中
 }

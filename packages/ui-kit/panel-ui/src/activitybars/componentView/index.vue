@@ -34,8 +34,8 @@ const activeKeys = useStorage('aigen-component-view-keys', []);
  * 计算组件分类列表
  */
 // 输入防抖 150ms 后进入过滤计算
-const debouncedSetKeyword = debounce((value: string) => {
-  filterKeyword.value = value;
+const debouncedSetKeyword = debounce((value: unknown) => {
+  filterKeyword.value = value as string;
 }, 150);
 watch(keyword, (value) => debouncedSetKeyword(value));
 

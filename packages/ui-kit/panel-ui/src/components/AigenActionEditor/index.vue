@@ -53,7 +53,7 @@ allEvents.value.forEach((item: any) => {
     },
     set(e) {
       if (e && e.length > 0) {
-        modelValueComputed.value[item.type] = e.map((item) => toRaw(item));
+        modelValueComputed.value[item.type] = e.map((item: any) => toRaw(item));
       } else {
         // 事件动作为空时，则清除该事件列表
         delete modelValueComputed.value[item.type];
@@ -71,7 +71,7 @@ watch(
       // 如果 filterEventList.value 不为空数组
       // 过滤出满足条件的事件，并将它们的标题存储在 activeNames.value 中
       activeNames.value = e
-        .filter((item) => {
+        .filter((item: any) => {
           // 对于每个事件项，检查其包含的事件类型
           for (let i = 0; i < item.events.length; i++) {
             const type = item.events[i].type;
@@ -83,7 +83,7 @@ watch(
           // 如果事件项中没有任何一个事件类型满足条件，则返回 false
           return false;
         })
-        .map((item) => item.title); // 将满足条件的事件项的标题映射成一个新的数组
+        .map((item: any) => item.title); // 将满足条件的事件项的标题映射成一个新的数组
     }
   },
   {
@@ -108,7 +108,7 @@ function handleOpen(type: string) {
  * @param {string} type - 事件类型
  * @param {any} action - 要执行的动作
  */
-function handleOpenEdit(index: number, type: string, action) {
+function handleOpenEdit(index: number, type: string, action: any) {
   // 如果 aigenActionModalRef.value 不为 null 或 undefined，则调用其 handleOpenEdit 方法
   aigenActionModalRef.value?.handleOpenEdit(action);
 
