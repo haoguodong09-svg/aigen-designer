@@ -1,24 +1,69 @@
-import type { ComponentSchema, PageSchema } from '@aigen-designer/types';
+import type {
+  ComponentConfigModel,
+  ComponentSchema,
+  PageSchema,
+} from '@aigen-designer/types';
 
 import { isProxy, isRef, toRaw } from 'vue';
-
-import { pluginManager } from '@aigen-designer/manager';
 
 import { getUUID } from './string';
 
 /**
+ * 组件配置查询器：由 manager 包在导入时注册（见 pluginManager.ts）。
+ * 采用注入式而不是模块级 import @aigen-designer/manager，是为了切断
+ * utils → manager → revoke → schemaWorkerBridge → schema.worker 的循环依赖链：
+ * Worker 构建（W16）只需 utils 的纯函数，若 utils 模块级引用 manager，
+ * worker 依赖图会把整个 manager/base-ui（含 .vue 与 monaco）打包进来。
+ * Worker 内无注册表时 provider 为 null，行为与 getConfigByType 返回 undefined 一致。
+ */
+type ComponentConfigProvider = (
+  type: string,
+) => ComponentConfigModel | undefined;
+
+let componentConfigProvider: ComponentConfigProvider | null = null;
+
+/**
+ * 注册/注销全局组件配置查询器（由 @aigen-designer/manager 在模块初始化时调用）
+ */
+export function setComponentConfigProvider(
+  provider: ComponentConfigProvider | null,
+): void {
+  componentConfigProvider = provider;
+}
+
+/** 获取组件配置（无注册表时返回 undefined） */
+function getComponentConfig(type: string): ComponentConfigModel | undefined {
+  return componentConfigProvider?.(type);
+}
+
+/** 危险键名：直接赋值会触发原型链写入（原型污染向量），与 diff.ts 保持一致 */
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * 解析路径字符串为片段数组，支持点语法与数组索引语法
+ * 例如 "a.b[0].c" → ["a", "b", "0", "c"]
+ * @param path 点分隔的路径字符串
+ */
+function parsePath(path: string): string[] {
+  return path
+    .replaceAll(/\[(\d+)\]/g, '.$1')
+    .split('.')
+    .filter(Boolean);
+}
+
+/**
  * 深拷贝数据
  * @param obj 要拷贝的对象
- * @param useStructuredClone 是否使用 structuredClone 方法
+ * @param useStructuredClone 是否使用 structuredClone 方法（Worker/无 window 环境需传 false）
  * @param cache 缓存对象，用于处理循环引用
  * @returns 拷贝后的对象
  */
-export function deepClone<T extends object>(
+export function deepClone<T>(
   obj: T,
   useStructuredClone = true,
   cache = new WeakMap(),
 ): T {
-  // 如果不是对象或数组，则直接返回
+  // 如果不是对象或数组，则直接返回（基础类型/函数原样返回）
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
@@ -28,8 +73,9 @@ export function deepClone<T extends object>(
     return cache.get(obj);
   }
 
-  // https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone
-  if (useStructuredClone && typeof window.structuredClone === 'function') {
+  // 优先使用全局 structuredClone（浏览器/现代 Node 均可用）。
+  // 用 typeof 判断避免 SSR/无 window 环境下直接访问 window 抛 ReferenceError（W3-3.3）
+  if (useStructuredClone && typeof structuredClone === 'function') {
     const rawObj = deepToRaw(obj);
     try {
       const cloned = structuredClone(rawObj);
@@ -49,7 +95,38 @@ export function deepClone<T extends object>(
     return clonedArray;
   }
 
-  // 处理对象
+  // 手动路径的特殊类型分支（W3-3.3）：Date/RegExp/Map/Set 不再静默变成 {}
+  if (obj instanceof Date) {
+    const cloned = new Date(obj) as T;
+    cache.set(obj, cloned);
+    return cloned;
+  }
+  if (obj instanceof RegExp) {
+    const cloned = new RegExp(obj.source, obj.flags) as T;
+    cache.set(obj, cloned);
+    return cloned;
+  }
+  if (obj instanceof Map) {
+    const cloned = new Map() as T;
+    cache.set(obj, cloned);
+    for (const [key, value] of obj) {
+      (cloned as Map<unknown, unknown>).set(
+        key,
+        deepClone(value, useStructuredClone, cache),
+      );
+    }
+    return cloned;
+  }
+  if (obj instanceof Set) {
+    const cloned = new Set() as T;
+    cache.set(obj, cloned);
+    for (const value of obj) {
+      (cloned as Set<unknown>).add(deepClone(value, useStructuredClone, cache));
+    }
+    return cloned;
+  }
+
+  // 处理普通对象
   const clonedObj = {} as Record<string, unknown>;
   cache.set(obj, clonedObj);
   Object.keys(obj).forEach((key) => {
@@ -187,8 +264,7 @@ export function generateNewSchema(
     // 存在字段名，则自动在字段名后补充id
     if (
       (newVal.field || newVal.input) &&
-      !pluginManager.component.getConfigByType(newVal.type)?.editConstraints
-        ?.fixedField
+      !getComponentConfig(newVal.type)?.editConstraints?.fixedField
     ) {
       newVal.field = newVal.id;
     }
@@ -205,12 +281,20 @@ export function generateNewSchema(
  * @param obj1 - 要修改的对象。
  * @param obj2 - 要比较的对象。
  * @param shouldDelete - 如果为true，则删除obj2中不存在的obj1的属性。
+ * @param visited - 内部参数：已处理的 (obj1, obj2) 配对，用于循环引用检测（W3-3.6）
  */
 export function deepCompareAndModify(
   obj1: object,
   obj2: object,
   shouldDelete: boolean = true,
+  visited = new WeakMap<object, object>(),
 ): void {
+  // 环检测（W3-3.6）：同一对 (obj1, obj2) 已处理过则跳过，避免循环引用栈溢出
+  if (visited.has(obj1) && visited.get(obj1) === obj2) {
+    return;
+  }
+  visited.set(obj1, obj2);
+
   const typedObj1 = obj1 as Record<string, unknown>;
 
   // 循环遍历obj2的所有属性
@@ -228,11 +312,27 @@ export function deepCompareAndModify(
       } else if (!Array.isArray(typedObj1[key]) && Array.isArray(val2)) {
         typedObj1[key] = [];
       }
+      // Date/RegExp/Map/Set 等特殊对象整体替换（W3-3.6）：
+      // Object.entries 对它们返回空数组，递归会静默忽略导致永不更新
+      if (
+        typedObj1[key] instanceof Date ||
+        typedObj1[key] instanceof RegExp ||
+        typedObj1[key] instanceof Map ||
+        typedObj1[key] instanceof Set ||
+        val2 instanceof Date ||
+        val2 instanceof RegExp ||
+        val2 instanceof Map ||
+        val2 instanceof Set
+      ) {
+        typedObj1[key] = val2;
+        continue;
+      }
       // 递归比较
       deepCompareAndModify(
         typedObj1[key] as Record<string, unknown>,
         val2 as Record<string, unknown>,
         shouldDelete,
+        visited,
       );
     } else {
       // 如果属性值不相等，则将obj2的属性值复制给typedObj1
@@ -297,6 +397,14 @@ export function deepEqual(
     obj1 === null ||
     typeof obj2 !== 'object' ||
     obj2 === null
+  ) {
+    return false;
+  }
+
+  // 类型标签检查（W3-3.2）：Date/Map/Set 等与普通对象/数组互相比较时直接判定不等
+  if (
+    Object.prototype.toString.call(obj1) !==
+    Object.prototype.toString.call(obj2)
   ) {
     return false;
   }
@@ -470,7 +578,7 @@ export function getMatchedById(
 /**
  * 从嵌套对象中提取值
  * @param object - 要访问的对象
- * @param path - 点分隔的路径字符串
+ * @param path - 点分隔的路径字符串（支持 a.b[0] 数组索引语法，W3-3.7 与 setValueByPath 一致）
  * @param defaultValue - 如果路径不存在，返回的默认值
  * @returns 通过路径获取的值
  */
@@ -482,11 +590,10 @@ export function getValueByPath(
   if (!path) {
     return defaultValue;
   }
-  // 将路径字符串拆分为数组
-  const pathArray = path.split('.');
+  // 统一路径解析（点语法 + 数组索引语法）
+  const pathArray = parsePath(path);
 
   // 逐步从对象中提取值
-
   let result: any = object;
   for (const element of pathArray) {
     // eslint-disable-next-line eqeqeq
@@ -505,24 +612,27 @@ export function getValueByPath(
 /**
  * 在嵌套对象中设置值
  * @param object - 要修改的对象
- * @param path - 点分隔的路径字符串
+ * @param path - 点分隔的路径字符串（支持 a.b[0] 数组索引语法）
  * @param value - 要设置的值
  * @returns 修改后的对象
  */
-export function setValueByPath(object: object, path: string, value: unknown) {
+export function setValueByPath<T>(object: T, path: string, value: unknown): T {
   // 如果路径为空，直接返回对象
   if (!path) {
     return object;
   }
 
-  // 将路径字符串拆分为数组
-  const pathArray = path
-    .replaceAll(/\[(\d+)\]/g, '.$1')
-    .split('.')
-    .filter(Boolean);
+  // 统一路径解析（点语法 + 数组索引语法）
+  const pathArray = parsePath(path);
+
+  // 原型污染防护（W3-3.1）：危险键名直接抛错拒绝（与 diff.ts 的 DANGEROUS_KEYS 一致）
+  for (const key of pathArray) {
+    if (DANGEROUS_KEYS.has(key)) {
+      throw new Error(`路径包含危险键名: ${key}`);
+    }
+  }
 
   // 逐步设置对象中的值
-
   let current: any = object;
 
   for (let i = 0; i < pathArray.length - 1; i++) {
@@ -572,7 +682,7 @@ export function getFormSchemas(
     (currentNode) => {
       return (
         currentNode.type === 'form' &&
-        (currentNode.props?.name ?? currentNode.name === formName)
+        (currentNode.props?.name ?? currentNode.name) === formName
       );
     },
     true,
@@ -704,6 +814,9 @@ export function findSchemaById(
  * 通过id查询schema及节点children index 信息
  * @param schemas
  * @param id
+ * @description 重写（W3-3.5）：显式遍历 children/slots 容器查找目标节点；
+ * 未找到统一抛错，不再返回 { schema: undefined } 垃圾数据（原实现对
+ * 叶子节点 children 为 [] 时静默失败，导致粘贴/删除等操作失效）
  */
 export function findSchemaInfoById(
   schemas: ComponentSchema[],
@@ -714,53 +827,40 @@ export function findSchemaInfoById(
   parentSchema: ComponentSchema;
   schema: ComponentSchema;
 } {
-  const stack: ComponentSchema[] = [{ type: '', children: schemas }];
-  let index: number = 0;
-  let children: ComponentSchema[] | null = null;
-  // 查询父节点
-  const parentSchema = findSchemas(
-    stack,
-    (currentNode) => {
-      children = currentNode.children ?? null;
+  // 根容器：children 为传入的 schemas
+  const root: ComponentSchema = { type: '', children: schemas };
+  const stack: ComponentSchema[] = [root];
 
-      if (!children) {
-        if (currentNode?.slots) {
-          for (const key in currentNode.slots) {
-            children = currentNode.slots[key] as ComponentSchema[];
-            for (const [i, child] of children.entries()) {
-              if (child.id === id) {
-                index = i;
-                return true;
-              }
-            }
-          }
-        }
-        return false;
+  while (stack.length > 0) {
+    const currentNode = stack.pop() as ComponentSchema;
+
+    // 收集所有子节点容器（children + 各 slots）
+    const containers: ComponentSchema[][] = [];
+    if (currentNode.children) {
+      containers.push(currentNode.children);
+    }
+    if (currentNode.slots) {
+      for (const key in currentNode.slots) {
+        containers.push(currentNode.slots[key]);
       }
+    }
 
-      for (const [i, child] of children.entries()) {
-        if (child.id === id) {
-          index = i;
-          return true;
-        }
+    for (const list of containers) {
+      const index = list.findIndex((child) => child.id === id);
+      if (index !== -1) {
+        return {
+          index,
+          parentSchema: currentNode,
+          schema: list[index],
+          list,
+        };
       }
-
-      return false;
-    },
-    true,
-  ) as ComponentSchema & { children: ComponentSchema };
-
-  // 判断节点是否存在，不存在则抛出异常
-  if (!children) {
-    throw new Error(`没有查询到id为${id}的节点`);
+      // 继续向下查找
+      stack.push(...list);
+    }
   }
 
-  return {
-    index,
-    parentSchema,
-    schema: children[index],
-    list: children,
-  };
+  throw new Error(`没有查询到id为${id}的节点`);
 }
 
 /**
@@ -770,9 +870,8 @@ export function findSchemaInfoById(
  */
 
 export function convertKFormData(data: any) {
-  if (!data.config) {
-    data.config = {};
-  }
+  // 本地读取配置，不再向输入数据写入 data.config（W3-3.11 输入不变异）
+  const config = data.config ?? {};
   const convertedData: PageSchema = {
     schemas: [
       {
@@ -784,19 +883,18 @@ export function convertKFormData(data: any) {
             label: '表单',
             type: 'form',
             icon: 'aigen-icon-daibanshixiang',
-            labelWidth: data.config.labelWidth || 100,
+            labelWidth: config.labelWidth || 100,
             name: 'default',
             props: {
-              colon: data.config.colon || true,
-              hideRequiredMark: data.config.hideRequiredMark || false,
-              labelAlign: data.config.labelAlign || 'right',
-              labelCol: data.config.labelCol || { span: 5 },
-              labelLayout:
-                data.config.labelLayout === 'flex' ? 'fixed' : 'flex',
-              labelWidth: data.config.labelWidth || 100,
-              layout: data.config.layout || 'horizontal',
-              size: data.config.size || 'middle',
-              wrapperCol: data.config.wrapperCol || { span: 19 },
+              colon: config.colon || true,
+              hideRequiredMark: config.hideRequiredMark || false,
+              labelAlign: config.labelAlign || 'right',
+              labelCol: config.labelCol || { span: 5 },
+              labelLayout: config.labelLayout === 'flex' ? 'fixed' : 'flex',
+              labelWidth: config.labelWidth || 100,
+              layout: config.layout || 'horizontal',
+              size: config.size || 'middle',
+              wrapperCol: config.wrapperCol || { span: 19 },
             },
             children: [],
             id: `form_${getUUID()}`,
@@ -848,7 +946,8 @@ export function recursionConvertedNode(
 ): ComponentSchema[] {
   return children.map((item) => {
     let type = item.type ?? '';
-    const props = item.options ?? ({} as Record<string, unknown>);
+    // 浅拷贝 options：后续 delete/改写不污染输入数据（W3-3.11）
+    const props: Record<string, any> = item.options ? { ...item.options } : {};
 
     const handleUploadComponent = (uploadType: string, replacement: string) => {
       if (type === uploadType) {
@@ -892,17 +991,19 @@ export function recursionConvertedNode(
       // 待修改
     }
 
+    // 本地生成 key：不再改写输入 item.key（W3-3.11）
+    let key = item.key;
     if (parent && parent.type === 'grid') {
       type = 'col';
       props.span = item.span;
-      item.key = getUUID();
+      key = getUUID();
     }
 
     // 创建新的节点数据
     const newItem: ComponentSchema = {
       field: item.model,
       icon: item.icon || '',
-      id: item.key,
+      id: key,
       label: item.label,
       props,
       type,
@@ -941,11 +1042,13 @@ export function recursionConvertedNode(
     ];
     if (inputTypes.includes(type)) {
       newItem.input = true;
-      if (item.rules?.[0]?.required === false) {
-        item.rules.shift();
+      // 复制规则数组后剔除首条非必填规则：不修改输入（W3-3.11）
+      const rules = item.rules ? [...item.rules] : undefined;
+      if (rules?.[0]?.required === false) {
+        rules.shift();
       }
-      if (item.rules && item.rules.length > 0) {
-        newItem.rules = item.rules;
+      if (rules && rules.length > 0) {
+        newItem.rules = rules;
       }
     }
 
@@ -1023,7 +1126,7 @@ export function reorganizeSchemasForTableView(
     const inputSchemas = findSchemas(
       form.children,
       (child) => {
-        const config = pluginManager.component.getConfigByType(child.type);
+        const config = getComponentConfig(child.type);
         const isInput = Boolean(child.input && config && !config.isSubTable);
         if (isInput && fullWidthTypes.includes(child.type)) {
           child.class = 'aigen-full-width';
@@ -1032,7 +1135,7 @@ export function reorganizeSchemasForTableView(
       },
       false,
       (item) => {
-        const config = pluginManager.component.getConfigByType(item.type);
+        const config = getComponentConfig(item.type);
         if (config?.isSubTable) {
           item.class = 'aigen-sub-table aigen-full-width';
           subTables.push(item);

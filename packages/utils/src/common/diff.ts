@@ -138,8 +138,12 @@ function diffValue(
       visited,
     );
   } finally {
-    visited.delete(before);
-    visited.delete(after);
+    if (isObjectLike(before)) {
+      visited.delete(before);
+    }
+    if (isObjectLike(after)) {
+      visited.delete(after);
+    }
   }
 }
 
@@ -201,6 +205,11 @@ function diffArrays(
   const beforeMidEnd = beforeLen - suffix;
   const afterMidEnd = afterLen - suffix;
   const overlap = Math.min(beforeMidEnd - prefix, afterMidEnd - prefix);
+
+  // 决策记录（性能文档 P-W9）：前缀/后缀优化已覆盖大部分数组重排场景，
+  // 中间区域采用 add+remove 而非 keyed move 匹配，生成的补丁虽非最紧凑，
+  // 但 applyPatch 按序应用结果正确，且避免 key 匹配带来的额外复杂度，
+  // 故保留当前实现，不做 keyed diff 改造。
 
   // 1. 删除多余元素（逆序，保证后续路径在应用时仍然有效）
   for (let i = beforeMidEnd - 1; i >= prefix + overlap; i--) {

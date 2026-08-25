@@ -58,4 +58,29 @@ describe('getValueByPath 函数测试', () => {
     };
     expect(getValueByPath(dataWithArray, 'user.profile.names.1')).toBe('Jane');
   });
+
+  it('应该支持数组索引语法（a[0]），与 setValueByPath 保持一致', () => {
+    const dataWithArray = {
+      list: [{ name: 'a' }, { name: 'b' }],
+    };
+
+    expect(getValueByPath(dataWithArray, 'list[0].name')).toBe('a');
+    expect(getValueByPath(dataWithArray, 'list[1].name')).toBe('b');
+    expect(getValueByPath(dataWithArray, 'list[0]')).toEqual({ name: 'a' });
+    expect(getValueByPath(dataWithArray, 'list[3].name', '默认值')).toBe(
+      '默认值',
+    );
+  });
+
+  it('应该支持点语法与数组索引混合的路径', () => {
+    const dataWithArray = {
+      user: {
+        profiles: [{ settings: { theme: 'dark' } }],
+      },
+    };
+
+    expect(
+      getValueByPath(dataWithArray, 'user.profiles[0].settings.theme'),
+    ).toBe('dark');
+  });
 });

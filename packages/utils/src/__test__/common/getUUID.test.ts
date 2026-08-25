@@ -28,4 +28,20 @@ describe('getUUID 函数测试', () => {
 
     expect(uuids.size).toBe(numTests);
   });
+
+  it('数值类型 UUID 长度为 1 时应覆盖 0-9（边界修复）', () => {
+    const results = new Set<string>();
+    for (let i = 0; i < 2000; i++) {
+      results.add(getUUID(1, 'number'));
+    }
+    expect([...results].every((value) => /^[0-9]$/.test(value))).toBe(true);
+    expect(results.has('0')).toBe(true);
+  });
+
+  it('数值类型 UUID 应生成指定长度的数字', () => {
+    for (let length = 2; length <= 11; length++) {
+      const uuid = getUUID(length, 'number');
+      expect(uuid).toMatch(new RegExp(`^[1-9]\\d{${length - 1}}$`));
+    }
+  });
 });

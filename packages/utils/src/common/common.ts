@@ -8,7 +8,7 @@ export function debounce<T extends (...args: unknown[]) => void>(
   handler: T,
   delay: number,
 ): (...args: Parameters<T>) => void {
-  let timer: null | number = null;
+  let timer: null | ReturnType<typeof setTimeout> = null;
 
   return (...args: Parameters<T>): void => {
     if (timer) {
@@ -16,6 +16,6 @@ export function debounce<T extends (...args: unknown[]) => void>(
     }
     timer = setTimeout(() => {
       handler(...args);
-    }, delay) as unknown as number;
+    }, delay);
   };
 }

@@ -17,7 +17,7 @@ describe('setValueByPath 函数测试', () => {
   });
 
   it('应该在不存在的路径中创建新对象', () => {
-    const obj = {};
+    const obj: Record<string, any> = {};
 
     const updatedObj = setValueByPath(
       obj,
@@ -28,7 +28,7 @@ describe('setValueByPath 函数测试', () => {
   });
 
   it('应该在数组路径中设置值', () => {
-    const obj = {
+    const obj: Record<string, any> = {
       user: {
         profiles: [],
       },
@@ -48,7 +48,7 @@ describe('setValueByPath 函数测试', () => {
   });
 
   it('应该在深层嵌套路径中设置值', () => {
-    const obj = {
+    const obj: Record<string, any> = {
       a: {
         b: {
           c: {},
@@ -61,11 +61,28 @@ describe('setValueByPath 函数测试', () => {
   });
 
   it('应该处理路径中包含数字的情况', () => {
-    const obj = {
+    const obj: Record<string, any> = {
       items: [],
     };
 
     const updatedObj = setValueByPath(obj, 'items[2].name', 'Item3');
     expect(updatedObj.items[2].name).toBe('Item3');
+  });
+
+  it('应拒绝 __proto__ 等危险键名，防止原型污染', () => {
+    const obj: Record<string, any> = {};
+
+    expect(() => setValueByPath(obj, '__proto__.x', 1)).toThrow(/危险键名/);
+    expect(() =>
+      setValueByPath(obj, 'a.constructor.prototype.polluted', true),
+    ).toThrow(/危险键名/);
+    expect(() => setValueByPath(obj, 'a[0].__proto__.polluted', true)).toThrow(
+      /危险键名/,
+    );
+
+    // 验证原型未被污染
+    expect(({} as any).x).toBeUndefined();
+    expect(({} as any).polluted).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call({}, 'polluted')).toBe(false);
   });
 });

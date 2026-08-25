@@ -5,9 +5,7 @@ import { getFormSchemas } from '../../';
 describe('getFormSchemas 函数测试', () => {
   const schemas = [
     {
-      props: {
-        
-      },
+      props: {},
       id: 'root',
       label: '页面',
       type: 'page',
@@ -118,5 +116,63 @@ describe('getFormSchemas 函数测试', () => {
 
     const result = getFormSchemas(emptySchemas, 'emptyForm');
     expect(result).toHaveLength(0);
+  });
+
+  it('formName 应优先匹配 props.name，不匹配时返回空数组', () => {
+    const otherSchemas = [
+      {
+        id: 'root',
+        type: 'page',
+        children: [
+          {
+            id: 'form_other',
+            label: '表单',
+            type: 'form',
+            name: 'default',
+            props: { name: 'other' },
+            children: [
+              {
+                id: 'input_other',
+                type: 'input',
+                input: true,
+                field: 'input_other',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    // props.name 为 'other'，请求 'default' 不应匹配（修复前会误匹配）
+    expect(getFormSchemas(otherSchemas, 'default')).toHaveLength(0);
+    expect(getFormSchemas(otherSchemas, 'other')).toHaveLength(1);
+  });
+
+  it('props.name 缺失时应回退到 schema 级 name 匹配', () => {
+    const fallbackSchemas = [
+      {
+        id: 'root',
+        type: 'page',
+        children: [
+          {
+            id: 'form_fb',
+            label: '表单',
+            type: 'form',
+            name: 'default',
+            children: [
+              {
+                id: 'input_fb',
+                type: 'input',
+                input: true,
+                field: 'input_fb',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    expect(getFormSchemas(fallbackSchemas, 'default')).toHaveLength(1);
+    expect(getFormSchemas(fallbackSchemas, 'other')).toHaveLength(0);
   });
 });

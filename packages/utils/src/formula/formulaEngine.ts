@@ -31,6 +31,11 @@ const internalFunctions: Record<string, FormulaFunction> = {
 // --- 核心引擎类 ---
 
 export class FormulaEngine {
+  /** AST 缓存上限，防止表达式无限增长导致内存膨胀 */
+  private static readonly AST_CACHE_MAX = 1000;
+
+  /** AST 缓存：相同表达式只解析一次（性能文档 P-W6），避免每次 calculate 重复调用 jsep */
+  private static readonly astCache = new Map<string, jsep.Expression>();
   private context: FormulaContext;
 
   constructor(initialContext: FormulaContext = {}) {
@@ -56,7 +61,16 @@ export class FormulaEngine {
     };
 
     try {
-      const ast = jsep(expression);
+      // 优先使用缓存中的 AST，相同表达式第二次调用不再触发 jsep 解析
+      let ast = FormulaEngine.astCache.get(expression);
+      if (!ast) {
+        ast = jsep(expression);
+        if (FormulaEngine.astCache.size >= FormulaEngine.AST_CACHE_MAX) {
+          // 简单淘汰策略：达到上限时整体清空，避免缓存无限增长
+          FormulaEngine.astCache.clear();
+        }
+        FormulaEngine.astCache.set(expression, ast);
+      }
       return this._execute(ast, mergedContext);
     } catch (error) {
       console.error('[Aigen: 公式解析错误]', error);
@@ -143,7 +157,9 @@ export class FormulaEngine {
 
       // 逻辑表达式: &&, ||
       case 'LogicalExpression': {
-        const logNode = node;
+        // jsep 类型未显式声明 LogicalExpression，left/right 经索引签名推断为
+        // 联合类型（含 undefined），这里按 BinaryExpression 形状断言保证类型安全
+        const logNode = node as jsep.BinaryExpression;
         const left = this._execute(logNode.left, ctx);
         const right = this._execute(logNode.right, ctx);
         return logNode.operator === '&&' ? left && right : left || right;

@@ -103,4 +103,26 @@ describe('deepEqual', () => {
 
     expect(deepEqual(obj1, obj2)).toBe(false);
   });
+
+  it('应当返回 false 当 Date 与普通对象比较时（类型标签不一致）', () => {
+    expect(deepEqual(new Date(0), {})).toBe(false);
+    expect(deepEqual({}, new Date(0))).toBe(false);
+  });
+
+  it('应当返回 false 当 Map/Set 与普通对象比较时', () => {
+    expect(deepEqual(new Map(), {})).toBe(false);
+    expect(deepEqual(new Set(), {})).toBe(false);
+    expect(deepEqual({}, new Map())).toBe(false);
+  });
+
+  it('应当正确处理 Date/RegExp/Map/Set 同类型比较', () => {
+    expect(deepEqual(new Date(0), new Date(0))).toBe(true);
+    expect(deepEqual(new Date(0), new Date(1))).toBe(false);
+    expect(deepEqual(/ab/g, /ab/g)).toBe(true);
+    expect(deepEqual(/ab/g, /ab/i)).toBe(false);
+    expect(deepEqual(new Map([['a', 1]]), new Map([['a', 1]]))).toBe(true);
+    expect(deepEqual(new Map([['a', 1]]), new Map([['a', 2]]))).toBe(false);
+    expect(deepEqual(new Set([1, 2]), new Set([2, 1]))).toBe(true);
+    expect(deepEqual(new Set([1, 2]), new Set([1, 3]))).toBe(false);
+  });
 });

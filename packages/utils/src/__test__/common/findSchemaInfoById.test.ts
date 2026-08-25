@@ -5,9 +5,7 @@ import { findSchemaInfoById } from '../../';
 describe('findSchemaInfoById 函数测试', () => {
   const schemas = [
     {
-      props: {
-        
-      },
+      props: {},
       id: 'root',
       label: '页面',
       type: 'page',
@@ -152,5 +150,30 @@ describe('findSchemaInfoById 函数测试', () => {
     expect(() => findSchemaInfoById(schemas, id)).toThrow(
       `没有查询到id为${id}的节点`,
     );
+  });
+
+  it('叶子节点 children 为空数组且未找到时应抛出异常而不是返回垃圾数据', () => {
+    const leafSchemas = [
+      {
+        id: 'root',
+        type: 'page',
+        children: [
+          {
+            id: 'form',
+            type: 'form',
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    expect(() => findSchemaInfoById(leafSchemas, 'missing_id')).toThrow(
+      '没有查询到id为missing_id的节点',
+    );
+  });
+
+  it('未找到时应抛错而不是返回 schema 为 undefined 的结果', () => {
+    const notFound = () => findSchemaInfoById(schemas, 'non_existent');
+    expect(notFound).toThrow();
   });
 });

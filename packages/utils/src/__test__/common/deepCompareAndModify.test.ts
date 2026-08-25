@@ -82,4 +82,48 @@ describe('deepCompareAndModify', () => {
 
     expect(obj1).toEqual({ a: { x: 10, y: 20 }, b: 4, c: 5 });
   });
+
+  it('Date 值应整体更新而不是静默忽略', () => {
+    const obj1 = { time: new Date('2024-01-01T00:00:00Z') };
+    const obj2 = { time: new Date('2024-02-01T00:00:00Z') };
+
+    deepCompareAndModify(obj1, obj2);
+
+    expect(obj1.time).toBe(obj2.time);
+    expect(obj1.time.getTime()).toBe(obj2.time.getTime());
+  });
+
+  it('Map/Set 值应整体更新而不是静默忽略', () => {
+    const obj1 = { map: new Map([['a', 1]]), set: new Set([1]) };
+    const obj2 = { map: new Map([['a', 2]]), set: new Set([1, 2]) };
+
+    deepCompareAndModify(obj1, obj2);
+
+    expect(obj1.map).toBe(obj2.map);
+    expect(obj1.set).toBe(obj2.set);
+  });
+
+  it('循环引用不应导致栈溢出', () => {
+    const obj1: any = { name: 'a' };
+    obj1.self = obj1;
+    const obj2: any = { name: 'b' };
+    obj2.self = obj2;
+
+    deepCompareAndModify(obj1, obj2);
+
+    expect(obj1.name).toBe('b');
+    expect(obj1.self).toBe(obj1);
+  });
+
+  it('同一对象在两侧同时出现（共享引用）不应导致无限递归', () => {
+    const shared1: any = { v: 1 };
+    const shared2: any = { v: 2 };
+    const obj1 = { a: shared1, b: shared1 };
+    const obj2 = { a: shared2, b: shared2 };
+
+    deepCompareAndModify(obj1, obj2);
+
+    expect(obj1.a).toEqual({ v: 2 });
+    expect(obj1.b).toEqual({ v: 2 });
+  });
 });

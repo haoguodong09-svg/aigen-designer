@@ -19,8 +19,13 @@ export function getUUID(
   }
 
   // 生成数值类型UUID
+  // 边界处理：randomLength 为 1 时应覆盖 0-9（原实现恒为 1-9，缺少 0）
   const times = 10 ** (randomLength - 1);
-  return (times + Math.floor(Math.random() * 9 * times)).toString();
+  const randomValue =
+    randomLength <= 1
+      ? Math.floor(Math.random() * 10)
+      : times + Math.floor(Math.random() * 9 * times);
+  return randomValue.toString();
 }
 
 /**
