@@ -101,4 +101,27 @@ describe('deepClone', () => {
     expect(cloned).toEqual(obj);
     expect(cloned.b).toBe(cloned);
   });
+
+  it('手动克隆路径应保留 Error 的 message/name/stack', () => {
+    const err = new TypeError('自定义错误信息');
+    err.stack = 'Error: 自定义错误信息\n    at test';
+
+    const cloned = deepClone(err, false);
+
+    expect(cloned).toBeInstanceOf(Error);
+    expect(cloned).toBeInstanceOf(TypeError);
+    expect(cloned.message).toBe('自定义错误信息');
+    expect(cloned.name).toBe('TypeError');
+    expect(cloned.stack).toBe('Error: 自定义错误信息\n    at test');
+    expect(cloned).not.toBe(err);
+  });
+
+  it('默认路径克隆 Error 也应保留错误信息', () => {
+    const err = new Error('默认路径错误');
+
+    const cloned = deepClone(err);
+
+    expect(cloned).toBeInstanceOf(Error);
+    expect(cloned.message).toBe('默认路径错误');
+  });
 });

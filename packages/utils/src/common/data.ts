@@ -125,6 +125,16 @@ export function deepClone<T>(
     }
     return cloned;
   }
+  // Error 的 message/name/stack 均为不可枚举属性，普通对象路径会克隆成 {}，
+  // 这里显式保留错误信息与子类类型（W3-3.3 补充）
+  if (obj instanceof Error) {
+    const ErrorCtor = obj.constructor as new (message?: string) => Error;
+    const cloned = new ErrorCtor(obj.message) as T;
+    (cloned as Error).name = obj.name;
+    (cloned as Error).stack = obj.stack;
+    cache.set(obj, cloned);
+    return cloned;
+  }
 
   // 处理普通对象
   const clonedObj = {} as Record<string, unknown>;
