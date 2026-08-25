@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "pnpm i && turbo run build -F aigen-examples && turbo run build",
+    "changeset": "changeset",
+    "changeset:publish": "changeset publish",
+    "changeset:version": "changeset version",
     "dev": "turbo run dev",
     "lib": "vitest run && turbo run build -F aigen-designer",
     "test": "vitest run",
