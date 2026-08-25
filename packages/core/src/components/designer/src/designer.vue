@@ -186,6 +186,8 @@ function handleWheel(event: WheelEvent) {
 
 onUnmounted(() => {
   designerRef.value?.removeEventListener('wheel', handleWheel);
+  // 释放撤销链资源：取消挂起的防抖提交（W6-6.4）并销毁 Schema Worker（W6 隐藏问题）
+  revoke.dispose();
 });
 
 defineExpose({

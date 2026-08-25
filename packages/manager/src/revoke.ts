@@ -15,7 +15,7 @@ import {
   findSchemaById,
 } from '@aigen-designer/utils';
 
-import { postToWorker } from './schemaWorkerBridge';
+import { disposeSchemaWorker, postToWorker } from './schemaWorkerBridge';
 
 /**
  * 历史记录模型 - 用于存储页面状态的快照或差异
@@ -279,12 +279,14 @@ export function useRevoke(
   };
 
   /**
-   * 释放资源：取消挂起的防抖提交
+   * 释放资源：取消挂起的防抖提交，并销毁 Schema Worker（W6 隐藏问题修复）
    * @description ⚠️ core 接入点：设计器组件 onUnmounted 时应调用本方法（W6-6.4），
    * 否则组件卸载后防抖定时器仍会对已卸载的 pageSchema 执行提交。
+   * disposeSchemaWorker 终止 Worker 线程；后续再次 postToWorker 会自动重建（桥接层降级标记一并重置）。
    */
   const dispose = (): void => {
     clearPendingDebounce();
+    disposeSchemaWorker();
   };
 
   /**
