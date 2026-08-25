@@ -220,17 +220,34 @@ const isPublic = computed(() => props.actionItem.type === 'public');
 const exprVisible = ref(false);
 const exprTargetIndex = ref(0);
 
-/** 表达式插入器字段列表：页面输入组件（label + field + type） */
+/** 表达式插入器字段列表：事件参数 + 页面输入组件（label + field + type） */
 const expressionFields = computed<ExpressionField[]>(() => {
+  // 事件参数：运行时 doActions 将触发事件的原生参数作为 $event 数组传入公式上下文
+  // （如「值变化时」= [新值, 原生事件]，表达式写 $event[0] 取新值）
+  const eventParams: ExpressionField[] = [
+    {
+      field: '$event[0]',
+      label: '事件参数①（如「值变化时」的新值）',
+      type: 'event',
+    },
+    {
+      field: '$event[1]',
+      label: '事件参数②（如 原生事件对象）',
+      type: 'event',
+    },
+  ];
   const inputSchemas = findSchemas(
     pageSchema.schemas,
     (item) => Boolean(item.input) && Boolean(item.field),
   ) as ComponentSchema[];
-  return inputSchemas.map((item) => ({
-    field: item.field as string,
-    label: item.label ?? (item.field as string),
-    type: item.type,
-  }));
+  return [
+    ...eventParams,
+    ...inputSchemas.map((item) => ({
+      field: item.field as string,
+      label: item.label ?? (item.field as string),
+      type: item.type,
+    })),
+  ];
 });
 
 function openExpression(index: number) {

@@ -135,6 +135,8 @@ export function buildMockFormData(
   const formData: Record<string, unknown> = {};
   fields.forEach((field) => {
     if (!field.field) return;
+    // 事件参数（$ 前缀）不进入 formData 模拟数据，由公式上下文的 event 提供
+    if (field.field.startsWith('$')) return;
     const type = field.type ?? '';
     if (NUMBER_INPUT_TYPES.has(type)) {
       formData[field.field] = 100;

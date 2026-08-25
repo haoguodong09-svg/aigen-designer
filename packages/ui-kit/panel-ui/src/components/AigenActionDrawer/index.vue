@@ -6,14 +6,13 @@ import type { ActionDraft, ActionType } from './helper';
 import { computed, onBeforeUnmount, reactive, ref, toRaw, watch } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
-import { pluginManager } from '@aigen-designer/manager';
 import { deepClone, findSchemaById } from '@aigen-designer/utils';
 
 import {
   buildCacheKey,
   createEmptyDraft,
   getArgsArray,
-  stringifyArgs,
+  isExpressionValue,
 } from './helper';
 import StepArgs from './steps/StepArgs.vue';
 import StepMethod from './steps/StepMethod.vue';
@@ -261,28 +260,35 @@ function handleSave() {
     return;
   }
 
-  // setAttr 参数规整：仅保留 [属性名, 属性值]（迁移旧 modal 保存时的特殊处理）
+  // setAttr 参数校验：StepArgs 已产出 [属性名, 属性值] 结构，此处只校验不再规整。
+  // （旧弹窗按"全量属性列表索引"取值的规整逻辑已废弃——args 结构变化后索引错位，
+  //   会把用户填写的属性值覆盖为 undefined/null，导致动作"配置了却不生效"。）
   if (
     type === 'component' &&
     methodName === 'setAttr' &&
     componentSchema.value
   ) {
-    const componentConfig = pluginManager.component.getConfigByType(
-      componentSchema.value.type,
-    );
-    const componentAttributes = (
-      componentConfig?.config.attribute ?? []
-    ).filter(({ field }) => String(field).startsWith('props'));
     const args = getArgsArray(state.actionItem.args);
-    const attributeIndex = componentAttributes.findIndex(
-      ({ field }) => field === `props.${args[0]}`,
-    );
-    if (attributeIndex !== -1) {
-      state.actionItem.args = stringifyArgs([
-        args[0],
-        args[attributeIndex + 1],
-      ]);
+    const attrName = args[0];
+    const attrValue = args[1];
+    if (typeof attrName !== 'string' || attrName.trim() === '') {
+      saveError.value = '请选择要设置的属性';
+      return;
     }
+    if (
+      !isExpressionValue(attrValue) &&
+      (attrValue === undefined || attrValue === null)
+    ) {
+      saveError.value = '请设置属性值（可点击 fx 使用表达式，如 $event[0]）';
+      return;
+    }
+  }
+
+  // 通用兜底：参数数组含 undefined 会被 JSON.stringify 序列化为 null，静默失效。
+  // 保存前拦截，要求所有参数有值（可显式填 0 / false / 空字符串，或用表达式）。
+  if (getArgsArray(state.actionItem.args).includes(undefined)) {
+    saveError.value = '请补全所有参数（空参数不会生效，可点击 fx 使用表达式）';
+    return;
   }
 
   const payload = deepClone(buildActionPayload());

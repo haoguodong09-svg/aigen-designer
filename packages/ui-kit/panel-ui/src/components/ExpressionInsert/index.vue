@@ -82,7 +82,11 @@ const preview = computed(() => {
     return { state: 'empty' as const, text: '输入表达式后自动预览' };
   }
   const formData = buildMockFormData(fieldItems.value);
-  const result = formulaEngine.calculate(expression, { formData });
+  // 事件参数为模拟值（$event[0]=true），仅供预览展示，设计态不触发任何运行时事件
+  const result = formulaEngine.calculate(expression, {
+    event: [true, { type: 'change' }],
+    formData,
+  });
   if (result === null || result === undefined) {
     return {
       state: 'error' as const,
@@ -111,9 +115,9 @@ function insertText(text: string) {
   parseError.value = '';
 }
 
-/** 点击字段：插入 $formData.{field} 引用 */
+/** 点击字段：插入引用（$ 前缀的事件参数原样插入，其余补 $formData. 前缀） */
 function insertField(field: string) {
-  insertText(`$formData.${field}`);
+  insertText(field.startsWith('$') ? field : `$formData.${field}`);
 }
 
 /** 点击内置函数：插入函数名并等待输入参数 */
@@ -183,7 +187,7 @@ watch(
                 :key="item.field"
                 type="button"
                 class="aigen-expression-insert-item"
-                :title="`插入 $formData.${item.field}`"
+                :title="`插入 ${item.field.startsWith('$') ? item.field : `$formData.${item.field}`}`"
                 @click="insertField(item.field)"
               >
                 <span class="aigen-expression-insert-item-label">{{
