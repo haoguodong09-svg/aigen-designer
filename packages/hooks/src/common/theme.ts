@@ -1,3 +1,5 @@
+import type { Ref } from 'vue';
+
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { useToggle } from '@vueuse/core';
@@ -42,7 +44,7 @@ export function useDark() {
  * 获取dark初始化状态
  * @param isDark
  */
-export function getDarkState(isDark) {
+export function getDarkState(isDark: Ref<boolean>) {
   // 检查是否在浏览器环境中
   if (typeof document === 'undefined') return;
   const targetNode = document.documentElement;
@@ -54,7 +56,7 @@ export function getDarkState(isDark) {
  * 监听html元素
  * @param isDark
  */
-function monitorHtml(isDark) {
+function monitorHtml(isDark: Ref<boolean>) {
   // 检查是否在浏览器环境中
   if (typeof document === 'undefined') return;
 

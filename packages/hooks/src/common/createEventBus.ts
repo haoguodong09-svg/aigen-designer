@@ -2,31 +2,48 @@ import { onUnmounted, provide } from 'vue';
 
 import { EVENT_BUS_KEY } from '../logic/useEventBus';
 
+type EventCallback = (...args: any[]) => void;
+
+interface CachedEvent {
+  args: any[];
+  timestamp: number;
+}
+
+interface EventChannel {
+  clear(): void;
+  emit(event: string, ...args: any[]): void;
+  eventCache: Map<string, CachedEvent[]>;
+  listeners: Map<string, Set<EventCallback>>;
+  off(event: string, callback: EventCallback): void;
+  on(event: string, callback: EventCallback): () => void;
+}
+
 // 创建全局的通道管理器
-const channelMap = new Map();
+const channelMap = new Map<string, EventChannel>();
 
 export function createEventBus(channelId = 'root') {
   // 获取或创建指定通道的事件总线
-  const getOrCreateChannel = (id) => {
+  const getOrCreateChannel = (id: string): EventChannel => {
     if (!channelMap.has(id)) {
       // 创建独立的事件总线
-      const listeners = new Map();
-      const eventCache = new Map(); // 缓存最近的事件
+      const listeners = new Map<string, Set<EventCallback>>();
+      const eventCache = new Map<string, CachedEvent[]>(); // 缓存最近的事件
       const MAX_CACHE_SIZE = 10; // 最多缓存10个事件
 
-      const channel = {
+      const channel: EventChannel = {
         // 清空通道
         clear() {
           listeners.clear();
           eventCache.clear();
         },
         // 触发事件
-        emit(event, ...args) {
+        emit(event: string, ...args: any[]) {
           // 缓存事件
-          if (!eventCache.has(event)) {
-            eventCache.set(event, []);
+          let cache = eventCache.get(event);
+          if (!cache) {
+            cache = [];
+            eventCache.set(event, cache);
           }
-          const cache = eventCache.get(event);
           cache.push({ args, timestamp: Date.now() });
 
           // 限制缓存大小
@@ -35,8 +52,9 @@ export function createEventBus(channelId = 'root') {
           }
 
           // 触发监听器
-          if (listeners.has(event)) {
-            listeners.get(event).forEach((callback) => {
+          const eventListeners = listeners.get(event);
+          if (eventListeners) {
+            eventListeners.forEach((callback) => {
               try {
                 callback(...args);
               } catch (error) {
@@ -49,23 +67,26 @@ export function createEventBus(channelId = 'root') {
         eventCache,
 
         // 取消监听
-        off(event, callback) {
-          if (listeners.has(event)) {
-            listeners.get(event).delete(callback);
+        off(event: string, callback: EventCallback) {
+          const eventListeners = listeners.get(event);
+          if (eventListeners) {
+            eventListeners.delete(callback);
           }
         },
 
         // 监听事件
-        on(event, callback) {
-          if (!listeners.has(event)) {
-            listeners.set(event, new Set());
+        on(event: string, callback: EventCallback) {
+          let eventListeners = listeners.get(event);
+          if (!eventListeners) {
+            eventListeners = new Set();
+            listeners.set(event, eventListeners);
           }
-          listeners.get(event).add(callback);
+          eventListeners.add(callback);
 
           // 处理缓存的事件（立即触发最近的事件）
-          if (eventCache.has(event) && eventCache.get(event).length > 0) {
-            const recentEvent =
-              eventCache.get(event)[eventCache.get(event).length - 1];
+          const cachedEvents = eventCache.get(event);
+          if (cachedEvents && cachedEvents.length > 0) {
+            const recentEvent = cachedEvents[cachedEvents.length - 1];
             try {
               callback(...recentEvent.args);
             } catch (error) {
@@ -87,7 +108,8 @@ export function createEventBus(channelId = 'root') {
       channelMap.set(id, channel);
     }
 
-    return channelMap.get(id);
+    // has() 守卫保证此处必然存在（上面已创建），非空断言避免二次 get
+    return channelMap.get(id) as EventChannel;
   };
 
   // 获取当前通道的事件总线
@@ -95,19 +117,19 @@ export function createEventBus(channelId = 'root') {
   const rootBus = getOrCreateChannel('root');
 
   // 触发事件（A组件使用）
-  const emit = (event, ...args: any[]) => {
+  const emit = (event: string, ...args: any[]) => {
     scopedBus.emit(event, ...args);
   };
 
-  const emitRoot = (event, ...args: any[]) => {
+  const emitRoot = (event: string, ...args: any[]) => {
     rootBus.emit(event, ...args);
   };
 
   // 取消监听
-  const off = (event, callback) => {
+  const off = (event: string, callback: EventCallback) => {
     scopedBus.off(event, callback);
   };
-  const offRoot = (event, callback) => {
+  const offRoot = (event: string, callback: EventCallback) => {
     rootBus.off(event, callback);
   };
 
@@ -123,11 +145,11 @@ export function createEventBus(channelId = 'root') {
   };
 
   // 判断通道是否还存在监听器
-  const hasChannelListeners = (bus) =>
+  const hasChannelListeners = (bus: EventChannel) =>
     [...bus.listeners.values()].some((set) => set.size > 0);
 
   // 自动清理的监听函数
-  const useAutoCleanupListener = (event, callback) => {
+  const useAutoCleanupListener = (event: string, callback: EventCallback) => {
     const unsubscribe = scopedBus.on(event, callback);
 
     // 组件卸载时自动取消监听
@@ -143,7 +165,7 @@ export function createEventBus(channelId = 'root') {
     return unsubscribe;
   };
 
-  const onRoot = (event, callback) => {
+  const onRoot = (event: string, callback: EventCallback) => {
     const unsubscribe = rootBus.on(event, callback);
 
     // 组件卸载时自动取消监听

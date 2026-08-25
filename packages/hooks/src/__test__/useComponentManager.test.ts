@@ -68,7 +68,7 @@ describe('useComponentManager', () => {
     manager.registerComponent(config);
 
     const stored = manager.getComponentConfigByType('input');
-    const actionTypes = stored.config.action.map((a) => a.type);
+    const actionTypes = stored.config.action!.map((a) => a.type);
 
     // 只保留一份 setValue/getValue/setAttr
     expect(actionTypes.filter((t) => t === 'setValue')).toHaveLength(1);
