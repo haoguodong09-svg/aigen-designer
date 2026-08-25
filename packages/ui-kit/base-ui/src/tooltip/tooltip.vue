@@ -66,46 +66,61 @@ const clearTimers = () => {
   }
 };
 
-// 显示
+// 统一同步显示状态到外部
+const syncVisible = (value: boolean) => {
+  emit('update:open', value);
+  emit('openChange', value);
+  emit('visibleChange', value);
+};
+
+// 立即显示（click 触发场景，不走 hover 延迟）
+const showImmediately = () => {
+  if (visible.value) return;
+  clearTimers();
+  visible.value = true;
+  syncVisible(true);
+  updatePosition();
+};
+
+// 立即隐藏（click 触发 / 点击外部场景，不走 leave 延迟）
+const hideImmediately = () => {
+  if (!visible.value) return;
+  clearTimers();
+  visible.value = false;
+  syncVisible(false);
+};
+
+// 显示（hover 触发，支持 mouseEnterDelay 延迟）
 const show = () => {
   if (visible.value) return;
   if (hasClicked.value) return; // 如果已经点击过，不显示
   clearTimers();
 
-  if (props.mouseEnterDelay > 0) {
-    enterTimer = window.setTimeout(() => {
-      visible.value = true;
-      emit('update:open', true);
-      emit('openChange', true);
-      emit('visibleChange', true);
-      updatePosition();
-    }, props.mouseEnterDelay);
-  } else {
+  const doShow = () => {
     visible.value = true;
-    emit('update:open', true);
-    emit('openChange', true);
-    emit('visibleChange', true);
+    syncVisible(true);
     updatePosition();
+  };
+  if (props.mouseEnterDelay > 0) {
+    enterTimer = window.setTimeout(doShow, props.mouseEnterDelay);
+  } else {
+    doShow();
   }
 };
 
-// 隐藏
+// 隐藏（hover 触发，支持 mouseLeaveDelay 延迟）
 const hide = () => {
   if (!visible.value) return;
   clearTimers();
 
-  if (props.mouseLeaveDelay > 0) {
-    leaveTimer = window.setTimeout(() => {
-      visible.value = false;
-      emit('update:open', false);
-      emit('openChange', false);
-      emit('visibleChange', false);
-    }, props.mouseLeaveDelay);
-  } else {
+  const doHide = () => {
     visible.value = false;
-    emit('update:open', false);
-    emit('openChange', false);
-    emit('visibleChange', false);
+    syncVisible(false);
+  };
+  if (props.mouseLeaveDelay > 0) {
+    leaveTimer = window.setTimeout(doHide, props.mouseLeaveDelay);
+  } else {
+    doHide();
   }
 };
 
@@ -118,15 +133,6 @@ const smartHide = () => {
   leaveDelayTimer = window.setTimeout(() => {
     hide();
   }, 100); // 短暂延迟检查
-};
-
-// 切换
-const toggle = () => {
-  if (visible.value) {
-    smartHide();
-  } else {
-    show();
-  }
 };
 
 // 事件处理
@@ -146,9 +152,15 @@ const handleMouseLeave = () => {
 
 const handleClick = () => {
   if (props.trigger === 'click') {
-    toggle();
+    // click 触发：直接切换显示状态，不依赖 hover 延迟与 hasClicked 标记
+    if (visible.value) {
+      hideImmediately();
+    } else {
+      showImmediately();
+    }
+    return;
   }
-  // 无论哪种触发方式，点击后都标记为已点击
+  // 其他触发方式（hover/focus）：点击后标记为已点击并关闭，避免误触
   hasClicked.value = true;
   clearTimers(); // 清除所有定时器，包括正在进行的延迟显示
   hide(); // 点击后立即隐藏tooltip
@@ -163,45 +175,33 @@ function updatePosition() {
     ? (target as Element).getBoundingClientRect()
     : { bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0 };
   const tooltipRect = tooltipRef.value!.getBoundingClientRect();
-  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
   let top = 0;
   let left = 0;
   const offset = 8;
 
+  // position: fixed 使用视口坐标系，getBoundingClientRect 已相对视口返回，
+  // 这里不再叠加 scrollX/scrollY，避免滚动时 tooltip 出现偏移
   switch (props.placement) {
     case 'bottom': {
-      top = triggerRect.bottom + scrollY + offset;
-      left =
-        triggerRect.left +
-        scrollX +
-        (triggerRect.width - tooltipRect.width) / 2;
+      top = triggerRect.bottom + offset;
+      left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
       break;
     }
 
     case 'left': {
-      top =
-        triggerRect.top +
-        scrollY +
-        (triggerRect.height - tooltipRect.height) / 2;
-      left = triggerRect.left + scrollX - tooltipRect.width - offset;
+      top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+      left = triggerRect.left - tooltipRect.width - offset;
       break;
     }
     case 'right': {
-      top =
-        triggerRect.top +
-        scrollY +
-        (triggerRect.height - tooltipRect.height) / 2;
-      left = triggerRect.right + scrollX + offset;
+      top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+      left = triggerRect.right + offset;
       break;
     }
     case 'top': {
-      top = triggerRect.top + scrollY - tooltipRect.height - offset;
-      left =
-        triggerRect.left +
-        scrollX +
-        (triggerRect.width - tooltipRect.width) / 2;
+      top = triggerRect.top - tooltipRect.height - offset;
+      left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
       break;
     }
   }
@@ -225,14 +225,16 @@ function updatePosition() {
 
 // 点击外部关闭
 const handleClickOutside = (event: MouseEvent) => {
-  if (
-    props.trigger === 'click' &&
-    visible.value &&
-    triggerRef.value &&
-    !triggerRef.value.contains(event.target as Node) &&
-    tooltipRef.value &&
-    !tooltipRef.value.contains(event.target as Node)
-  ) {
+  if (!visible.value || !triggerRef.value) return;
+  // 点击触发元素或 tooltip 自身时不关闭
+  if (triggerRef.value.contains(event.target as Node)) return;
+  if (tooltipRef.value && tooltipRef.value.contains(event.target as Node)) {
+    return;
+  }
+  if (props.trigger === 'click') {
+    // click 触发：点击外部直接关闭
+    hideImmediately();
+  } else if (props.trigger === 'hover') {
     smartHide();
   }
 };
@@ -244,9 +246,19 @@ const tooltipStyle = computed<CSSProperties>(() => ({
   ...props.overlayStyle,
 }));
 
+// 滚动或窗口尺寸变化时重新定位 tooltip
+const handleViewportChange = () => {
+  if (visible.value) {
+    updatePosition();
+  }
+};
+
 // 生命周期
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  // fixed 定位的 tooltip 需跟随元素：监听滚动（捕获阶段覆盖内部滚动容器）与窗口尺寸变化
+  window.addEventListener('resize', handleViewportChange);
+  window.addEventListener('scroll', handleViewportChange, true);
 
   // 初始化open属性
   if (props.open !== undefined) {
@@ -259,6 +271,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', handleViewportChange);
+  window.removeEventListener('scroll', handleViewportChange, true);
   clearTimers();
 });
 
@@ -303,7 +317,10 @@ watch(
           v-if="visible"
           ref="tooltipRef"
           class="aigen-tooltip"
-          :class="[`aigen-tooltip-placement-${placement}`, `aigen-tooltip-${color}`]"
+          :class="[
+            `aigen-tooltip-placement-${placement}`,
+            `aigen-tooltip-${color}`,
+          ]"
           :style="tooltipStyle"
           role="tooltip"
         >

@@ -10,8 +10,8 @@ import { pluginManager } from '@aigen-designer/manager';
 import { deepClone, deepEqual } from '@aigen-designer/utils';
 import { useVModel } from '@vueuse/core';
 
-import { triggerOptions, typeOptions } from './data';
 import AigenRuleItem from './AigenRuleItem.vue';
+import { triggerOptions, typeOptions } from './data';
 
 const props = defineProps({
   modelValue: {

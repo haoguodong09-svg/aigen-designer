@@ -3,10 +3,10 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import type { PropType } from 'vue';
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { AigenIcon } from '@aigen-designer/base-ui';
+import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { getUUID } from '@aigen-designer/utils';
 import { useVModel } from '@vueuse/core';
@@ -21,6 +21,9 @@ const emit = defineEmits(['update:modelValue']);
 
 const Radio = pluginManager.component.get('radio');
 const Number = pluginManager.component.get('number');
+// 统一 v-model 属性解析
+const radioBindModel = useBindModel('radio').bindModel;
+const numberBindModel = useBindModel('number').bindModel;
 
 const attrOptions = [
   {
@@ -65,19 +68,29 @@ const selectedAttr = ref('span');
 const innerValue = useVModel(props, 'modelValue', emit);
 
 /**
- * 新增栅格Col
+ * 新增子节点。
+ * 子节点类型依据已有子节点推断（row 的子节点为 col，collapse 的子节点为 collapse-item 等），
+ * 避免折叠面板等编辑器误添加 col 子节点。
  */
 function handleAdd() {
+  const childType = innerValue.value[0]?.type ?? 'col';
   const colItem = {
     id: getUUID(),
-    props: {
-      span: 12,
-    },
-    type: 'col',
+    // 仅栅格列需要默认 span 属性
+    props: childType === 'col' ? { span: 12 } : {},
+    type: childType,
     children: [],
   };
   innerValue.value = [...innerValue.value, colItem];
 }
+
+/**
+ * 添加按钮文案：依据子节点类型显示
+ */
+const addButtonLabel = computed(() => {
+  const childType = innerValue.value[0]?.type ?? 'col';
+  return childType === 'col' ? '添加列' : '添加子项';
+});
 
 /**
  * 删除栅格Col
@@ -93,10 +106,7 @@ function handleDelete(index: number) {
   <div class="aigen-col-editor">
     <div class="aigen-col-editor-radio">
       <div class="text-$aigen-text-helper text-sm">选择需要配置的属性：</div>
-      <Radio
-        v-model:value="selectedAttr"
-        :options="attrOptions"
-      />
+      <Radio v-model:[radioBindModel]="selectedAttr" :options="attrOptions" />
     </div>
     <VueDraggable
       v-model="innerValue"
@@ -106,7 +116,7 @@ function handleDelete(index: number) {
       }"
       class="edit-col-range"
       :animation="200"
-      :gorup="{ name: 'edit-col-range' }"
+      :group="{ name: 'edit-col-range' }"
       handle=".handle"
     >
       <div
@@ -117,7 +127,7 @@ function handleDelete(index: number) {
         <AigenIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
         <Number
           :key="selectedAttr"
-          v-model:value="item.props[selectedAttr]"
+          v-model:[numberBindModel]="item.props[selectedAttr]"
           style="width: 100%"
           :min="1"
           :max="24"
@@ -131,7 +141,9 @@ function handleDelete(index: number) {
         </template>
       </div>
     </VueDraggable>
-    <div class="aigen-button ghost primary" @click="handleAdd">添加列</div>
+    <div class="aigen-button ghost primary" @click="handleAdd">
+      {{ addButtonLabel }}
+    </div>
   </div>
 </template>
 <style scoped lang="less">

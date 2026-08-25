@@ -40,6 +40,8 @@ const props = withDefaults(
 const emit = defineEmits(['update:modelValue']);
 
 const isFullScreen = ref(false);
+// JSON 格式错误提示（valueFormat 为 json 时的错误边界）
+const jsonError = ref('');
 
 const fullScreenStyle = `position: fixed;
   top: 0;
@@ -141,10 +143,17 @@ onMounted(() => {
 
     // valueFormat 为json 格式，需要转换处理
     if (props.valueFormat === 'json' && currenValue) {
-      emit('update:modelValue', JSON.parse(currenValue));
+      try {
+        // 非法 JSON 时仅展示错误态，不向上抛异常导致编辑器崩溃
+        jsonError.value = '';
+        emit('update:modelValue', JSON.parse(currenValue));
+      } catch (error) {
+        jsonError.value = `JSON 格式错误：${(error as Error).message}`;
+      }
       return;
     }
 
+    jsonError.value = '';
     emit('update:modelValue', currenValue ?? '');
   });
 });
@@ -157,7 +166,10 @@ defineExpose({
 <template>
   <div
     ref="editContainer"
-    :class="{ bordered: props.bordered }"
+    :class="{
+      bordered: props.bordered,
+      'has-error': !!jsonError,
+    }"
     :style="isFullScreen ? fullScreenStyle : ''"
     class="aigen-code-editor relative"
   >
@@ -174,6 +186,12 @@ defineExpose({
         "
       />
     </div>
+    <div
+      v-if="jsonError"
+      class="aigen-code-editor-error absolute bottom-1 left-2 z-10 text-xs text-red-500"
+    >
+      {{ jsonError }}
+    </div>
   </div>
 </template>
 <style lang="less" scoped>
@@ -186,6 +204,10 @@ defineExpose({
 
   &.bordered {
     border: 1px solid var(--aigen-border);
+  }
+
+  &.has-error {
+    border: 1px solid #f56c6c;
   }
 }
 </style>

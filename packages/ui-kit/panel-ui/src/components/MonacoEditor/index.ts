@@ -1,7 +1,7 @@
 import type { ComponentConfigModel } from '@aigen-designer/types';
 
 export default {
-  bindModel: 'model-value',
+  bindModel: 'modelValue',
   component: async () => await import('./index.vue'),
   config: {
     attribute: [
@@ -24,7 +24,7 @@ export default {
   },
   defaultSchema: {
     field: 'monacoEditor',
-    icon: 'aigen-icon-write',
+    icon: 'icon--aigen--edit-square-outline-rounded',
     input: true,
     label: '代码编辑器',
     type: 'monacoEditor',

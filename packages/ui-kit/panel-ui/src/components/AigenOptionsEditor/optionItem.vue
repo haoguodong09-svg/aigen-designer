@@ -2,7 +2,7 @@
 import { inject } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { AigenIcon } from '@aigen-designer/base-ui';
+import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 import { useVModel } from '@vueuse/core';
 
@@ -23,6 +23,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['update:modelValue']);
 const Input = pluginManager.component.get('input');
+const { bindModel } = useBindModel('input');
 const tree = inject(OPTIONS_EDITOR_TREE_KEY, false);
 const innerValue = useVModel(props, 'modelValue', emit);
 
@@ -72,14 +73,8 @@ function handleRemove(index: number) {
         class="option-item text-16px text-$aigen-text-secondary mb-2 grid items-center gap-2"
       >
         <AigenIcon class="handle mr-2 cursor-move" name="icon--aigen--drag" />
-        <Input
-          v-model:value="option.label"
-          placeholder="label"
-        />
-        <Input
-          v-model:value="option.value"
-          placeholder="value"
-        />
+        <Input v-model:[bindModel]="option.label" placeholder="label" />
+        <Input v-model:[bindModel]="option.value" placeholder="value" />
         <AigenIcon
           v-if="tree"
           class="text-lg! cursor-pointer"

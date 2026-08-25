@@ -165,5 +165,9 @@ function handleAdd(action: any) {
       </div>
     </AigenCollapsePanel>
   </AigenCollapse>
-  <aigenActionModal ref="aigenActionModalRef" @add="handleAdd" @edit="handleEdit" />
+  <aigenActionModal
+    ref="aigenActionModalRef"
+    @add="handleAdd"
+    @edit="handleEdit"
+  />
 </template>

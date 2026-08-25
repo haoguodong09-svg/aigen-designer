@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { nextTick, ref, watch } from 'vue';
 
+import { useBindModel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
 const props = defineProps<{
@@ -9,6 +10,9 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 const Input = pluginManager.component.get('input');
 const Select = pluginManager.component.get('select');
+// 统一 v-model 属性解析：input 与 select 分别读取注册的 bindModel 声明
+const inputBindModel = useBindModel('input').bindModel;
+const selectBindModel = useBindModel('select').bindModel;
 const size = ref<null | string>(null);
 const unit = ref('px');
 const unitArray = [
@@ -61,7 +65,7 @@ function handleUpdate() {
 </script>
 <template>
   <Input
-    v-model:value="size"
+    v-model:[inputBindModel]="size"
     class="aigen-input-size"
     type="number"
     min="0"
@@ -69,7 +73,7 @@ function handleUpdate() {
   >
     <template #suffix>
       <Select
-        v-model:value="unit"
+        v-model:[selectBindModel]="unit"
         style="width: 60px"
         :options="unitArray"
       />

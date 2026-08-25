@@ -8,7 +8,6 @@
     margin-bottom: 12px;
     padding: 0 16px;
 
-
     &.vertical {
       display: block;
     }
@@ -20,7 +19,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: var(--aigen-text-md); 
+      font-size: var(--aigen-text-md);
       line-height: 32px;
     }
 
@@ -33,6 +32,7 @@
   }
 }
 
-.aigen-designer-main .el-collapse .el-collapse-item__header {
+// 折叠面板头部统一 box-sizing（通用类名，不依赖具体 UI 框架的 el-collapse 类）
+.aigen-designer-main .aigen-collapse-panel__header {
   box-sizing: border-box;
 }

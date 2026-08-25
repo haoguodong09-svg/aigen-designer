@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type {
-  ComponentSchema,
   AigenNodeInstance,
+  ComponentSchema,
   FieldStateType,
 } from '@aigen-designer/types';
 
@@ -11,6 +11,7 @@ import {
   computed,
   defineComponent,
   getCurrentInstance,
+  markRaw,
   onBeforeUnmount,
   provide,
   reactive,
@@ -97,18 +98,67 @@ const innerValue = computed({
 // 设计模式模式下，添加字段后缀
 addDesignModeSuffix();
 
-// 监听 props.componentSchema 的变化，并在变化时调用 deepCompareAndModify 方法更新内部schema数据
+// 记录上一次触发组件重建的关键字段，用于判断是否需要重新初始化组件
+let prevInitKey = '';
+
+/**
+ * 生成组件重建关键字段标识。
+ * type/field/slotName 变化需要重建组件实例，defaultValue 变化需要重新应用默认值。
+ * @returns 重建标识字符串
+ */
+function getInitKey() {
+  const schema = props.componentSchema;
+  let defaultValueKey = '';
+  const defaultValue = schema?.props?.defaultValue;
+  if (typeof defaultValue === 'object' && defaultValue !== null) {
+    defaultValueKey = JSON.stringify(defaultValue);
+  } else if (defaultValue !== undefined) {
+    defaultValueKey = String(defaultValue);
+  }
+  return `${schema?.type ?? ''}|${schema?.field ?? ''}|${schema?.slotName ?? ''}|${defaultValueKey}`;
+}
+
+/**
+ * 关键字段变化时重新初始化组件。
+ * 普通 props 变化由 getProps 计算属性驱动重新渲染，无需重建组件实例。
+ */
+function maybeReinitComponent() {
+  const key = getInitKey();
+  if (key === prevInitKey) return;
+  prevInitKey = key;
+  initComponent();
+}
+
+// 监听 props.componentSchema 自身字段的变化，并同步更新内部schema数据。
+// 采用 targeted watch（仅监听当前节点自身字段），避免任意子节点变化时
+// 所有 AigenNode 实例同时触发 deepEqual + deepClone + deepCompareAndModify（O(n²×m)）；
+// children 的变化由递归模板（edit-node 插槽）自然处理，无需在此监听。
 watch(
-  () => props.componentSchema,
-  (componentSchema) => {
+  () => [
+    props.componentSchema?.type,
+    props.componentSchema?.field,
+    props.componentSchema?.label,
+    props.componentSchema?.props,
+    props.componentSchema?.rules,
+    props.componentSchema?.show,
+    props.componentSchema?.on,
+    props.componentSchema?.noFormItem,
+    props.componentSchema?.slotName,
+    props.componentSchema?.input,
+  ],
+  () => {
+    const componentSchema = props.componentSchema;
     // 深度比较对象属性值是否变更, 忽略 children 节点
     if (deepEqual(innerSchema, componentSchema, ['children'])) {
+      maybeReinitComponent();
       return;
     }
     deepCompareAndModify(innerSchema, deepClone(componentSchema, false));
     addDesignModeSuffix();
+    maybeReinitComponent();
   },
   {
+    // 深度遍历限定在当前节点自身字段（props 对象等），而非整个 schema 子树
     deep: true,
   },
 );
@@ -156,24 +206,50 @@ const checkPayload = ref<null | { message?: string; result?: boolean }>(null);
 const fieldStateType = ref<FieldStateType | null>(null);
 const fieldRequired = ref<boolean | null | undefined>(null);
 
+// 字段状态变化时更新 fieldStateType/fieldRequired。
+// 仅按当前节点自身字段 watch，fieldStateMap 重建但本节点状态对象未变时不触发，
+// 避免所有节点级联执行 condition（性能优化）。
+watch(
+  () => {
+    // 仅监听当前节点自身字段的状态对象；field 名变化时 getter 重新求值
+    const fieldName = innerSchema?.field;
+    return fieldName ? fieldStateMap.value?.[fieldName] : undefined;
+  },
+  (currentFieldState) => {
+    if (!currentFieldState) {
+      fieldStateType.value = null;
+      fieldRequired.value = null;
+      return;
+    }
+
+    const { condition, required, state } = currentFieldState;
+    if (typeof condition === 'function') {
+      // 条件型字段状态：值随表单数据变化，由下方 watchEffect 实时求值
+      const matched = condition(formData);
+      fieldStateType.value = matched ? state : null;
+      fieldRequired.value = matched ? required : null;
+    } else {
+      fieldStateType.value = state;
+      fieldRequired.value = required;
+    }
+  },
+  {
+    immediate: true,
+  },
+);
+
+// 条件型字段状态依赖表单数据：仅存在 condition 的节点订阅 formData 变化，
+// 无规则节点不订阅数据变化，避免级联执行 condition（性能优化）。
 watchEffect(() => {
   const fieldName = innerSchema?.field;
   const currentFieldState = fieldName && fieldStateMap.value?.[fieldName];
-
-  if (!currentFieldState) {
-    fieldStateType.value = null;
-    fieldRequired.value = null;
+  if (!currentFieldState || typeof currentFieldState.condition !== 'function') {
     return;
   }
 
-  const { condition, required, state } = currentFieldState;
-  if (typeof condition === 'function') {
-    fieldStateType.value = condition(formData) ? state : null;
-    fieldRequired.value = condition(formData) ? required : null;
-  } else {
-    fieldStateType.value = state;
-    fieldRequired.value = required;
-  }
+  const matched = currentFieldState.condition(formData);
+  fieldStateType.value = matched ? currentFieldState.state : null;
+  fieldRequired.value = matched ? currentFieldState.required : null;
 });
 
 const show = computed(() => {
@@ -272,9 +348,11 @@ const getFormItemProps = computed<ComponentSchema>(() => {
 
 // 获取组件原配置
 const getComponentConfig = computed(() => {
-  return (
-    pluginManager.component.getComponentConfigByType(innerSchema.type) ?? null
+  const config = pluginManager.component.getComponentConfigByType(
+    innerSchema.type,
   );
+  // 组件配置为静态元数据（type/icon 等不可变字段），标记为 raw 避免不必要的响应式追踪
+  return config ? markRaw(config) : null;
 });
 
 const hasFormItem = computed(() => {
@@ -398,7 +476,8 @@ async function initComponent() {
   if (innerSchema.props?.defaultValue !== undefined) {
     const defaultValue = pageManager.isDesignMode.value
       ? innerSchema.props?.defaultValue
-      : (formData[innerSchema.field!] ?? innerSchema.props?.defaultValue);
+      : (getValueByPath(formData, innerSchema.field!) ??
+        innerSchema.props?.defaultValue);
 
     handleUpdate(deepClone(defaultValue), true);
   }
@@ -468,24 +547,12 @@ function handleUpdate(value: any, isInit?: boolean) {
   emit('change', value);
 }
 
-let oldData: null | string = null;
-// 需要监听值变化，重新渲染组件
-watch(
-  () => innerSchema,
-  (newVal) => {
-    // 过滤所有子节点
-    const newData = JSON.stringify({ ...newVal, children: undefined });
-    if (newData === oldData) {
-      return false;
-    }
-    oldData = newData;
-    initComponent();
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+// 组件实例重建由上面 targeted watch 内的 maybeReinitComponent 驱动：
+// 以关键字段（type/field/slotName/defaultValue）替代 innerSchema 的 JSON.stringify
+// 序列化检测，避免每次变化都对整棵 schema 做 O(n×m) 的序列化比较。
+
+// 初始化组件（type/field/slotName/defaultValue 变化时由 maybeReinitComponent 驱动重建）
+maybeReinitComponent();
 
 // 添加组件实例
 handleAddComponentInstance();

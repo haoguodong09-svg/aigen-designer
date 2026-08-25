@@ -3,10 +3,11 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import type { TreeProps } from './types';
 
-import { computed, provide, ref, useSlots } from 'vue';
+import { computed, provide, ref, useSlots, watch } from 'vue';
 
-import { AigenIcon } from '@aigen-designer/base-ui';
+import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
+import { debounce } from '@aigen-designer/utils';
 
 import AigenTreeNodes from './treeNodes.vue';
 import { TREE_CONTEXT_KEY } from './useTreeContext';
@@ -26,8 +27,11 @@ const emits = defineEmits(['update:selectedKeys', 'nodeClick']);
 const slots = useSlots();
 
 const Input = pluginManager.component.get('input');
+const { bindModel } = useBindModel('input');
 
 const keyword = ref('');
+// 搜索关键字（防抖后用于过滤，避免每次按键递归过滤整棵树）
+const filterKeyword = ref('');
 const expandedKeys = ref([]);
 const selectedKeysComputed = computed({
   get() {
@@ -38,9 +42,15 @@ const selectedKeysComputed = computed({
   },
 });
 
+// 输入防抖 150ms 后进入过滤计算
+const debouncedSetKeyword = debounce((value: string) => {
+  filterKeyword.value = value;
+}, 150);
+watch(keyword, (value) => debouncedSetKeyword(value));
+
 const getTreeData = computed({
   get() {
-    return filterTreeByLabel(props.options, keyword.value);
+    return filterTreeByLabel(props.options, filterKeyword.value);
   },
   set() {
     // console.log(e);
@@ -90,7 +100,7 @@ provide(TREE_CONTEXT_KEY, {
     <!-- 搜素框 start -->
     <div class="aigen-search-box px-10px py-6px">
       <Input
-        v-model:value="keyword"
+        v-model:[bindModel]="keyword"
         placeholder="搜索节点"
         clearable
         allow-clear

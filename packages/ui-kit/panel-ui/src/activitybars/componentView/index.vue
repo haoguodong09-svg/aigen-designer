@@ -1,31 +1,51 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
-import { AigenCollapse, AigenCollapsePanel, AigenIcon } from '@aigen-designer/base-ui';
+import {
+  AigenCollapse,
+  AigenCollapsePanel,
+  AigenIcon,
+  useBindModel,
+} from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import { findSchemaInfoById, generateNewSchema } from '@aigen-designer/utils';
+import {
+  debounce,
+  findSchemaInfoById,
+  generateNewSchema,
+} from '@aigen-designer/utils';
 import { useStorage } from '@vueuse/core';
 
 const Input = pluginManager.component.get('input');
+const { bindModel } = useBindModel('input');
 const designer = useDesignerContext();
 const revoke = designer.revoke;
 const pageSchema = designer.pageSchema;
 const groups = pluginManager.component.getComponentSchemaGroups();
 const keyword = ref('');
+// 搜索关键字（防抖后用于过滤，避免每次按键对组件列表进行过滤计算）
+const filterKeyword = ref('');
 const activeKeys = useStorage('aigen-component-view-keys', []);
 
 /**
  * 计算组件分类列表
  */
+// 输入防抖 150ms 后进入过滤计算
+const debouncedSetKeyword = debounce((value: string) => {
+  filterKeyword.value = value;
+}, 150);
+watch(keyword, (value) => debouncedSetKeyword(value));
+
 const getSchemaTypeList = computed(() => {
   return groups.value
     .map((item) => ({
       ...item,
-      list: item.list.filter((item) => item.label?.includes(keyword.value)),
+      list: item.list.filter((item) =>
+        item.label?.includes(filterKeyword.value),
+      ),
     }))
     .filter((item) => item.list.length > 0);
 });
@@ -65,7 +85,7 @@ function handleClick(schema: ComponentSchema) {
     <!-- 搜素框 start -->
     <div class="aigen-search-box px-10px py-2">
       <Input
-        v-model:value="keyword"
+        v-model:[bindModel]="keyword"
         placeholder="搜索组件"
         clearable
         allow-clear

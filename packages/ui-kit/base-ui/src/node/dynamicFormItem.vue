@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ComponentSchema, AigenNodeInstance } from '@aigen-designer/types';
+import type { AigenNodeInstance, ComponentSchema } from '@aigen-designer/types';
 
 import type { VNode } from 'vue';
 
@@ -39,17 +39,27 @@ const addFormItemInstance = (vNode: VNode) => {
 </script>
 
 <template>
-  <!-- 如果有 FormItem，则包裹 slot，否则直接渲染 slot -->
-  <FormItem
+  <!-- 根节点必须是元素（display: contents 不产生盒子、不影响布局）：
+       设计器节点链上可能存在运行时指令（如父级 v-show / 组件库内部指令），
+       若根是非元素（组件/slot），Vue 会告警 "Runtime directive used on
+       component with non-element root node" 且指令无法生效。 -->
+  <div
     v-if="props.hasFormItem"
-    :check-payload="props.checkPayload"
-    v-bind="props.formItemProps"
-    :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
-    @vue:mounted="addFormItemInstance"
+    class="aigen-form-item-wrap"
+    style="display: contents"
   >
-    <slot></slot>
-  </FormItem>
+    <FormItem
+      :check-payload="props.checkPayload"
+      v-bind="props.formItemProps"
+      :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
+      @vue:mounted="addFormItemInstance"
+    >
+      <slot></slot>
+    </FormItem>
+  </div>
   <!-- 无FormItem start -->
-  <slot v-else></slot>
+  <div v-else class="aigen-form-item-wrap" style="display: contents">
+    <slot></slot>
+  </div>
   <!-- 无FormItem end -->
 </template>
