@@ -194,6 +194,33 @@ const selectedAttrSchema = computed(() => {
   );
 });
 
+/** setAttr 属性值为 select 下拉（如 输入类型/尺寸）：用原生 select 渲染。
+ * antd 下拉弹层默认挂 body 且 z-index 1050，会被抽屉遮罩（z-index 2990）盖住，
+ * 导致无法弹出选择，故此处不经过 AigenNode/antd 弹层控件 */
+const attrValueIsSelect = computed(
+  () => selectedAttrSchema.value?.type === 'select',
+);
+
+const attrValueOptions = computed(() => {
+  const options = selectedAttrSchema.value?.props?.options;
+  if (!Array.isArray(options)) return [];
+  return options.map((opt) => {
+    if (typeof opt === 'object' && opt !== null) {
+      const record = opt as Record<string, unknown>;
+      return {
+        label: String(record.label ?? record.value ?? ''),
+        value: record.value ?? record.label,
+      };
+    }
+    return { label: String(opt), value: opt };
+  });
+});
+
+const attrValueSelectModel = computed({
+  get: () => argsArray.value[1] as string,
+  set: (value: string) => setArg(1, value),
+});
+
 /**
  * 清除表达式，恢复为直接值编辑。
  * 按对应属性的控件类型给合理默认值（switch/checkbox → false，其余 → 空字符串），
@@ -371,6 +398,20 @@ const delayText = computed({
                 改为直接值
               </button>
             </div>
+            <select
+              v-else-if="attrValueIsSelect"
+              v-model="attrValueSelectModel"
+              class="aigen-step-args-select"
+            >
+              <option value="" disabled>请选择</option>
+              <option
+                v-for="opt in attrValueOptions"
+                :key="String(opt.value)"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
             <AigenNode
               v-else
               is-property
