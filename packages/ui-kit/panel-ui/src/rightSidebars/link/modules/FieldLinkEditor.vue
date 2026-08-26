@@ -371,25 +371,61 @@ function handleSave() {
 }
 
 function handleDelete(entry: LinkEntry) {
+  const snapshot = structuredClone(entry.link);
+  const ownerId = entry.ownerId;
   removeLinkFromOwner(entry.ownerId, entry.link.id);
-  // WP-C 契约：按 linkId 从源元素 on[change] 过滤编译动作
   removeCompiledActionsFromOwner(entry.ownerId, entry.link.id);
   if (editingEntry.value?.link.id === entry.link.id) {
     formVisible.value = false;
     editingEntry.value = null;
   }
-  revoke.push('关联编辑');
+  revoke.push({
+    redo: () => {
+      removeLinkFromOwner(ownerId, snapshot.id);
+      removeCompiledActionsFromOwner(ownerId, snapshot.id);
+    },
+    type: '关联编辑',
+    undo: () => {
+      const owner = findSchemaByIdSafe(ownerId);
+      if (owner) {
+        owner.links = owner.links || [];
+        owner.links.push(structuredClone(snapshot));
+        resyncLinksToOn(owner);
+      }
+    },
+  });
 }
 
 function handleToggle(entry: LinkEntry, enabled: boolean) {
   const owner = findSchemaByIdSafe(entry.ownerId);
   if (!owner || !Array.isArray(owner.links)) return;
+  const prevEnabled = entry.link.enabled;
   owner.links = owner.links.map((item) =>
     item.id === entry.link.id ? { ...item, enabled } : item,
   );
   // 启停用后同步编译产物：停用规则不编译（移除），启用规则重建（按 linkId 定位）
   resyncLinksToOn(owner);
-  revoke.push('关联编辑');
+  revoke.push({
+    redo: () => {
+      const o = findSchemaByIdSafe(entry.ownerId);
+      if (o && Array.isArray(o.links)) {
+        o.links = o.links.map((item) =>
+          item.id === entry.link.id ? { ...item, enabled } : item,
+        );
+        resyncLinksToOn(o);
+      }
+    },
+    type: '关联编辑',
+    undo: () => {
+      const o = findSchemaByIdSafe(entry.ownerId);
+      if (o && Array.isArray(o.links)) {
+        o.links = o.links.map((item) =>
+          item.id === entry.link.id ? { ...item, enabled: prevEnabled } : item,
+        );
+        resyncLinksToOn(o);
+      }
+    },
+  });
 }
 
 function handleToggleChange(entry: LinkEntry, event: Event) {
