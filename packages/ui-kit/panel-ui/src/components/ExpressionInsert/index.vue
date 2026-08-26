@@ -138,10 +138,9 @@ function handleCancel() {
   emit('update:visible', false);
 }
 
-// Esc 关闭（捕获阶段优先于抽屉的 Esc 监听，避免连带关闭抽屉）
+// Esc 关闭（不再 stopPropagation，允许抽屉同时响应 Escape 关闭）
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && props.visible) {
-    event.stopPropagation();
     emit('update:visible', false);
   }
 }
