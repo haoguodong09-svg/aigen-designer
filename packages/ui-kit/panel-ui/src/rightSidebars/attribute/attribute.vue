@@ -7,6 +7,7 @@ import { pluginManager } from '@aigen-designer/manager';
 import { useClipboard } from '@vueuse/core';
 
 import AigenAttributeItem from './modules/attributeItem.vue';
+import ComputedFieldEditor from './modules/computedFieldEditor.vue';
 
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
@@ -54,6 +55,12 @@ const componentAttributes = computed(() => {
 
   return allAttributes;
 });
+
+/** 计算字段区块显示条件：输入型组件且配置了 field 时展示（非输入元素不显示） */
+const showComputedSection = computed(() => {
+  const node = selectedNode.value;
+  return Boolean(node && node.input === true && node.field);
+});
 </script>
 <template>
   <div :key="selectedNode?.id" class="aigen-attribute-view">
@@ -89,5 +96,19 @@ const componentAttributes = computed(() => {
     <div v-for="item in componentAttributes" :key="item.field">
       <AigenAttributeItem :schema="item" />
     </div>
+    <!-- 计算字段 start（方案C-E2：公式字段配置在字段属性里，仅输入型组件展示） -->
+    <div
+      v-if="showComputedSection"
+      :key="`computed-${selectedNode?.id}`"
+      class="aigen-attr-item mt-2 flex h-8 items-center px-4"
+    >
+      <div class="aigen-attr-label">计算字段</div>
+    </div>
+    <ComputedFieldEditor
+      v-if="showComputedSection"
+      :key="`computed-editor-${selectedNode?.id}`"
+      :target-field="selectedNode?.field ?? ''"
+    />
+    <!-- 计算字段 end -->
   </div>
 </template>

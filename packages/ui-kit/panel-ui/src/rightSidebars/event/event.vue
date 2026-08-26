@@ -7,6 +7,9 @@ import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { getValueByPath, setValueByPath } from '@aigen-designer/utils';
 
+import EventBusView from '../link/modules/EventBusView.vue';
+import FieldLinkEditor from '../link/modules/FieldLinkEditor.vue';
+
 const designer = useDesignerContext();
 const revoke = designer.revoke;
 const AigenActionEditor = pluginManager.component.get('AigenActionEditor');
@@ -16,6 +19,17 @@ interface AigenActionEditorExpose {
   openAdd: (type: string) => void;
 }
 const editorRef = ref<AigenActionEditorExpose | null>(null);
+
+// 行为面板内部页签（方案C-E1）：行为（事件动作）| 联动（字段联动 + 事件总线）
+type EventTab = 'behavior' | 'link';
+
+const TABS: Array<{ key: EventTab; title: string }> = [
+  { key: 'behavior', title: '行为' },
+  { key: 'link', title: '联动' },
+];
+
+// 默认展示「行为」页；切到「联动」时 v-if 切换使子模块重新挂载，联动列表天然自动刷新
+const activeTab = ref<EventTab>('behavior');
 
 const componentConfigs = pluginManager.component.getComponentConfigs();
 const selectedNode = computed(() => {
@@ -194,55 +208,122 @@ function handleSetValue(value: any, field: string) {
 
 <template>
   <div class="aigen-event-view">
-    <div v-if="selectedNode">
-      <!-- 快捷上手模板：仅当没有任何动作时作为辅助入口展示（事件列表始终可见） -->
-      <div
-        v-if="!hasAnyAction && filteredTemplates.length"
-        class="aigen-event-empty"
+    <!-- 内部页签：行为 | 联动（原「关联与计算」右侧页签已并入本面板，方案C-E1） -->
+    <div class="aigen-event-tabs">
+      <button
+        v-for="tab in TABS"
+        :key="tab.key"
+        type="button"
+        class="aigen-event-tab"
+        :class="{ 'aigen-event-tab--active': activeTab === tab.key }"
+        @click="activeTab = tab.key"
       >
-        <div class="aigen-event-empty__title">快捷上手</div>
-        <div class="aigen-event-empty__desc">
-          从常用场景开始，或点击下方事件旁的 ＋ 手动添加
-        </div>
-        <div
-          v-for="template in filteredTemplates"
-          :key="template.eventType"
-          class="aigen-event-empty__item"
-          @click="handleEmptyTemplateClick(template.eventType)"
-        >
-          {{ template.text }}
-        </div>
-      </div>
-      <AigenActionEditor
-        ref="editorRef"
-        :key="selectedNode.id"
-        :event-list="eventList"
-        :model-value="getValueByPath(selectedNode!, `on`)"
-        @update:model-value="handleSetValue($event, `on`)"
-      />
+        {{ tab.title }}
+      </button>
     </div>
-    <!-- 联动能力引导：更多跨元素联动（字段联动 / 计算字段 / 事件总线）在「关联与计算」面板 -->
-    <div class="aigen-event-link-hint">
-      更多联动能力：切换到右侧『关联与计算』页签
+
+    <!-- 行为页：快捷上手模板 + 事件动作编辑（保持原样） -->
+    <div v-if="activeTab === 'behavior'">
+      <div v-if="selectedNode">
+        <!-- 快捷上手模板：仅当没有任何动作时作为辅助入口展示（事件列表始终可见） -->
+        <div
+          v-if="!hasAnyAction && filteredTemplates.length"
+          class="aigen-event-empty"
+        >
+          <div class="aigen-event-empty__title">快捷上手</div>
+          <div class="aigen-event-empty__desc">
+            从常用场景开始，或点击下方事件旁的 ＋ 手动添加
+          </div>
+          <div
+            v-for="template in filteredTemplates"
+            :key="template.eventType"
+            class="aigen-event-empty__item"
+            @click="handleEmptyTemplateClick(template.eventType)"
+          >
+            {{ template.text }}
+          </div>
+        </div>
+        <AigenActionEditor
+          ref="editorRef"
+          :key="selectedNode.id"
+          :event-list="eventList"
+          :model-value="getValueByPath(selectedNode!, `on`)"
+          @update:model-value="handleSetValue($event, `on`)"
+        />
+      </div>
+    </div>
+
+    <!-- 联动页：字段联动 + 事件总线（设计态仅保存与预览，不触发运行时事件） -->
+    <div v-else class="aigen-event-link-body">
+      <div class="aigen-event-link-desc">
+        联动规则在设计态仅保存与预览，不触发任何运行时事件；保存后经运行时编译，在预览与发布环境生效。
+      </div>
+      <FieldLinkEditor />
+      <div class="aigen-event-link-separator"></div>
+      <EventBusView />
     </div>
   </div>
 </template>
 
 <style scoped>
 .aigen-event-view {
-  padding: 4px 0;
+  padding: 4px 0 12px;
 }
 
-/* 底部引导：更多联动能力见「关联与计算」页签 */
-.aigen-event-link-hint {
-  margin: 8px 12px 4px;
-  padding: 6px 10px;
+/* 内部页签栏（样式与 link.vue 页签一致：aigen-* 前缀 + 激活态高亮） */
+.aigen-event-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 12px 8px;
+  padding: 3px;
+  background: var(--aigen-secondary, #f5f6f8);
+  border: 1px solid var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+}
+
+.aigen-event-tab {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--aigen-text-secondary);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+}
+
+.aigen-event-tab:hover {
+  color: var(--aigen-primary);
+}
+
+.aigen-event-tab--active {
+  color: var(--aigen-primary);
+  font-weight: 500;
+  background: var(--aigen-background, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* 联动页：说明文案 + 子模块左右留白（与旧 link 面板 body 一致） */
+.aigen-event-link-body {
+  padding: 0 12px 12px;
+}
+
+.aigen-event-link-desc {
+  margin-bottom: 10px;
+  padding: 8px 10px;
   font-size: 12px;
   line-height: 1.6;
   color: var(--aigen-text-helper);
   background: var(--aigen-secondary, #f5f6f8);
-  border: 1px dashed var(--aigen-border);
+  border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius, 6px);
+}
+
+/* 字段联动 与 事件总线 之间的分隔线 */
+.aigen-event-link-separator {
+  height: 1px;
+  margin: 12px 0;
+  background: var(--aigen-border);
 }
 
 /* 快捷上手模板（事件列表上方，仅无动作时展示） */

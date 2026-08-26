@@ -3,7 +3,7 @@ import type { ComponentSchema, ComputedField } from '@aigen-designer/types';
 
 import type { ExpressionField } from '../../../components/AigenActionDrawer/helper';
 
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { findSchemas, FormulaEngine, getUUID } from '@aigen-designer/utils';
@@ -12,23 +12,32 @@ import {
   buildMockFormData,
   formatPreviewValue,
 } from '../../../components/AigenActionDrawer/helper';
-import { parseComputedDependencies } from './linkHelper';
+import { parseComputedDependencies } from '../../link/modules/linkHelper';
 
 /**
- * 计算字段子模块（B4.3）：
- * - 列表：目标字段 = 公式；
- * - 新建 / 编辑：目标字段（页面输入组件字段）+ 公式编辑 + 实时预览 + 依赖字段自动解析；
- * - 保存写入 pageSchema.computed（ComputedField，id = getUUID()，enabled 默认 true），经 revoke.push 入撤销栈。
- * 运行期由 P3 页面级求值器（WP-C：依赖字段变化即重算 → setValueByPath(formData, targetField)）接管；
- * 本模块只做设计态数据读写与求值展示（预览基于模拟数据，不触发任何运行时事件）。
+ * 计算字段编辑器（方案C-E2：计算字段由独立 link_view 面板迁移至元素属性面板，
+ * 钉钉宜搭模式：公式字段配置在字段属性里）。
+ * - props.targetField：当前选中元素的 field，本模块只展示该元素的计算字段；
+ * - 列表：pageSchema.computed 中 targetField === props.targetField 的条目（一个元素通常一条，
+ *   显示公式 + 启停用 + 编辑/删除）；
+ * - 新建 / 编辑：目标字段只读展示（当前元素 label（field））+ 公式编辑 + FormulaEngine 实时预览
+ *   （buildMockFormData 模拟数据）+ 依赖字段自动解析（parseComputedDependencies）；
+ * - 保存：ComputedField { id: editingId || getUUID(), targetField: props.targetField, expression, enabled: true }
+ *   → 更新 pageSchema.computed + revoke.push('计算字段')；校验：公式必填、预览错误提示。
+ * 设计态安全：预览基于模拟数据仅做求值展示，不触发任何运行时事件；
+ * 运行期由 P3 页面级求值器（WP-C：依赖字段变化即重算 → setValueByPath(formData, targetField)）接管。
  */
+const props = defineProps<{
+  targetField: string;
+}>();
+
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
 const revoke = designer.revoke;
 
 const formulaEngine = new FormulaEngine();
 
-/** 页面输入组件字段（label + field + type） */
+/** 页面输入组件字段（label + field + type）——供 buildMockFormData 构造模拟数据 */
 const inputFields = computed<ExpressionField[]>(() => {
   const schemas = findSchemas(
     pageSchema.schemas,
@@ -41,21 +50,41 @@ const inputFields = computed<ExpressionField[]>(() => {
   }));
 });
 
-/** 计算字段列表 */
-const computedFields = computed<ComputedField[]>(
-  () => pageSchema.computed ?? [],
+/** 目标字段展示名：当前选中元素 label（field），从 useDesignerContext 的 selectedNode 取 label */
+const targetFieldLabel = computed(() => {
+  const node = designer.state.selectedNode;
+  return node?.label ?? props.targetField;
+});
+
+/** 当前元素的计算字段列表（按 targetField 过滤） */
+const computedFields = computed<ComputedField[]>(() =>
+  (pageSchema.computed ?? []).filter(
+    (c) => c.targetField === props.targetField,
+  ),
 );
 
-/** 新建 / 编辑表单草稿 */
+/** 新建 / 编辑表单草稿（目标字段固定为当前元素，无需选择） */
 interface ComputedDraft {
   expression: string;
-  targetField: string;
 }
 
 const formVisible = ref(false);
 const editingId = ref('');
 const formError = ref('');
-const draft = reactive<ComputedDraft>({ expression: '', targetField: '' });
+const draft = reactive<ComputedDraft>({ expression: '' });
+
+/** 目标字段切换时重置表单（防御性：正常情况下父级按 selectedNode.id 重建本组件） */
+watch(
+  () => props.targetField,
+  () => {
+    if (formVisible.value) {
+      formVisible.value = false;
+      editingId.value = '';
+      draft.expression = '';
+      formError.value = '';
+    }
+  },
+);
 
 /** 实时预览（设计态安全：基于模拟数据求值，仅展示，不触发运行时事件） */
 const preview = computed(() => {
@@ -80,24 +109,16 @@ const dependencies = computed(() =>
   parseComputedDependencies(draft.expression),
 );
 
-function getTargetFieldLabel(field: string): string {
-  const item = inputFields.value.find((f) => f.field === field);
-  return item ? item.label : field;
-}
-
 function handleCreate() {
   editingId.value = '';
-  Object.assign(draft, { expression: '', targetField: '' });
+  draft.expression = '';
   formError.value = '';
   formVisible.value = true;
 }
 
 function handleEdit(item: ComputedField) {
   editingId.value = item.id;
-  Object.assign(draft, {
-    expression: item.expression,
-    targetField: item.targetField,
-  });
+  draft.expression = item.expression;
   formError.value = '';
   formVisible.value = true;
 }
@@ -109,14 +130,13 @@ function handleCancel() {
 
 function handleSave() {
   formError.value = '';
-  const targetField = draft.targetField;
-  if (!targetField) {
-    formError.value = '请选择目标字段';
-    return;
-  }
   const expression = draft.expression.trim();
   if (!expression) {
     formError.value = '请输入计算公式';
+    return;
+  }
+  if (preview.value.state === 'error') {
+    formError.value = preview.value.text;
     return;
   }
 
@@ -124,13 +144,13 @@ function handleSave() {
     enabled: true,
     expression,
     id: editingId.value || getUUID(),
-    targetField,
+    targetField: props.targetField,
   };
   const list = pageSchema.computed ?? [];
   pageSchema.computed = editingId.value
     ? list.map((c) => (c.id === item.id ? item : c))
     : [...list, item];
-  revoke.push('计算字段编辑');
+  revoke.push('计算字段');
   formVisible.value = false;
   editingId.value = '';
 }
@@ -143,14 +163,14 @@ function handleDelete(item: ComputedField) {
     formVisible.value = false;
     editingId.value = '';
   }
-  revoke.push('计算字段编辑');
+  revoke.push('计算字段');
 }
 
 function handleToggle(item: ComputedField, enabled: boolean) {
   pageSchema.computed = (pageSchema.computed ?? []).map((c) =>
     c.id === item.id ? { ...c, enabled } : c,
   );
-  revoke.push('计算字段编辑');
+  revoke.push('计算字段');
 }
 
 function handleToggleChange(item: ComputedField, event: Event) {
@@ -159,22 +179,16 @@ function handleToggleChange(item: ComputedField, event: Event) {
 </script>
 
 <template>
-  <div class="aigen-link-computed">
-    <!-- 模块头：标题 + 新建 -->
-    <div class="aigen-link-module-head">
-      <span class="aigen-link-module-title">计算字段</span>
-      <button type="button" class="aigen-link-add-btn" @click="handleCreate">
-        + 新建
-      </button>
-    </div>
-
+  <div class="aigen-attr-computed">
     <!-- 计算字段列表 -->
-    <div v-if="computedFields.length" class="aigen-link-list">
+    <div v-if="computedFields.length" class="aigen-attr-computed__list">
       <div
         v-for="item in computedFields"
         :key="item.id"
-        class="aigen-link-item"
-        :class="{ 'aigen-link-item--disabled': item.enabled === false }"
+        class="aigen-attr-computed__item"
+        :class="{
+          'aigen-attr-computed__item--disabled': item.enabled === false,
+        }"
       >
         <label
           class="aigen-switch aigen-switch--small"
@@ -189,24 +203,21 @@ function handleToggleChange(item: ComputedField, event: Event) {
           />
           <span class="aigen-switch__slider"></span>
         </label>
-        <div class="aigen-link-item__main">
-          <div class="aigen-link-item__summary" :title="item.targetField">
-            {{ getTargetFieldLabel(item.targetField) }} =
-          </div>
+        <div class="aigen-attr-computed__item-main">
           <div
-            class="aigen-link-item__summary aigen-link-item__summary--action"
+            class="aigen-attr-computed__item-summary"
             :title="item.expression"
           >
-            {{ item.expression }}
+            = {{ item.expression }}
           </div>
         </div>
-        <div class="aigen-link-item__ops">
+        <div class="aigen-attr-computed__item-ops">
           <button type="button" title="编辑" @click="handleEdit(item)">
             编辑
           </button>
           <button
             type="button"
-            class="aigen-link-item__del"
+            class="aigen-attr-computed__item-del"
             title="删除"
             @click="handleDelete(item)"
           >
@@ -215,67 +226,74 @@ function handleToggleChange(item: ComputedField, event: Event) {
         </div>
       </div>
     </div>
-    <div v-else class="aigen-link-empty">
-      暂无计算字段，点击右上角「+ 新建」添加
-    </div>
+    <div v-else class="aigen-attr-computed__empty">暂无计算字段</div>
+
+    <!-- 新建 -->
+    <button
+      type="button"
+      class="aigen-attr-computed__add"
+      @click="handleCreate"
+    >
+      ＋ 新建计算字段
+    </button>
 
     <!-- 新建 / 编辑表单（内联展开） -->
-    <div v-if="formVisible" class="aigen-link-form">
-      <div class="aigen-link-form__row">
-        <span class="aigen-link-form__label">目标字段</span>
-        <select v-model="draft.targetField" class="aigen-link-select">
-          <option value="" disabled>请选择目标字段</option>
-          <option
-            v-for="item in inputFields"
-            :key="item.field"
-            :value="item.field"
-          >
-            {{ item.label }}（{{ item.field }}）
-          </option>
-        </select>
+    <div v-if="formVisible" class="aigen-attr-computed__form">
+      <!-- 目标字段只读展示（当前元素 label（field）） -->
+      <div class="aigen-attr-computed__row">
+        <span class="aigen-attr-computed__row-label">目标字段</span>
+        <div class="aigen-attr-computed__row-value">
+          {{ targetFieldLabel }}（{{ targetField }}）
+        </div>
       </div>
 
-      <div class="aigen-link-form__row aigen-link-form__row--top">
-        <span class="aigen-link-form__label">计算公式</span>
+      <div class="aigen-attr-computed__row aigen-attr-computed__row--top">
+        <span class="aigen-attr-computed__row-label">计算公式</span>
         <textarea
           v-model="draft.expression"
-          class="aigen-link-textarea"
+          class="aigen-attr-computed__textarea"
           placeholder="如：$formData.qty * $formData.price"
           spellcheck="false"
         ></textarea>
       </div>
 
       <!-- 依赖字段自动解析 -->
-      <div v-if="dependencies.length" class="aigen-link-form__deps">
-        <span class="aigen-link-form__deps-label">依赖字段：</span>
+      <div v-if="dependencies.length" class="aigen-attr-computed__deps">
+        <span class="aigen-attr-computed__deps-label">依赖字段：</span>
         <span
           v-for="dep in dependencies"
           :key="dep"
-          class="aigen-link-form__dep"
+          class="aigen-attr-computed__dep"
         >
           $formData.{{ dep }}
         </span>
       </div>
 
       <!-- 实时预览 -->
-      <div class="aigen-link-form__preview">
-        <div class="aigen-link-form__preview-label">实时预览</div>
+      <div class="aigen-attr-computed__preview">
+        <div class="aigen-attr-computed__preview-label">实时预览</div>
         <template v-if="preview.state === 'empty'">
-          <span class="aigen-link-form__preview-hint">{{ preview.text }}</span>
+          <span class="aigen-attr-computed__preview-hint">
+            {{ preview.text }}
+          </span>
         </template>
         <template v-else-if="preview.state === 'error'">
-          <span class="aigen-link-form__preview-error">{{ preview.text }}</span>
+          <span class="aigen-attr-computed__preview-error">
+            {{ preview.text }}
+          </span>
         </template>
         <template v-else>
-          <span class="aigen-link-form__preview-value">{{ preview.text }}</span>
+          <span class="aigen-attr-computed__preview-value">
+            {{ preview.text }}
+          </span>
         </template>
       </div>
 
-      <div class="aigen-link-form__footer">
-        <span v-if="formError" class="aigen-link-form__error">
+      <div class="aigen-attr-computed__footer">
+        <span v-if="formError" class="aigen-attr-computed__error">
           {{ formError }}
         </span>
-        <div class="aigen-link-form__actions">
+        <div class="aigen-attr-computed__actions">
           <button
             type="button"
             class="aigen-btn aigen-btn--secondary"
@@ -297,42 +315,20 @@ function handleToggleChange(item: ComputedField, event: Event) {
 </template>
 
 <style scoped>
-/* 模块头 */
-.aigen-link-module-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.aigen-link-module-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--aigen-text-main);
-}
-
-.aigen-link-add-btn {
-  padding: 3px 10px;
-  font-size: 12px;
-  color: var(--aigen-primary);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--aigen-primary);
-  border-radius: var(--aigen-radius, 6px);
-}
-
-.aigen-link-add-btn:hover {
-  opacity: 0.85;
+/* 计算字段区块（迁移至元素属性面板后，aigen-* 前缀；布局参照 attributeItem：label 左侧、控件右侧） */
+.aigen-attr-computed {
+  padding: 0 16px 12px;
 }
 
 /* 列表 */
-.aigen-link-list {
+.aigen-attr-computed__list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-bottom: 8px;
 }
 
-.aigen-link-item {
+.aigen-attr-computed__item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -342,17 +338,18 @@ function handleToggleChange(item: ComputedField, event: Event) {
   border-radius: var(--aigen-radius, 6px);
 }
 
-.aigen-link-item--disabled {
+.aigen-attr-computed__item--disabled {
   opacity: 0.55;
 }
 
-.aigen-link-item__main {
+.aigen-attr-computed__item-main {
   flex: 1;
   min-width: 0;
 }
 
-.aigen-link-item__summary {
+.aigen-attr-computed__item-summary {
   overflow: hidden;
+  font-family: monospace;
   font-size: 12px;
   line-height: 1.6;
   color: var(--aigen-text-main);
@@ -360,18 +357,13 @@ function handleToggleChange(item: ComputedField, event: Event) {
   white-space: nowrap;
 }
 
-.aigen-link-item__summary--action {
-  color: var(--aigen-text-secondary);
-  font-family: monospace;
-}
-
-.aigen-link-item__ops {
+.aigen-attr-computed__item-ops {
   display: flex;
   flex-shrink: 0;
   gap: 4px;
 }
 
-.aigen-link-item__ops button {
+.aigen-attr-computed__item-ops button {
   padding: 2px 6px;
   font-size: 12px;
   color: var(--aigen-text-secondary);
@@ -381,23 +373,40 @@ function handleToggleChange(item: ComputedField, event: Event) {
   border-radius: 4px;
 }
 
-.aigen-link-item__ops button:hover {
+.aigen-attr-computed__item-ops button:hover {
   color: var(--aigen-primary);
 }
 
-.aigen-link-item__ops .aigen-link-item__del:hover {
+.aigen-attr-computed__item-ops .aigen-attr-computed__item-del:hover {
   color: var(--aigen-destructive);
 }
 
-.aigen-link-empty {
-  padding: 16px 0;
+.aigen-attr-computed__empty {
+  padding: 10px 0;
   font-size: 12px;
   color: var(--aigen-text-helper);
   text-align: center;
 }
 
+/* 新建按钮（虚线全宽，属性面板常见新增交互） */
+.aigen-attr-computed__add {
+  width: 100%;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--aigen-primary);
+  cursor: pointer;
+  background: transparent;
+  border: 1px dashed var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+}
+
+.aigen-attr-computed__add:hover {
+  border-color: var(--aigen-primary);
+  opacity: 0.85;
+}
+
 /* 表单 */
-.aigen-link-form {
+.aigen-attr-computed__form {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -408,41 +417,36 @@ function handleToggleChange(item: ComputedField, event: Event) {
   border-radius: var(--aigen-radius, 6px);
 }
 
-.aigen-link-form__row {
+.aigen-attr-computed__row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.aigen-link-form__row--top {
+.aigen-attr-computed__row--top {
   align-items: flex-start;
 }
 
-.aigen-link-form__label {
+/* label 左侧、控件右侧（与 attributeItem 的 80px 标签宽度对齐） */
+.aigen-attr-computed__row-label {
   flex-shrink: 0;
-  width: 64px;
+  width: 80px;
   font-size: 12px;
+  line-height: 32px;
   color: var(--aigen-text-main);
 }
 
-.aigen-link-select {
+.aigen-attr-computed__row-value {
   flex: 1;
   min-width: 0;
-  padding: 5px 8px;
+  overflow: hidden;
   font-size: 13px;
-  color: var(--aigen-text-main);
-  outline: none;
-  background: var(--aigen-background, #fff);
-  border: 1px solid var(--aigen-border);
-  border-radius: var(--aigen-radius, 6px);
-  box-sizing: border-box;
+  color: var(--aigen-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.aigen-link-select:focus {
-  border-color: var(--aigen-primary);
-}
-
-.aigen-link-textarea {
+.aigen-attr-computed__textarea {
   flex: 1;
   min-width: 0;
   min-height: 64px;
@@ -459,25 +463,25 @@ function handleToggleChange(item: ComputedField, event: Event) {
   box-sizing: border-box;
 }
 
-.aigen-link-textarea:focus {
+.aigen-attr-computed__textarea:focus {
   border-color: var(--aigen-primary);
 }
 
 /* 依赖字段 */
-.aigen-link-form__deps {
+.aigen-attr-computed__deps {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
-  padding-left: 72px;
+  padding-left: 88px;
 }
 
-.aigen-link-form__deps-label {
+.aigen-attr-computed__deps-label {
   font-size: 12px;
   color: var(--aigen-text-helper);
 }
 
-.aigen-link-form__dep {
+.aigen-attr-computed__dep {
   padding: 1px 6px;
   font-size: 11px;
   font-family: monospace;
@@ -487,29 +491,29 @@ function handleToggleChange(item: ComputedField, event: Event) {
 }
 
 /* 实时预览 */
-.aigen-link-form__preview {
+.aigen-attr-computed__preview {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-left: 72px;
+  padding-left: 88px;
 }
 
-.aigen-link-form__preview-label {
+.aigen-attr-computed__preview-label {
   font-size: 12px;
   color: var(--aigen-text-helper);
 }
 
-.aigen-link-form__preview-hint {
+.aigen-attr-computed__preview-hint {
   font-size: 12px;
   color: var(--aigen-text-helper);
 }
 
-.aigen-link-form__preview-error {
+.aigen-attr-computed__preview-error {
   font-size: 12px;
   color: var(--aigen-destructive);
 }
 
-.aigen-link-form__preview-value {
+.aigen-attr-computed__preview-value {
   font-size: 13px;
   font-family: monospace;
   color: var(--aigen-primary);
@@ -517,24 +521,24 @@ function handleToggleChange(item: ComputedField, event: Event) {
 }
 
 /* 底部 */
-.aigen-link-form__footer {
+.aigen-attr-computed__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.aigen-link-form__error {
+.aigen-attr-computed__error {
   font-size: 12px;
   color: var(--aigen-destructive);
 }
 
-.aigen-link-form__actions {
+.aigen-attr-computed__actions {
   display: flex;
   gap: 8px;
 }
 
-/* 启停用 switch（aigen 风格，不依赖具体 UI 库） */
+/* 启停用 switch（aigen 风格，本地定义，不依赖具体 UI 库） */
 .aigen-switch {
   position: relative;
   display: inline-flex;
