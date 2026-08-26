@@ -241,7 +241,7 @@ export function generateNewSchema(
 ) {
   const [newSchema] = mapSchemas([deepClone(schema)], (item) => {
     let attemptCount = 0; // 初始化尝试次数
-    let newId = `${item.type}_${getUUID(4, 'number')}`;
+    let newId = `${item.type}_${getUUID(4)}`;
 
     // 循环检查是否冲突，直到没有冲突为止
     while (
@@ -262,7 +262,7 @@ export function generateNewSchema(
         throw new Error(`ID冲突，已尝试 ${attemptCount} 次，无法生成唯一ID`);
       }
       // 如果冲突，重新生成ID并继续检查
-      newId = `${item.type}_${getUUID(4, 'number')}`;
+      newId = `${item.type}_${getUUID(4)}`;
     }
 
     // 补充id字段
@@ -602,6 +602,13 @@ export function getValueByPath(
   }
   // 统一路径解析（点语法 + 数组索引语法）
   const pathArray = parsePath(path);
+
+  // 原型污染防护：危险键名直接抛错拒绝（与 setValueByPath / diff.ts 的 DANGEROUS_KEYS 一致）
+  for (const key of pathArray) {
+    if (DANGEROUS_KEYS.has(key)) {
+      throw new Error(`路径包含危险键名: ${key}`);
+    }
+  }
 
   // 逐步从对象中提取值
   let result: any = object;

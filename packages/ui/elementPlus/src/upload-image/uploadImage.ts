@@ -51,7 +51,7 @@ export default defineComponent({
           fileList.value = modelValue.split(',').map((url) => ({
             name: url,
             status: 'success',
-            uid: Number(getUUID(10, 'number')) as number,
+            uid: Number(getUUID(10)) as number,
             url,
           }));
         }

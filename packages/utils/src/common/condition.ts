@@ -12,6 +12,8 @@ export interface ConditionContext {
   event?: unknown[];
   /** 表单数据（formData 上下文） */
   formData?: Record<string, any>;
+  /** 全局状态变量（P3 运行时），条件求值消费 */
+  vars?: Record<string, any>;
 }
 
 /**
@@ -50,7 +52,13 @@ export function evaluateCondition(
 function evaluateGroup(
   group: ConditionGroup,
   context: ConditionContext,
+  depth = 0,
 ): boolean {
+  const MAX_DEPTH = 50;
+  if (depth > MAX_DEPTH) {
+    console.warn('[Aigen:condition] 条件嵌套深度超过限制，中止求值');
+    return false;
+  }
   const { logic, items } = group;
   // 结构 fail-safe：items 缺失或非数组视为不满足
   if (!Array.isArray(items)) {
@@ -60,7 +68,7 @@ function evaluateGroup(
   const results = items.map((item) => {
     // 嵌套条件组：递归求值
     if (isConditionGroup(item)) {
-      return evaluateGroup(item, context);
+      return evaluateGroup(item, context, depth + 1);
     }
     return evaluateItem(item, context);
   });
