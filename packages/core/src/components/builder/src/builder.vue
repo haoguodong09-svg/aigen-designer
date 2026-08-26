@@ -96,6 +96,18 @@ watch(
     // 依赖 Vue 响应式系统按变更局部更新，不再强制全量 Suspense 重挂载；
     // 确需重置挂载状态时仅重置挂载监视器即可
     pageManager.mountMonitor.reset();
+    // 重新注册新 schema 中所有组件的 pendingIds，防止 isAllMounted 提前为 true
+    const registerPendingIds = (schemas) => {
+      for (const schema of schemas) {
+        if (schema.id) {
+          pageManager.mountMonitor.push(schema.id);
+        }
+        if (schema.children && schema.children.length > 0) {
+          registerPendingIds(schema.children);
+        }
+      }
+    };
+    registerPendingIds(pageManager.pageSchema.schemas || []);
   },
   {
     immediate: true,

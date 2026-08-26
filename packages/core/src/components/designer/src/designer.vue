@@ -73,7 +73,7 @@ const {
   state,
 } = useDesigner(props, emit);
 
-const { setTarget } = useHotkeys({
+const { cleanup: cleanupHotkeys, setTarget } = useHotkeys({
   emit,
   handleDelete,
   pageSchema,
@@ -191,6 +191,10 @@ onUnmounted(() => {
   designerRef.value?.removeEventListener('wheel', handleWheel);
   // 释放撤销链资源：取消挂起的防抖提交（W6-6.4）并销毁 Schema Worker（W6 隐藏问题）
   revoke.dispose();
+  // 清理 hotkeys 的 keydown 监听器
+  if (typeof cleanupHotkeys === 'function') {
+    cleanupHotkeys();
+  }
 });
 
 defineExpose({
