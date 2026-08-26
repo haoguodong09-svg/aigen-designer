@@ -262,7 +262,7 @@ const customMethodName = computed({
   set: (value: string) => emit('change', { methodName: value }),
 });
 
-const scriptOpen = ref(false);
+const scriptOpen = ref(true);
 
 /* ---------------- 公共函数 ---------------- */
 
