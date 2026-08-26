@@ -18,23 +18,28 @@ import {
 import { disposeSchemaWorker, postToWorker } from './schemaWorkerBridge';
 
 /**
- * 历史记录模型 - 用于存储页面状态的快照或差异
- * @description 为避免大型表单全量快照的内存压力，历史记录采用「基线快照 + 差异」存储：
- * 历史链首记录保存完整快照（snapshot），后续记录只保存相对上一状态的差异（diff）。
+ * 操作记录模型 - 用于存储页面状态的快照、差异或自定义回调
+ * @description 支持两种记录模式：
+ *   1. 快照/差异模式：保存 pageSchema 状态快照或相对上一状态的差异
+ *   2. 回调模式：保存自定义 undo/redo 回调（用于需要精细控制的场景）
  */
 export interface RecordModel {
   /** 相对上一状态的差异操作列表（JSON 字符串） */
   diff?: string;
   /** 旧版本兼容字段：历史版本保存的全量快照（JSON 字符串），导入时转换为 snapshot */
   pageSchema?: string;
+  /** 自定义重做回调（存在时优先于 diff/snapshot 执行） */
+  redo?: () => void;
   /** 当前选中组件的ID，用于恢复选中状态 */
   selectedId?: string;
   /** 完整快照（JSON 字符串），链首基线记录使用 */
   snapshot?: string;
   /** 记录创建时间戳 */
   timestamp: number;
-  /** 操作类型描述，如"添加组件"、"删除组件"等 */
+  /** 操作类型描述 */
   type: string;
+  /** 自定义撤销回调（存在时优先于 diff/snapshot 执行） */
+  undo?: () => void;
 }
 
 /**
@@ -208,6 +213,9 @@ export function useRevoke(
    * @param type - 操作类型描述
    * @param raw - 已剥离代理的当前页面状态
    * @param ops - 相对上一状态的差异操作；null 表示保存完整快照（链首基线）
+   * @param precomputedDiff - 预序列化的差异字符串（W16 Worker 路径）
+   * @param undo - 自定义撤销回调
+   * @param redo - 自定义重做回调
    * @returns 历史记录对象
    */
   const createRecord = (
@@ -215,6 +223,8 @@ export function useRevoke(
     raw: Record<string, unknown>,
     ops: DiffOp[] | null,
     precomputedDiff?: string,
+    undo?: () => void,
+    redo?: () => void,
   ): RecordModel => {
     const record: RecordModel = {
       selectedId: state.selectedNode?.id,
@@ -229,16 +239,31 @@ export function useRevoke(
       // W16 Worker 路径可传入已序列化的 diff，避免主线程重复 JSON.stringify（1-8ms）
       record.diff = precomputedDiff ?? JSON.stringify(ops);
     }
+    // 存储自定义回调（存在时优先于 diff/snapshot 执行）
+    if (undo) record.undo = undo;
+    if (redo) record.redo = redo;
     return record;
   };
 
   /**
    * 应用历史记录到当前页面
-   * @description 从基线快照回放差异还原目标状态，并恢复选中状态
+   * @description 从基线快照回放差异还原目标状态，并恢复选中状态。
+   * 若记录带有自定义 undo/redo 回调，优先执行回调（用于需要精细控制的操作）。
    * @param record - 要应用的历史记录对象
    * @returns 是否应用成功；失败时页面保持不变（调用方决定是否回滚记录移动）
    */
   const applyRecord = (record: RecordModel): boolean => {
+    // 优先执行自定义回调（用于需要精细控制的 undo/redo 操作）
+    if (record.undo) {
+      try {
+        record.undo();
+      } catch (error) {
+        console.error('执行撤销回调失败:', error);
+        return false;
+      }
+      return true;
+    }
+
     try {
       // 回放差异链，还原目标状态
       const parsedSchema = materializeState(record);
@@ -264,6 +289,10 @@ export function useRevoke(
   let debounceTimer: null | ReturnType<typeof setTimeout> = null;
   /** 防抖窗口内暂存的提交类型 */
   let pendingCommitType: null | string = null;
+  /** 防抖窗口内暂存的撤销回调 */
+  let pendingUndo: (() => void) | undefined;
+  /** 防抖窗口内暂存的重做回调 */
+  let pendingRedo: (() => void) | undefined;
   /** 提交调度时的链版本号，回调触发时校验，防止基于已撤销状态提交 */
   let pendingCommitVersion = -1;
 
@@ -276,6 +305,8 @@ export function useRevoke(
       debounceTimer = null;
     }
     pendingCommitType = null;
+    pendingUndo = undefined;
+    pendingRedo = undefined;
   };
 
   /**
@@ -295,8 +326,14 @@ export function useRevoke(
    * 等链变更时，回调触发时校验链版本——若链已被改变则放弃本次提交（过期提交），
    * 避免基于已撤销状态产生「幽灵空记录」（diff: []）。
    */
-  const debounceCommit = (type: string): void => {
+  const debounceCommit = (
+    type: string,
+    undo?: () => void,
+    redo?: () => void,
+  ): void => {
     pendingCommitType = type;
+    pendingUndo = undo;
+    pendingRedo = redo;
     pendingCommitVersion = chainVersion;
     if (debounceTimer !== null) {
       clearTimeout(debounceTimer);
@@ -304,7 +341,11 @@ export function useRevoke(
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
       const capturedType = pendingCommitType;
+      const capturedUndo = pendingUndo;
+      const capturedRedo = pendingRedo;
       pendingCommitType = null;
+      pendingUndo = undefined;
+      pendingRedo = undefined;
       if (pendingCommitVersion !== chainVersion) {
         // 链已被改变：本次提交过期。与正常提交语义一致，作废旧的重做分支
         // （未落库的编辑意图会截断分支），但不产生空记录、不破坏链结构。
@@ -312,18 +353,36 @@ export function useRevoke(
         return;
       }
       if (capturedType !== null) {
-        commitCurrentState(capturedType);
+        commitCurrentState(capturedType, capturedUndo, capturedRedo);
       }
     }, DEBOUNCE_TIME) as unknown as ReturnType<typeof setTimeout>;
   };
 
   /**
    * 添加新的历史记录
-   * @description 将当前状态保存为历史记录，支持防抖和数量限制
-   * @param type - 操作类型描述，默认为"插入组件"
-   * @param isImportant - 是否为重要操作，重要操作会跳过防抖直接记录，默认为false
+   * @description 将当前状态保存为历史记录，支持防抖和数量限制。
+   * 支持两种模式：
+   *   1. 字符串模式：push(type, isImportant?) - 自动跟踪 pageSchema 状态快照/差异
+   *   2. 对象模式：push({ type, undo, redo }) - 使用自定义 undo/redo 回调
+   * @param typeOrRecord - 操作类型描述字符串，或包含 type/undo/redo 的记录对象
+   * @param isImportant - 是否为重要操作，重要操作会跳过防抖直接记录
    */
-  function push(type = '插入组件', isImportant = false): void {
+  function push(
+    typeOrRecord: Record<string, unknown> | string = '插入组件',
+    isImportant = false,
+  ): void {
+    // 解析参数：支持对象模式 { type, undo, redo }
+    let type: string;
+    let undoCallback: (() => void) | undefined;
+    let redoCallback: (() => void) | undefined;
+    if (typeof typeOrRecord === 'object' && typeOrRecord !== null) {
+      type = (typeOrRecord as { type: string }).type;
+      undoCallback = (typeOrRecord as { undo?: () => void }).undo;
+      redoCallback = (typeOrRecord as { redo?: () => void }).redo;
+    } else {
+      type = typeOrRecord;
+    }
+
     // 特殊处理：如果是加载数据操作且当前只有初始化记录
     if (type === '加载数据' && currentRecord.value?.type === '初始化') {
       // 替换基线记录为加载后的完整快照，并同步差异基准；
@@ -341,10 +400,10 @@ export function useRevoke(
     }
 
     if (isImportant) {
-      commitCurrentState(type);
+      commitCurrentState(type, undoCallback, redoCallback);
       return;
     }
-    debounceCommit(type);
+    debounceCommit(type, undoCallback, redoCallback);
   }
 
   /**
@@ -435,8 +494,14 @@ export function useRevoke(
    * 提交当前状态到历史记录
    * @description 将当前暂存的状态正式记录到历史记录中，并创建新的暂存记录
    * @param type - 操作类型描述
+   * @param undo - 自定义撤销回调（存在时存入记录，undo 时优先执行）
+   * @param redo - 自定义重做回调（存在时存入记录，redo 时优先执行）
    */
-  function commitCurrentState(type: string): void {
+  function commitCurrentState(
+    type: string,
+    undo?: () => void,
+    redo?: () => void,
+  ): void {
     // 取消仍挂起的防抖提交（重要操作直接提交时，防止旧的防抖回调重复提交）
     clearPendingDebounce();
 
@@ -453,7 +518,7 @@ export function useRevoke(
     // 链首基线记录：完整快照（无差异计算，保持同步；先序列化成功再入链）
     if (currentRecord.value === null || prevState === null) {
       const nextPrev = cloneCurrentState(raw);
-      const record = createRecord(type, raw, null);
+      const record = createRecord(type, raw, null, undefined, undo, redo);
       currentRecord.value = record;
       prevState = nextPrev;
       stateCache.clear();
@@ -477,7 +542,14 @@ export function useRevoke(
       // 注意（W6-6.3）：diff 为预序列化字符串，createRecord 在 recordList.push 之前
       // 完成记录构建，避免 ops 无法序列化抛错时「链已 push 而状态未更新」的损坏场景
       const nextPrev = cloneCurrentState(raw);
-      const record = createRecord(type, raw, diffResult.ops, diffResult.diff);
+      const record = createRecord(
+        type,
+        raw,
+        diffResult.ops,
+        diffResult.diff,
+        undo,
+        redo,
+      );
       recordList.value.push(pushedRecord);
       currentRecord.value = record;
       prevState = nextPrev;
@@ -554,6 +626,29 @@ export function useRevoke(
     const previous = currentRecord.value;
     // 取出最后一条重做记录
     const recordObj = undoList.value.pop() as RecordModel;
+
+    // 优先执行自定义 redo 回调
+    if (recordObj.redo) {
+      try {
+        recordObj.redo();
+      } catch (error) {
+        console.error('执行重做回调失败:', error);
+        // 回滚记录移动
+        if (previous !== null) {
+          recordList.value.push(previous);
+        }
+        undoList.value.push(recordObj);
+        return false;
+      }
+      // 恢复选中状态（与 applyRecord 的 diff 模式对齐）
+      const selectedNode = recordObj.selectedId
+        ? findSchemaById(pageSchema.schemas, recordObj.selectedId)
+        : undefined;
+      setSelectedNode(selectedNode ?? undefined);
+      currentRecord.value = recordObj;
+      prevState = cloneCurrentState();
+      return true;
+    }
 
     // 将当前状态保存回历史记录
     if (previous !== null) {

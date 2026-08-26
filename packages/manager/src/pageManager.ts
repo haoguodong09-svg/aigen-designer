@@ -254,9 +254,17 @@ export function createPageManager() {
    * @param exposed
    */
   function defineExpose(exposed?: Record<string, Function> | undefined): void {
-    if (exposed) {
-      funcs.value = exposed;
+    if (!exposed) return;
+    const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    const filtered: Record<string, Function> = {};
+    for (const key of Object.keys(exposed)) {
+      if (DANGEROUS_KEYS.has(key)) {
+        console.warn(`[Aigen:defineExpose] 忽略危险键名: ${key}`);
+      } else {
+        filtered[key] = exposed[key];
+      }
     }
+    funcs.value = filtered;
   }
 
   /**
@@ -271,114 +279,147 @@ export function createPageManager() {
     scopeName = DEFAULT_SCOPE,
     ...args: unknown[]
   ): void {
-    // 检查是否提供了操作数组，如果没有提供，则发出警告并返回
-    if (!actions || actions.length === 0) {
-      console.warn('未提供任何动作');
-      return;
-    }
+    // 递归深度保护（doActions 每次调用独立计数，避免跨调用累积）
+    const MAX_RECURSION_DEPTH = 20;
+    let depth = 0;
 
-    // 遍历每个操作
-    actions.forEach((action) => {
-      // 动作级启停用：enabled === false 时跳过该动作，不中断整条动作链。
-      // 缺省（undefined）视为启用，兼容旧数据（与 normalizeAction 的 enabled 缺省 true 语义一致）
-      if (action.enabled === false) {
+    function executeActions(
+      acts: ActionsModel[],
+      sn: string,
+      a: unknown[],
+    ): void {
+      depth++;
+      if (depth > MAX_RECURSION_DEPTH) {
+        console.error('[Aigen:doActions] 递归深度超过限制，中止执行');
         return;
       }
 
-      const formNames = Object.keys(forms.value);
-      // 处理数据参数（表单数据 + 触发事件参数 + 全局变量，供条件求值与表达式计算使用）
-      const context = {
-        event: args,
-        formData: (formNames.length === 1
-          ? forms.value[formNames[0]]
-          : forms.value) as Record<string, any>,
-        // P3：全局变量注入公式上下文（$vars.xxx）
-        vars: vars.value,
-      };
-
-      // P3：动作条件求值——不满足时跳过该动作，不中断整条动作链。
-      // evaluateCondition 内部 fail-safe（求值异常返回 false 并告警）
-      if (
-        !evaluateCondition(action.condition, {
-          event: args,
-          formData: context.formData,
-        })
-      ) {
-        return;
-      }
-
-      // 尝试解析操作参数，如果没有提供，则使用传入的参数。
-      // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
-      let methodArgs: unknown[];
-      if (action.args) {
-        try {
-          const parsed = JSON.parse(action.args);
-          // 兼容非数组 JSON（如对象字面量），统一包装为数组
-          methodArgs = Array.isArray(parsed) ? parsed : [parsed];
-        } catch (error) {
-          console.warn(
-            `[Aigen：动作(${action.methodName})]args 非法 JSON，已跳过该动作`,
-            { args: action.args, error },
-          );
+      try {
+        // 检查是否提供了操作数组，如果没有提供，则发出警告并返回
+        if (!acts || acts.length === 0) {
+          console.warn('未提供任何动作');
           return;
         }
-      } else {
-        methodArgs = args;
-      }
 
-      methodArgs = methodArgs.map((arg: any) => {
-        // 如果是对象且标记为表达式，调用 jsep 计算
-        if (arg && typeof arg === 'object' && arg.__isExpression__) {
-          return formulaEngine.calculate(arg.content, context);
-        }
+        // 追踪延迟执行的 timer，便于后续清理（如页面卸载时 clear 防止内存泄漏）
+        const pendingTimers = new Set<number>();
 
-        // 否则（字符串、数字等），直接返回原值（兼容旧数据）
-        return arg;
-      });
-
-      // 实际执行体：按动作类型分发到对应执行函数（各执行函数内部均有 try/catch，
-      // 此处兜底保证单动作异常不中断动作链）
-      const executeAction = (): void => {
-        try {
-          // 根据操作的类型，调用不同的执行函数
-          switch (action.type) {
-            case 'component': {
-              // 执行组件方法
-              executeComponentMethod(action, scopeName, methodArgs);
-              break;
-            }
-
-            case 'custom': {
-              // 执行自定义方法
-              executeCustomMethod(action, methodArgs);
-              break;
-            }
-
-            case 'public': {
-              // 执行公共方法
-              executePublicMethod(action, methodArgs);
-              break;
-            }
-
-            default: {
-              // 如果遇到未知的操作类型，发出警告
-              console.warn(`未知的动作类型: ${action.type}`);
-              break;
-            }
+        // 遍历每个操作
+        acts.forEach((action) => {
+          // 动作级启停用：enabled === false 时跳过该动作，不中断整条动作链。
+          // 缺省（undefined）视为启用，兼容旧数据（与 normalizeAction 的 enabled 缺省 true 语义一致）
+          if (action.enabled === false) {
+            return;
           }
-        } catch (error) {
-          console.error(`[Aigen：动作(${action.methodName})]执行异常:`, error);
-        }
-      };
 
-      // P3：延迟执行——仅该动作延迟，动作链其他动作不受影响（动作参数已在
-      // 调用前完成解析与表达式求值，延迟体内直接执行）
-      if (typeof action.delay === 'number' && action.delay > 0) {
-        setTimeout(executeAction, action.delay);
-      } else {
-        executeAction();
+          const formNames = Object.keys(forms.value);
+          // 处理数据参数（表单数据 + 触发事件参数 + 全局变量，供条件求值与表达式计算使用）
+          const context = {
+            event: a,
+            formData: (formNames.length === 1
+              ? forms.value[formNames[0]]
+              : forms.value) as Record<string, any>,
+            // P3：全局变量注入公式上下文（$vars.xxx）
+            vars: vars.value,
+          };
+
+          // P3：动作条件求值——不满足时跳过该动作，不中断整条动作链。
+          // evaluateCondition 内部 fail-safe（求值异常返回 false 并告警）
+          if (
+            !evaluateCondition(action.condition, {
+              event: a,
+              formData: context.formData,
+              vars: vars.value,
+            })
+          ) {
+            return;
+          }
+
+          // 尝试解析操作参数，如果没有提供，则使用传入的参数。
+          // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
+          let methodArgs: unknown[];
+          if (action.args) {
+            try {
+              const parsed = JSON.parse(action.args);
+              // 兼容非数组 JSON（如对象字面量），统一包装为数组
+              methodArgs = Array.isArray(parsed) ? parsed : [parsed];
+            } catch (error) {
+              console.warn(
+                `[Aigen：动作(${action.methodName})]args 非法 JSON，已跳过该动作`,
+                { args: action.args, error },
+              );
+              return;
+            }
+          } else {
+            methodArgs = a;
+          }
+
+          methodArgs = methodArgs.map((arg: any) => {
+            // 如果是对象且标记为表达式，调用 jsep 计算
+            if (arg && typeof arg === 'object' && arg.__isExpression__) {
+              return formulaEngine.calculate(arg.content, context);
+            }
+
+            // 否则（字符串、数字等），直接返回原值（兼容旧数据）
+            return arg;
+          });
+
+          // 实际执行体：按动作类型分发到对应执行函数（各执行函数内部均有 try/catch，
+          // 此处兜底保证单动作异常不中断动作链）
+          const executeAction = (): void => {
+            try {
+              // 根据操作的类型，调用不同的执行函数
+              switch (action.type) {
+                case 'component': {
+                  // 执行组件方法
+                  executeComponentMethod(action, sn, methodArgs);
+                  break;
+                }
+
+                case 'custom': {
+                  // 执行自定义方法
+                  executeCustomMethod(action, methodArgs);
+                  break;
+                }
+
+                case 'public': {
+                  // 执行公共方法
+                  executePublicMethod(action, methodArgs);
+                  break;
+                }
+
+                default: {
+                  // 如果遇到未知的操作类型，发出警告
+                  console.warn(`未知的动作类型: ${action.type}`);
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error(
+                `[Aigen：动作(${action.methodName})]执行异常:`,
+                error,
+              );
+            }
+          };
+
+          // P3：延迟执行——仅该动作延迟，动作链其他动作不受影响（动作参数已在
+          // 调用前完成解析与表达式求值，延迟体内直接执行）
+          if (typeof action.delay === 'number' && action.delay > 0) {
+            const timerId = window.setTimeout(() => {
+              pendingTimers.delete(timerId);
+              executeAction();
+            }, action.delay);
+            pendingTimers.add(timerId);
+          } else {
+            executeAction();
+          }
+        });
+      } finally {
+        depth--;
       }
-    });
+    }
+
+    executeActions(actions, scopeName, [...args]);
   }
 
   /**

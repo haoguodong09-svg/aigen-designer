@@ -305,9 +305,11 @@ export function useComponentManager() {
     // 添加组件
     addComponent(type, componentConfig.component, componentConfig.priority);
 
-    if (!componentConfig.config.action) {
-      componentConfig.config.action = [];
-    }
+    // 确保 action 数组是独立的副本，避免修改外部共享对象的 config.action
+    componentConfig.config = { ...componentConfig.config };
+    componentConfig.config.action = componentConfig.config.action
+      ? [...componentConfig.config.action]
+      : [];
     // 输入组件增加动作配置（幂等：已存在 setValue/getValue 时不再重复添加，
     // 防止同一 config 对象被重复注册时动作配置累积）
     if (componentConfig.defaultSchema.input) {
