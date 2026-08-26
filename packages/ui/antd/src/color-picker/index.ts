@@ -2,7 +2,7 @@ import type { ComponentConfigModel } from '@aigen-designer/types';
 
 export default {
   bindModel: 'value',
-  component: async () => (await import('ant-design-vue')).Input,
+  component: () => import('./color-picker.vue'),
   config: {
     action: [],
     attribute: [

@@ -7,6 +7,8 @@ import { watchEffect } from 'vue';
 import { pluginManager as pManager } from '@aigen-designer/manager';
 import { message, version } from 'ant-design-vue';
 
+// Phase 1 新增组件
+import Alert from './alert';
 import Button from './button';
 import Card from './card';
 import Cascader from './cascader';
@@ -14,10 +16,12 @@ import Checkbox from './checkbox';
 import Col from './col';
 import colorPicker from './color-picker';
 import DatePicker from './date-picker';
+import Divider from './divider';
 import Form from './form';
 import FormItem from './form-item';
 import Input from './input';
 import InputNumber from './input-number';
+import Link from './link';
 import Modal from './modal';
 import Radio from './radio';
 import Row from './row';
@@ -26,6 +30,7 @@ import Slider from './slider';
 import Switch from './switch';
 import TabsPane from './tab-pane';
 import Tabs from './tabs';
+import Tag from './tag';
 import Textarea from './textarea';
 import TimePicker from './time-picker';
 import UploadFile from './upload-file';
@@ -91,6 +96,11 @@ export function setupAntd(
     Modal,
     Tabs,
     TabsPane,
+    // Phase 1 新增组件
+    Alert,
+    Divider,
+    Link,
+    Tag,
   ];
 
   const { uploadFile, uploadImage } = config;
@@ -119,6 +129,16 @@ export function setupAntd(
     pluginManager.component.register(item);
     pluginManager.component.addBaseComponentType(item.defaultSchema.type);
   });
+
+  // Phase 1：扩展组件分组
+  pluginManager.component.setSortedGroups([
+    '表单',
+    '布局',
+    '数据展示',
+    '反馈',
+    '导航',
+    '其他',
+  ]);
 
   // 注册全局提示函数
   pluginManager.global.$message = {

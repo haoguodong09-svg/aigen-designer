@@ -17,5 +17,5 @@ export default {
     type: 'modal',
     children: [],
   },
-  icon: 'aigen-icon-xiala',
+  icon: 'icon--aigen--window-outline',
 } as ComponentConfigModel;
