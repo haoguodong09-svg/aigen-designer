@@ -36,10 +36,7 @@ const visible = ref(false);
 const isAdd = ref(true);
 const currentStep = ref(0);
 const saveError = ref('');
-/** 画布点选时遮罩不拦截指针，保证可透视点选画布元素 */
-const maskPassive = ref(false);
 const componentSchema = ref<ComponentSchema | null>(null);
-const stepTargetRef = ref<InstanceType<typeof StepTarget> | null>(null);
 
 const state = reactive<{
   actionItem: ActionDraft;
@@ -91,7 +88,6 @@ function handleOpen() {
   isAdd.value = true;
   saveError.value = '';
   currentStep.value = 0;
-  maskPassive.value = false;
   componentSchema.value = null;
   Object.assign(state.actionItem, createEmptyDraft());
   state.actionItem.type = 'component';
@@ -103,7 +99,6 @@ function handleOpenEdit(action: ActionsModel) {
   visible.value = true;
   isAdd.value = false;
   saveError.value = '';
-  maskPassive.value = false;
   componentSchema.value = null;
 
   if (action.componentId) {
@@ -144,15 +139,7 @@ function handleOpenEdit(action: ActionsModel) {
 }
 
 function handleClose() {
-  // 通知 StepTarget 清理 picking 模式（移除 document 级监听器）
-  if (
-    stepTargetRef.value &&
-    typeof stepTargetRef.value.stopPicking === 'function'
-  ) {
-    stepTargetRef.value.stopPicking();
-  }
   visible.value = false;
-  maskPassive.value = false;
   componentSchema.value = null;
   state.cacheData = {};
   saveError.value = '';
@@ -319,11 +306,6 @@ function handleSave() {
   handleClose();
 }
 
-/** 画布点选模式下遮罩不拦截指针 */
-function handlePickChange(picking: boolean) {
-  maskPassive.value = picking;
-}
-
 function handleTypeChange(value: '' | ActionType) {
   const prevType = state.actionItem.type;
   state.actionItem.type = value;
@@ -354,12 +336,7 @@ defineExpose({
 <template>
   <Teleport to="body">
     <Transition name="aigen-drawer-mask">
-      <div
-        v-if="visible"
-        class="aigen-drawer-mask"
-        :class="{ 'aigen-drawer-mask--passive': maskPassive }"
-        @click="handleClose"
-      ></div>
+      <div v-if="visible" class="aigen-drawer-mask" @click="handleClose"></div>
     </Transition>
     <Transition name="aigen-drawer-slide">
       <div
@@ -413,11 +390,9 @@ defineExpose({
             @update:type="handleTypeChange"
           />
           <StepTarget
-            ref="stepTargetRef"
             v-else-if="currentStep === 1"
             :component-id="state.actionItem.componentId"
             :component-schema="componentSchema"
-            @pick-change="handlePickChange"
             @select="handleSelectTarget"
           />
           <StepMethod
