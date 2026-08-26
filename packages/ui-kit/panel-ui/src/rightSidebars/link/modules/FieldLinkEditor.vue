@@ -14,7 +14,9 @@ import type { ConditionOperator, LinkEntry } from './linkHelper';
 
 import { computed, reactive, ref } from 'vue';
 
+import { useBindModel } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
+import { pluginManager } from '@aigen-designer/manager';
 import {
   compileLinks,
   findSchemas,
@@ -75,6 +77,33 @@ const targetOptions = computed(() => {
 /** 聚合后的联动规则列表（按元素遍历顺序） */
 const linkEntries = computed<LinkEntry[]>(() => collectLinkEntries(pageSchema));
 
+/** 组件下拉（随当前 UI 库：antd Select / elementPlus / naiveUi），
+ * 与动作配置向导一致；options 经 attrs fallthrough 由各适配组件透传 */
+const SelectComponent = pluginManager.component.get('select');
+const { bindModel } = useBindModel('select');
+
+/** 源字段下拉选项（label 拼接 field，保持与原生版一致的展示信息） */
+const sourceFieldOptions = computed(() =>
+  inputFields.value.map((item) => ({
+    label:
+      item.label === item.field ? item.label : `${item.label}（${item.field}）`,
+    value: item.field,
+  })),
+);
+
+/** 条件字段下拉选项 */
+const conditionFieldOptions = computed(() =>
+  inputFields.value.map((item) => ({ label: item.label, value: item.field })),
+);
+
+/** 目标元素下拉选项（label 拼接 id） */
+const targetSelectOptions = computed(() =>
+  targetOptions.value.map((item) => ({
+    label: `${item.label}（${item.id}）`,
+    value: item.id,
+  })),
+);
+
 /** 条件比较运算符（简单版） */
 const CONDITION_OPERATORS = new Set<ConditionOperator>([
   '!=',
@@ -84,6 +113,11 @@ const CONDITION_OPERATORS = new Set<ConditionOperator>([
   '>',
   '>=',
 ]);
+
+/** 条件运算符下拉选项 */
+const conditionOperatorOptions = computed(() =>
+  [...CONDITION_OPERATORS].map((op) => ({ label: op, value: op })),
+);
 
 /** 新建 / 编辑表单草稿 */
 interface LinkDraft {
@@ -118,6 +152,22 @@ const formVisible = ref(false);
 const editingEntry = ref<LinkEntry | null>(null);
 const formError = ref('');
 const draft = reactive<LinkDraft>(createEmptyDraft());
+
+/** 行为为联合类型（'' | behavior），经包装模型适配组件下拉的 string 值 */
+const behaviorModel = computed({
+  get: () => draft.behavior,
+  set: (value: string) => {
+    draft.behavior = value as LinkDraft['behavior'];
+  },
+});
+
+/** 条件运算符联合类型包装 */
+const conditionOperatorModel = computed({
+  get: () => draft.conditionOperator,
+  set: (value: string) => {
+    draft.conditionOperator = value as ConditionOperator;
+  },
+});
 
 /* ---------------- 表达式插入器 ---------------- */
 
@@ -452,40 +502,41 @@ function getValueText(link: FieldLink): string {
     <div v-if="formVisible" class="aigen-link-form">
       <div class="aigen-link-form__row">
         <span class="aigen-link-form__label">源字段</span>
-        <select v-model="draft.sourceField" class="aigen-link-select">
-          <option value="" disabled>请选择源字段</option>
-          <option
-            v-for="item in inputFields"
-            :key="item.field"
-            :value="item.field"
-          >
-            {{ item.label }}（{{ item.field }}）
-          </option>
-        </select>
+        <div class="aigen-link-form__control">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="draft.sourceField"
+            :options="sourceFieldOptions"
+            placeholder="请选择源字段"
+            style="width: 100%"
+          />
+        </div>
       </div>
 
       <div class="aigen-link-form__row">
         <span class="aigen-link-form__label">行为</span>
-        <select v-model="draft.behavior" class="aigen-link-select">
-          <option value="" disabled>请选择行为</option>
-          <option
-            v-for="opt in LINK_BEHAVIOR_OPTIONS"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
+        <div class="aigen-link-form__control">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="behaviorModel"
+            :options="LINK_BEHAVIOR_OPTIONS"
+            placeholder="请选择行为"
+            style="width: 100%"
+          />
+        </div>
       </div>
 
       <div class="aigen-link-form__row">
         <span class="aigen-link-form__label">目标元素</span>
-        <select v-model="draft.targetId" class="aigen-link-select">
-          <option value="" disabled>请选择目标元素</option>
-          <option v-for="item in targetOptions" :key="item.id" :value="item.id">
-            {{ item.label }}（{{ item.id }}）
-          </option>
-        </select>
+        <div class="aigen-link-form__control">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="draft.targetId"
+            :options="targetSelectOptions"
+            placeholder="请选择目标元素"
+            style="width: 100%"
+          />
+        </div>
       </div>
 
       <!-- 赋值内容（行为 = 赋值时显示） -->
@@ -541,24 +592,23 @@ function getValueText(link: FieldLink): string {
         </label>
       </div>
       <div v-if="draft.useCondition" class="aigen-link-form__condition">
-        <select v-model="draft.conditionField" class="aigen-link-select">
-          <option value="" disabled>条件字段</option>
-          <option
-            v-for="item in inputFields"
-            :key="item.field"
-            :value="item.field"
-          >
-            {{ item.label }}
-          </option>
-        </select>
-        <select
-          v-model="draft.conditionOperator"
-          class="aigen-link-select aigen-link-select--op"
-        >
-          <option v-for="op in CONDITION_OPERATORS" :key="op" :value="op">
-            {{ op }}
-          </option>
-        </select>
+        <div class="aigen-link-form__control">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="draft.conditionField"
+            :options="conditionFieldOptions"
+            placeholder="条件字段"
+            style="width: 100%"
+          />
+        </div>
+        <div class="aigen-link-form__control aigen-link-form__control--op">
+          <component
+            :is="SelectComponent"
+            v-model:[bindModel]="conditionOperatorModel"
+            :options="conditionOperatorOptions"
+            style="width: 100%"
+          />
+        </div>
         <input
           v-model="draft.conditionValue"
           type="text"
@@ -727,7 +777,17 @@ function getValueText(link: FieldLink): string {
   color: var(--aigen-text-main);
 }
 
-.aigen-link-select,
+/* 组件下拉容器：占据行内剩余宽度 */
+.aigen-link-form__control {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 条件行内运算符下拉：固定窄宽度 */
+.aigen-link-form__control--op {
+  flex: 0 0 84px;
+}
+
 .aigen-link-input {
   flex: 1;
   min-width: 0;
@@ -741,13 +801,8 @@ function getValueText(link: FieldLink): string {
   box-sizing: border-box;
 }
 
-.aigen-link-select:focus,
 .aigen-link-input:focus {
   border-color: var(--aigen-primary);
-}
-
-.aigen-link-select--op {
-  flex: 0 0 64px;
 }
 
 .aigen-link-form__value {
