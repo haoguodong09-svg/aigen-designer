@@ -5,7 +5,12 @@ import type { ActionDraft, ExpressionField, ExpressionModel } from '../helper';
 
 import { computed, ref, watch } from 'vue';
 
-import { AigenNode, useBindModel } from '@aigen-designer/base-ui';
+import {
+  AigenCollapse,
+  AigenCollapsePanel,
+  AigenNode,
+  useBindModel,
+} from '@aigen-designer/base-ui';
 import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { findSchemas, getUUID } from '@aigen-designer/utils';
@@ -314,7 +319,7 @@ function handleExpressionConfirm(value: ExpressionModel) {
 
 /* ---------------- 高级折叠区（P1 仅保存字段） ---------------- */
 
-const advancedOpen = ref(false);
+const advancedOpen = ref<string[]>(['advanced']);
 
 const nameText = computed({
   get: () => props.actionItem.name,
@@ -517,52 +522,47 @@ const delayText = computed({
     </div>
 
     <!-- 高级折叠区 -->
-    <div class="aigen-step-args-advanced">
-      <button
-        type="button"
-        class="aigen-step-args-advanced-toggle"
-        @click="advancedOpen = !advancedOpen"
-      >
-        {{ advancedOpen ? '收起高级设置' : '高级设置' }}
-      </button>
-      <div v-show="advancedOpen" class="aigen-step-args-advanced-body">
-        <div class="aigen-step-args-row">
-          <span class="aigen-step-args-row-label">动作命名</span>
-          <input
-            v-model="nameText"
-            type="text"
-            class="aigen-step-args-input"
-            placeholder="给动作起个名字（可选）"
-          />
-        </div>
-        <div class="aigen-step-args-row">
-          <span class="aigen-step-args-row-label">备注</span>
-          <textarea
-            v-model="remarkText"
-            class="aigen-step-args-textarea"
-            placeholder="备注信息（可选）"
-          ></textarea>
-        </div>
-        <div class="aigen-step-args-row">
-          <span class="aigen-step-args-row-label">延迟 ms</span>
-          <input
-            v-model="delayText"
-            type="number"
-            min="0"
-            class="aigen-step-args-input aigen-step-args-input--num"
-            placeholder="0"
-          />
-          <span class="aigen-step-args-p3">P3 生效</span>
-        </div>
-        <div class="aigen-step-args-row aigen-step-args-row--condition">
-          <span class="aigen-step-args-row-label">条件</span>
-          <div class="aigen-step-args-condition-note">
-            条件支持按字段比较（如 数量 &gt;
-            0）控制动作是否执行，将在后续版本开放配置；当前仅保存字段。
+    <AigenCollapse v-model="advancedOpen">
+      <AigenCollapsePanel name="advanced" title="高级设置">
+        <div class="aigen-step-args-advanced-body">
+          <div class="aigen-step-args-row">
+            <span class="aigen-step-args-row-label">动作命名</span>
+            <input
+              v-model="nameText"
+              type="text"
+              class="aigen-step-args-input"
+              placeholder="给动作起个名字（可选）"
+            />
+          </div>
+          <div class="aigen-step-args-row">
+            <span class="aigen-step-args-row-label">备注</span>
+            <textarea
+              v-model="remarkText"
+              class="aigen-step-args-textarea"
+              placeholder="备注信息（可选）"
+            ></textarea>
+          </div>
+          <div class="aigen-step-args-row">
+            <span class="aigen-step-args-row-label">延迟 ms</span>
+            <input
+              v-model="delayText"
+              type="number"
+              min="0"
+              class="aigen-step-args-input aigen-step-args-input--num"
+              placeholder="0"
+            />
+            <span class="aigen-step-args-p3">P3 生效</span>
+          </div>
+          <div class="aigen-step-args-row aigen-step-args-row--condition">
+            <span class="aigen-step-args-row-label">条件</span>
+            <div class="aigen-step-args-condition-note">
+              条件支持按字段比较（如 数量 &gt;
+              0）控制动作是否执行，将在后续版本开放配置；当前仅保存字段。
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </AigenCollapsePanel>
+    </AigenCollapse>
 
     <ExpressionInsert
       v-model:visible="exprVisible"
@@ -766,25 +766,6 @@ const delayText = computed({
   color: var(--aigen-text-helper);
   background: var(--aigen-muted);
   border-bottom: 1px solid var(--aigen-border);
-}
-
-.aigen-step-args-advanced {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--aigen-border);
-}
-
-.aigen-step-args-advanced-toggle {
-  padding: 0;
-  font-size: 12px;
-  color: var(--aigen-text-secondary);
-  cursor: pointer;
-  background: transparent;
-  border: none;
-}
-
-.aigen-step-args-advanced-toggle:hover {
-  color: var(--aigen-primary);
 }
 
 .aigen-step-args-advanced-body {
