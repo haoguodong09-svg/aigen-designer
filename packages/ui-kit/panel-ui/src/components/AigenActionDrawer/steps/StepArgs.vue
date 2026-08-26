@@ -54,6 +54,19 @@ watch(
 );
 
 function setArg(index: number, value: unknown) {
+  // setAttr 空值防御：属性值不能为 undefined/null（表达式除外）
+
+  if (
+    index === 1 &&
+    // eslint-disable-next-line no-use-before-define
+    isSetAttr.value &&
+    // eslint-disable-next-line no-use-before-define
+    selectedAttrSchema.value &&
+    !isExprValue(1) &&
+    (value === undefined || value === null)
+  ) {
+    return;
+  }
   const values = [...argsArray.value];
   values[index] = value;
   argsArray.value = values;

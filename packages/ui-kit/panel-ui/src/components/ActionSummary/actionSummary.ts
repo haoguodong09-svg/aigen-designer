@@ -105,5 +105,5 @@ export function getActionSummaryText(
     return `执行公共函数 ${methodName}`;
   }
 
-  return methodName || '';
+  return methodName || '未配置动作';
 }

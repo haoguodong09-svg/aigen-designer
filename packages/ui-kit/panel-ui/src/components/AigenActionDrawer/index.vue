@@ -39,6 +39,7 @@ const saveError = ref('');
 /** 画布点选时遮罩不拦截指针，保证可透视点选画布元素 */
 const maskPassive = ref(false);
 const componentSchema = ref<ComponentSchema | null>(null);
+const stepTargetRef = ref<InstanceType<typeof StepTarget> | null>(null);
 
 const state = reactive<{
   actionItem: ActionDraft;
@@ -106,8 +107,19 @@ function handleOpenEdit(action: ActionsModel) {
   componentSchema.value = null;
 
   if (action.componentId) {
-    const schema = findSchemaById(pageSchema.schemas, action.componentId);
-    componentSchema.value = schema;
+    const targetSchema = findSchemaById(pageSchema.schemas, action.componentId);
+    if (targetSchema) {
+      componentSchema.value = targetSchema;
+    } else {
+      // 组件已被删除，回退到步骤 1 让用户重新选择
+      componentSchema.value = null;
+      state.actionItem.componentId = null;
+      state.actionItem.methodName = '';
+      state.actionItem.args = null;
+      currentStep.value = 1;
+      saveError.value = '目标组件已从页面中移除，请重新选择';
+      return;
+    }
   }
 
   Object.assign(state.actionItem, {
@@ -132,6 +144,13 @@ function handleOpenEdit(action: ActionsModel) {
 }
 
 function handleClose() {
+  // 通知 StepTarget 清理 picking 模式（移除 document 级监听器）
+  if (
+    stepTargetRef.value &&
+    typeof stepTargetRef.value.stopPicking === 'function'
+  ) {
+    stepTargetRef.value.stopPicking();
+  }
   visible.value = false;
   maskPassive.value = false;
   componentSchema.value = null;
@@ -306,7 +325,24 @@ function handlePickChange(picking: boolean) {
 }
 
 function handleTypeChange(value: '' | ActionType) {
+  const prevType = state.actionItem.type;
   state.actionItem.type = value;
+  // 切换类型时清理不兼容的字段，防止残留导致步骤状态不一致
+  if (value === 'component') {
+    if (prevType !== 'component') {
+      state.actionItem.methodName = '';
+      state.actionItem.args = null;
+    }
+  } else if (
+    (value === 'custom' || value === 'public') &&
+    prevType !== 'custom' &&
+    prevType !== 'public'
+  ) {
+    state.actionItem.componentId = null;
+    state.actionItem.methodName = '';
+    state.actionItem.args = null;
+    componentSchema.value = null;
+  }
 }
 
 defineExpose({
@@ -377,6 +413,7 @@ defineExpose({
             @update:type="handleTypeChange"
           />
           <StepTarget
+            ref="stepTargetRef"
             v-else-if="currentStep === 1"
             :component-id="state.actionItem.componentId"
             :component-schema="componentSchema"

@@ -183,15 +183,11 @@ function handleEventSwitchChange(type: string, event: Event) {
  * @param type 事件类型
  */
 function getNewEvents(type: string) {
-  const newEvents: { [type: string]: any } = {};
+  const newEvents: Record<string, any> = {};
   props.allEvents.forEach((item: any) => {
-    if (getEventActions(item.type).length === 0) {
-      return false;
-    }
-    if (item.type === type) {
-      return false;
-    }
-    newEvents[item.type] = props.events[item.type];
+    if (item.type === type) return;
+    const actions = getEventActions(item.type);
+    newEvents[item.type] = actions.length > 0 ? [...actions] : [];
   });
   return newEvents;
 }
@@ -347,6 +343,7 @@ function isActionVisible(item: any, action: any): boolean {
         group="option-list"
         handle=".handle"
         :animation="200"
+        :disabled="!!keyword"
         @start="handleDragStart(item.type)"
         @end="handleDragEnd(item.type)"
       >
