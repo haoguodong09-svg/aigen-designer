@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest';
 import {
   collectLinkEntries,
   getSchemaLabel,
-  parseComputedDependencies,
   scanEventBusActions,
 } from './linkHelper';
 
@@ -83,24 +82,6 @@ describe('getSchemaLabel', () => {
     // 测试纯函数回退逻辑：label / type 均缺省时回退 id（缺 type 用断言，ComponentSchema 必填约束由入参承担）
     expect(getSchemaLabel({ id: 'a' } as ComponentSchema)).toBe('a');
     expect(getSchemaLabel({ type: 'x' })).toBe('x');
-  });
-});
-
-describe('parseComputedDependencies', () => {
-  it('解析 $formData.* 依赖，支持多级路径与去重', () => {
-    expect(
-      parseComputedDependencies(
-        '$formData.qty * $formData.price + $formData.user.score',
-      ),
-    ).toEqual(['qty', 'price', 'user.score']);
-    expect(parseComputedDependencies('$formData.qty + $formData.qty')).toEqual([
-      'qty',
-    ]);
-  });
-
-  it('无依赖时返回空数组', () => {
-    expect(parseComputedDependencies('SUM(1, 2)')).toEqual([]);
-    expect(parseComputedDependencies('')).toEqual([]);
   });
 });
 

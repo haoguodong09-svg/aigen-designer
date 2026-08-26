@@ -77,23 +77,6 @@ export function getSchemaLabel(schema: ComponentSchema): string {
   return schema.label ?? schema.type ?? schema.id ?? '未命名元素';
 }
 
-/**
- * 解析计算字段公式中的 $formData.* 依赖字段（去重、保序）。
- * 示例：'$formData.qty * $formData.price + $formData.user.score' →
- * ['qty', 'price', 'user.score']
- */
-export function parseComputedDependencies(expression: string): string[] {
-  const deps = new Set<string>();
-  // 每次调用新建正则实例，避免模块级 /g 正则的 lastIndex 状态残留
-  const regex = /\$formData\.([\w.]+)/g;
-  let match = regex.exec(expression);
-  while (match !== null) {
-    deps.add(match[1]);
-    match = regex.exec(expression);
-  }
-  return [...deps];
-}
-
 /** 事件总线动作扫描结果（单条广播 / 监听动作） */
 export interface EventBusAction {
   action: ActionsModel;

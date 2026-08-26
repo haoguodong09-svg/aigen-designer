@@ -83,21 +83,6 @@ export interface FieldLink {
   when?: ConditionGroup;
 }
 
-/**
- * 计算字段（P3 关联/计算面板）。
- * expression 为 jsep 公式，以 $formData.* 引用表单字段值。
- */
-export interface ComputedField {
-  /** 启停用，缺省视为 true（undefined 视为启用），可选 */
-  enabled?: boolean;
-  /** 计算表达式（jsep 公式，$formData.* 引用表单字段，$vars 引用全局状态） */
-  expression: string;
-  /** 稳定身份：拖拽 key、复制、引用定位 */
-  id: string;
-  /** 目标字段（formData 路径），计算结果写入该字段 */
-  targetField: string;
-}
-
 export interface RenderCallbackParams {
   tableMeta?: TableMeta;
   // TODO: 第二期收敛为 Record<string, unknown>。
@@ -177,8 +162,6 @@ export interface PageSchema {
     mode?: 'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet'; // 支持新旧模式  'pad' | 'pc' 为旧数据
     width?: string;
   };
-  // 计算字段列表（P3 关联/计算面板），可选
-  computed?: ComputedField[];
   schemas: ComponentSchema[];
   script?: string;
   // 全局状态初值（公式 $vars 上下文，P3 运行时），可选
