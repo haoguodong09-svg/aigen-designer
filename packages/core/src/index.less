@@ -1,34 +1,43 @@
-@import "./static/icons/iconify.css";
-@import "./theme/application.less";
-@import "./components/designer/src/index.less";
+@import './static/icons/iconify.css';
+// 行为面板图标（iconfont.cn 项目 PDA-Scan / 5238704，本地字体）
+@import './static/icons/behavior/iconfont.css';
+@import './theme/application.less';
+@import './components/designer/src/index.less';
 
 // iconfont 图标样式
 .iconfont {
-  font-family: "aigen-iconfont", "iconfont" !important;
+  font-family: 'aigen-iconfont', 'iconfont' !important;
   font-style: normal;
   font-size: 1em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 .aigen-button {
-  color: var(--aigen-text-main);
-  border: 1px solid var(--aigen-border);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   width: auto;
-  cursor: pointer;
   height: 32px;
   padding: 0 12px;
+  color: var(--aigen-text-main);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  background-color: var(--aigen-background);
+  border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease-out-quart;
 
   &:hover {
     color: var(--aigen-primary);
-    background-color: color-mix(in oklch, var(--aigen-primary), transparent 92%);
+    background-color: color-mix(
+      in oklch,
+      var(--aigen-primary),
+      transparent 92%
+    );
     border-color: var(--aigen-primary);
   }
 
@@ -36,13 +45,15 @@
     height: 24px;
     padding: 0 8px;
     border-radius: calc(var(--aigen-radius) - 2px);
+    font-size: var(--aigen-text-sm);
   }
 
   &.primary {
     color: var(--aigen-primary-foreground);
     background-color: var(--aigen-primary);
     border-color: var(--aigen-primary);
-    box-shadow: 0 2px 0 color-mix(in oklch, var(--aigen-primary), transparent 90%);
+    box-shadow: 0 2px 0
+      color-mix(in oklch, var(--aigen-primary), transparent 90%);
   }
 
   &.ghost {

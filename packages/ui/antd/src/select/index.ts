@@ -6,16 +6,20 @@ export default {
   config: {
     action: [
       {
-        description: '使 input 获取焦点',
+        description: '使选择框获取焦点',
         type: 'focus',
       },
       {
-        description: '使 input 失去焦点',
+        description: '使选择框失去焦点',
         type: 'blur',
       },
       {
-        description: '选中 input 中的文字',
-        type: 'select',
+        description: '清空当前选择',
+        type: 'clear',
+      },
+      {
+        description: '动态设置下拉选项列表',
+        type: 'setOptions',
       },
     ],
     attribute: [

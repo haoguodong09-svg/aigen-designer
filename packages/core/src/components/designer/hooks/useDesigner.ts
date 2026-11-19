@@ -14,6 +14,7 @@ import {
   useRevoke,
 } from '@aigen-designer/manager';
 import {
+  adaptLegacySchema,
   deepClone,
   deepCompareAndModify,
   deepEqual,
@@ -189,6 +190,7 @@ export function useDesigner(
     if (!schema) {
       schema = pageSchema.schemas[0];
     }
+    if (!schema) return;
     // 如果选中的节点是锁定的，则不执行选中操作
     if (isComponentLocked(schema)) {
       const matched = getMatchedById(
@@ -279,6 +281,12 @@ export function useDesigner(
     deepCompareAndModify(pageSchema.schemas, innerDefaultSchema.schemas);
     // 更新 script
     pageSchema.script = innerDefaultSchema.script;
+    // 重置联动规则（避免上一页/上一版本的规则残留并作用到新画布）
+    pageSchema.reactiveRules = deepClone(
+      innerDefaultSchema.reactiveRules ?? [],
+    );
+    // 默认数据若仍为旧版 FieldLink，升轨为声明式规则（幂等，按 id 去重）
+    adaptLegacySchema(pageSchema);
     // 选中根节点
     setSelectedNode(pageSchema.schemas[0]);
     revoke.push('重置操作');
@@ -292,6 +300,8 @@ export function useDesigner(
   function init() {
     // 初始化默认节点
     pageSchema.schemas = deepClone(innerDefaultSchema.schemas);
+    // 默认数据若仍为旧版 FieldLink，升轨为声明式规则，保证设计态联动可预览
+    adaptLegacySchema(pageSchema);
     // 选中根节点
     setSelectedNode(pageSchema.schemas[0]);
     revoke.push('初始化');

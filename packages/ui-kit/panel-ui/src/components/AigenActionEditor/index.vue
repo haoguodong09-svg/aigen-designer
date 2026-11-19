@@ -274,10 +274,12 @@ defineExpose({
 
 <style scoped>
 .aigen-action-editor__search {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
+  height: 32px;
   margin: 0 12px 8px;
-  padding: 0 8px;
+  padding: 0 10px;
   border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius);
   background-color: var(--aigen-background);
@@ -297,12 +299,12 @@ defineExpose({
 
 .aigen-action-editor__search-input {
   width: 100%;
-  height: 28px;
+  height: 100%;
   border: none;
   outline: none;
   color: var(--aigen-text-main);
   background-color: transparent;
-  font-size: var(--aigen-text-sm);
+  font-size: var(--aigen-text-md);
 
   &::placeholder {
     color: var(--aigen-text-helper);

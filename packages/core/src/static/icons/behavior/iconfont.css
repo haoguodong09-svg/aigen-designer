@@ -1,0 +1,201 @@
+/**
+ * 行为面板专用图标（来源：iconfont.cn 项目「PDA-Scan」，projectId 5238704）。
+ *
+ * 接入约定：
+ * - 不与 src/static/icons/iconify.css 的 `icon--aigen--*` 图标混用字体；
+ * - AigenIcon 传入 `icon--behavior--xxx` 时会同时挂上 `icon--behavior` 作用域类，
+ *   这里只对 `.iconfont.icon--behavior` 覆盖字体，避免影响全局 `.iconfont` 尺寸；
+ * - 字体文件已下载到本地，不依赖 iconfont 在线服务。
+ */
+@font-face {
+  font-family: 'aigen-behavior-iconfont';
+  src:
+    url('./iconfont.woff2?t=1794969201579') format('woff2'),
+    url('./iconfont.woff?t=1794969201579') format('woff'),
+    url('./iconfont.ttf?t=1794969201579') format('truetype');
+  font-display: block;
+}
+
+.iconfont.icon--behavior {
+  font-family: 'aigen-behavior-iconfont' !important;
+  font-style: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon--behavior--database:before {
+  content: '\e7b1';
+}
+
+.icon--behavior--mobile:before {
+  content: '\e7b2';
+}
+
+.icon--behavior--medicinebox:before {
+  content: '\e7cd';
+}
+
+.icon--behavior--idcard:before {
+  content: '\e7de';
+}
+
+.icon--behavior--key:before {
+  content: '\e7e2';
+}
+
+.icon--behavior--barcode:before {
+  content: '\e7d7';
+}
+
+.icon--behavior--camera:before {
+  content: '\e7d8';
+}
+
+.icon--behavior--printer:before {
+  content: '\e7d9';
+}
+
+.icon--behavior--qrcode:before {
+  content: '\e7dd';
+}
+
+.icon--behavior--error:before {
+  content: '\e7df';
+}
+
+.icon--behavior--wifi:before {
+  content: '\e7e0';
+}
+
+.icon--behavior--edit:before {
+  content: '\e7e1';
+}
+
+.icon--behavior--pushpin:before {
+  content: '\e7e3';
+}
+
+.icon--behavior--tag:before {
+  content: '\e7e4';
+}
+
+.icon--behavior--arrowright:before {
+  content: '\e7ee';
+}
+
+.icon--behavior--arrowup:before {
+  content: '\e7ef';
+}
+
+.icon--behavior--arrowleft:before {
+  content: '\e7f0';
+}
+
+.icon--behavior--arrowdown:before {
+  content: '\e7f1';
+}
+
+.icon--behavior--sort-descending:before {
+  content: '\e7f2';
+}
+
+.icon--behavior--sort-ascending:before {
+  content: '\e7f3';
+}
+
+.icon--behavior--check:before {
+  content: '\e7fc';
+}
+
+.icon--behavior--close:before {
+  content: '\e7fd';
+}
+
+.icon--behavior--desktop:before {
+  content: '\e842';
+}
+
+.icon--behavior--thunderbolt:before {
+  content: '\e843';
+}
+
+.icon--behavior--search:before {
+  content: '\e8ef';
+}
+
+.icon--behavior--login:before {
+  content: '\e8f0';
+}
+
+.icon--behavior--clear:before {
+  content: '\e900';
+}
+
+.icon--behavior--info-circle:before {
+  content: '\e77e';
+}
+
+.icon--behavior--time-circle:before {
+  content: '\e784';
+}
+
+.icon--behavior--warning-circle:before {
+  content: '\e785';
+}
+
+.icon--behavior--reload:before {
+  content: '\e788';
+}
+
+.icon--behavior--logout:before {
+  content: '\e78c';
+}
+
+.icon--behavior--eye:before {
+  content: '\e78f';
+}
+
+.icon--behavior--location:before {
+  content: '\e790';
+}
+
+.icon--behavior--user:before {
+  content: '\e7ae';
+}
+
+.icon--behavior--container:before {
+  content: '\e7b0';
+}
+
+.icon--behavior--file-text:before {
+  content: '\e7b9';
+}
+
+.icon--behavior--safetycertificate:before {
+  content: '\e7c0';
+}
+
+.icon--behavior--delete:before {
+  content: '\e7c3';
+}
+
+.icon--behavior--experiment:before {
+  content: '\e7c4';
+}
+
+.icon--behavior--home:before {
+  content: '\e7c6';
+}
+
+.icon--behavior--filter:before {
+  content: '\e7c7';
+}
+
+.icon--behavior--calendar:before {
+  content: '\e7d3';
+}
+
+.icon--behavior--scan:before {
+  content: '\e7d4';
+}

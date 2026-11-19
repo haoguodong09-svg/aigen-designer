@@ -2,6 +2,7 @@
 import type { PageManager } from '@aigen-designer/manager';
 import type {
   AigenNodeInstance,
+  ComponentSchema,
   FieldStateMap,
   FieldStates,
   FormDataModel,
@@ -14,6 +15,7 @@ import { AigenBaseLoader, AigenNode } from '@aigen-designer/base-ui';
 import {
   BUILDER_KEY,
   createEventBus,
+  FORM_CONTEXT_KEY,
   FORM_INSTANCES_KEY,
   provideBuilderDisabled,
   provideBuilderReadonly,
@@ -22,6 +24,7 @@ import {
 import { pluginManager } from '@aigen-designer/manager';
 import { setupPage } from '@aigen-designer/panel-ui';
 import {
+  adaptLegacySchema,
   deepClone,
   deepCompareAndModify,
   findSchemas,
@@ -92,12 +95,19 @@ watch(
       reorganizeSchemasForTableView(newSchema);
     }
 
+    // 存量 FieldLink 零中断升轨为声明式 ReactiveRule，并剥离旧编译器产物（linkId 动作），
+    // 避免「响应式规则 + 旧编译动作」双重执行。升轨发生在运行时 schema 副本上，
+    // 不污染设计器中的原始数据。
+    adaptLegacySchema(newSchema);
+
     deepCompareAndModify(pageManager.pageSchema, newSchema);
+    // schema 应用完成后立即求值一次：首屏联动（数据回填）无需等待用户交互即可生效
+    pageManager.reactiveEngine?.evaluateAllRules();
     // 依赖 Vue 响应式系统按变更局部更新，不再强制全量 Suspense 重挂载；
     // 确需重置挂载状态时仅重置挂载监视器即可
     pageManager.mountMonitor.reset();
     // 重新注册新 schema 中所有组件的 pendingIds，防止 isAllMounted 提前为 true
-    const registerPendingIds = (schemas) => {
+    const registerPendingIds = (schemas: ComponentSchema[]) => {
       for (const schema of schemas) {
         if (schema.id) {
           pageManager.mountMonitor.push(schema.id);
@@ -146,6 +156,11 @@ provide(BUILDER_KEY, {
 });
 providePageManager(pageManager);
 
+// 页面级共享表单数据：不在 <form> 内的元素共享同一份数据，
+// 使字段联动条件、$formData 公式与首屏数据回填在全页面范围内可用。
+// <form> 内部的节点会由 useForm 提供更近的表单上下文，自动覆盖此回退。
+provide(FORM_CONTEXT_KEY, pageManager.pageFormData);
+
 provide(FORM_INSTANCES_KEY, formInstances);
 
 /**
@@ -183,7 +198,7 @@ const instance = getCurrentInstance() as AigenNodeInstance;
 // 注入组件实例到 pageManager
 pageManager.addComponentInstance('builder', instance);
 
-pageManager.hook.register('formChange', (context) => {
+pageManager.hook.register('formChange', (context: any) => {
   emit('change', context);
 });
 

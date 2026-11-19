@@ -66,13 +66,15 @@ const methodOptions = computed<MethodOption[]>(() => {
   }
 
   if (props.type === 'public') {
-    return Object.entries(pluginManager.publicMethods.methodsMap).map(
-      ([label, method]) => ({
+    // onEvent 需要传入回调函数，无法通过可序列化参数配置，由「事件广播」类型反向订阅；
+    // 这里只暴露可直接调用的公共方法，避免用户选中后永远无法生效。
+    return Object.entries(pluginManager.publicMethods.methodsMap)
+      .filter(([name]) => name !== 'onEvent')
+      .map(([label, method]) => ({
         description: method.description ?? '插件注册的公共方法',
         label: method.description ?? label,
         value: label,
-      }),
-    );
+      }));
   }
 
   return [];
@@ -116,7 +118,7 @@ const emptyHint = computed(() => {
     return '该组件未注册可调用的动作，建议选择输入类组件（可设置值/属性），或检查组件扩展配置';
   }
   if (props.type === 'custom') {
-    return '请到「参数配置」步骤点击「编辑页面脚本」，通过 defineExpose 暴露函数';
+    return '请到下方参数区展开「页面脚本」，通过 defineExpose 暴露函数后即可选择';
   }
   return '公共函数由插件注册，请检查插件是否已安装';
 });
@@ -184,16 +186,17 @@ const emptyHint = computed(() => {
 }
 
 .aigen-step-method-search {
+  box-sizing: border-box;
   width: 100%;
-  padding: 6px 10px;
+  height: 32px;
+  padding: 0 10px;
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--aigen-text-main);
   outline: none;
   background: var(--aigen-background, #fff);
   border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius, 6px);
-  box-sizing: border-box;
 }
 
 .aigen-step-method-search:focus {

@@ -59,6 +59,22 @@ export default defineConfig(async () => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
+        // UI 包直接使用 workspace 源码，避免与 core/hooks 的模块实例分裂：
+        // UI 包 dist 会把 @aigen-designer/hooks 等别名到伞包 `aigen-designer`，
+        // 而 examples 中 core/hooks 走 workspace 源码，两边的 Symbol 注入键不同，
+        // 导致 Form 组件 inject(pageManager) 失败（未获取到 pageManager 实例）。
+        '@aigen-designer/antd': resolve(
+          __dirname,
+          '../packages/ui/antd/src/index.ts',
+        ),
+        '@aigen-designer/element-plus': resolve(
+          __dirname,
+          '../packages/ui/elementPlus/src/index.ts',
+        ),
+        '@aigen-designer/naive-ui': resolve(
+          __dirname,
+          '../packages/ui/naiveUi/src/index.ts',
+        ),
       },
     },
     server: {

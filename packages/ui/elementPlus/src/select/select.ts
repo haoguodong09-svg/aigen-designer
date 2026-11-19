@@ -1,4 +1,4 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, ref } from 'vue';
 
 import { ElOption, ElSelect } from 'element-plus';
 
@@ -6,54 +6,42 @@ import 'element-plus/es/components/select/style/css';
 
 // 二次封装组件
 export default defineComponent({
-  // 同时支持两种 v-model 协议：value（antd/naiveUi 的 bindModel 约定，core toolbar 使用）
-  // 与 modelValue（element-plus 原生约定），保证设计器内 v-model:value 跨 UI 库生效
+  // 同时支持两种 v-model 协议：value 与 modelValue
   emits: ['update:modelValue', 'update:value'],
-  setup(_, { attrs, emit }) {
+  setup(_, { attrs, emit, expose }) {
+    const selectRef = ref();
+    const dynamicOptions = ref<any[] | null>(null);
+
     function handleUpdate(e = null): void {
       emit('update:modelValue', e);
       emit('update:value', e);
     }
 
+    expose({
+      blur: () => selectRef.value?.blur?.(),
+      clear: () => selectRef.value?.clear?.(),
+      focus: () => selectRef.value?.focus?.(),
+      getNativeRef: () => selectRef.value,
+      setOptions: (opts: any[]) => {
+        dynamicOptions.value = opts;
+      },
+    });
+
     return () => {
+      const options = dynamicOptions.value ?? (attrs.options as any[]) ?? [];
       const props: Record<string, any> = {
         ...attrs,
         key: String(attrs.multiple),
         modelValue: attrs.modelValue ?? attrs.value,
         'onUpdate:modelValue': handleUpdate,
         placeholder: attrs.placeholder ?? '请选择',
+        ref: selectRef,
       };
 
-      // watch
-
-      // 注意：options 必须作为 vnode 数组子节点传入，而不能用函数型 default slot。
-      // element-plus 的 ElSelect 内部有一个 { immediate: true } 的兼容 watch，会在
-      // 渲染函数之外直接调用 slots.default()（select2.mjs 的 manuallyRenderSlots 兼容逻辑），
-      // 函数型 slot 经 Vue 的 withCtx 包装后，在渲染外调用会触发
-      // "Slot \"default\" invoked outside of the render function" 告警
-      // （EP 自带的告警抑制只覆盖 ElTreeSelect，普通 ElSelect 会漏出）。
-      // vnode 数组子节点的 slots.default 是普通函数（无 withCtx 包装），调用不会告警，
-      // 渲染结果与函数型 slot 完全一致。
-      // 注意：options 必须作为 vnode 数组子节点传入，而不能用函数型 default slot。
-      // element-plus 的 ElSelect 内部有一个 { immediate: true } 的兼容 watch，会在
-      // 渲染函数之外直接调用 slots.default()（select2.mjs 的 manuallyRenderSlots 兼容逻辑），
-      // 函数型 slot 经 Vue 的 withCtx 包装后，在渲染外调用会触发
-      // "Slot \"default\" invoked outside of the render function" 告警
-      // （EP 自带的告警抑制只覆盖 ElTreeSelect，普通 ElSelect 会漏出）。
-      // vnode 数组子节点的 slots.default 是普通函数（无 withCtx 包装），调用不会告警，
-      // 渲染结果与函数型 slot 完全一致。
-      // 注意：options 必须作为 vnode 数组子节点传入，而不能用函数型 default slot。
-      // element-plus 的 ElSelect 内部有一个 { immediate: true } 的兼容 watch，会在
-      // 渲染函数之外直接调用 slots.default()（select2.mjs 的 manuallyRenderSlots 兼容逻辑），
-      // 函数型 slot 经 Vue 的 withCtx 包装后，在渲染外调用会触发
-      // "Slot \"default\" invoked outside of the render function" 告警
-      // （EP 自带的告警抑制只覆盖 ElTreeSelect，普通 ElSelect 会漏出）。
-      // vnode 数组子节点的 slots.default 是普通函数（无 withCtx 包装），调用不会告警，
-      // 渲染结果与函数型 slot 完全一致。
       return h(
         ElSelect,
         props,
-        (props.options ?? []).map((option: any) =>
+        options.map((option: any) =>
           h(ElOption, { label: option.label, value: option.value }),
         ),
       );

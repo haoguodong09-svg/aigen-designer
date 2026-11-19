@@ -96,7 +96,7 @@ const innerValue = computed({
   set: handleUpdate,
 });
 // 设计模式模式下，添加字段后缀
-addDesignModeSuffix();
+syncDesignModeField();
 
 // 记录上一次触发组件重建的关键字段，用于判断是否需要重新初始化组件
 let prevInitKey = '';
@@ -154,7 +154,7 @@ watch(
       return;
     }
     deepCompareAndModify(innerSchema, deepClone(componentSchema, false));
-    addDesignModeSuffix();
+    syncDesignModeField();
     maybeReinitComponent();
   },
   {
@@ -179,19 +179,26 @@ function getBindValue() {
  * 此函数仅在pageManager的isDesignMode为true时执行，确保只在设计模式下影响字段命名。
  * 如果innerSchema.field已经是字符串类型，则直接追加后缀，否则不进行处理。
  */
-function addDesignModeSuffix() {
-  // 检查当前是否处于设计模式
-  // 检查是否是设计模式
-  if (
-    pageManager.isDesignMode.value && // 判断innerSchema.field的类型，仅在是字符串类型时追加后缀
-    // 检查 innerSchema.field 是否为字符串类型
-    typeof innerSchema.field === 'string'
-  ) {
-    // 给字段名添加设计模式后缀
-    // 给 innerSchema.field 添加后缀 '-design-mode'
-    innerSchema.field += '-design-mode';
-  }
+/**
+ * 同步设计态字段后缀。
+ * - 设计态（非交互演练）：field 追加 `-design-mode`，避免污染运行时数据；
+ * - 交互演练/渲染态：使用真实 field，保证字段联动条件与 $formData 能正确读取当前值。
+ * 采用「先剥离再按需追加」的方式，支持设计态与演练模式来回切换。
+ */
+function syncDesignModeField() {
+  if (typeof innerSchema.field !== 'string') return;
+  const baseField = innerSchema.field.replace(/-design-mode$/, '');
+  const needSuffix =
+    pageManager.isDesignMode.value &&
+    pageManager.isInteractiveMode?.value !== true;
+  innerSchema.field = needSuffix ? `${baseField}-design-mode` : baseField;
 }
+
+// 交互演练开关变化时，切换字段命名，保证联动规则读到同一份表单数据
+watch(
+  () => [pageManager.isDesignMode.value, pageManager.isInteractiveMode?.value],
+  () => syncDesignModeField(),
+);
 
 // 传递额外的attrs
 const attrs = useAttrs();
@@ -252,11 +259,36 @@ watchEffect(() => {
   fieldRequired.value = matched ? currentFieldState.required : null;
 });
 
-const show = computed(() => {
-  // 设计模式且showHiddenItems为true时 显示隐藏组件，提供查看隐藏元素的能力
-  if (props.showHiddenItems && pageManager.isDesignMode.value) return true;
+// 新一代响应式规则派生状态（ReactiveRuleEngine）
+const derivedState = computed(() => {
+  const map = pageManager.reactiveStateMap;
+  if (!map) return undefined;
+  const sn = scopeName.value || 'default';
+  return (
+    (innerSchema.field ? map[`${sn}:${innerSchema.field}`] : undefined) ??
+    (innerSchema.id ? map[`${sn}:${innerSchema.id}`] : undefined) ??
+    (innerSchema.field ? map[innerSchema.field] : undefined) ??
+    (innerSchema.id ? map[innerSchema.id] : undefined)
+  );
+});
 
-  // fieldStateType 属性优先级最高
+const show = computed(() => {
+  // 交互演练模式：呈现真实联动结果，隐藏即隐藏，否则无法验证显隐规则
+  if (pageManager.isInteractiveMode?.value === true) {
+    if (derivedState.value?.hidden !== undefined) {
+      return !derivedState.value.hidden;
+    }
+  } else if (props.showHiddenItems && pageManager.isDesignMode.value) {
+    // 设计模式且 showHiddenItems 为 true 时显示隐藏组件，提供查看隐藏元素的能力
+    return true;
+  }
+
+  // 新架构响应式规则派生状态优先（显隐）
+  if (derivedState.value?.hidden !== undefined) {
+    return !derivedState.value.hidden;
+  }
+
+  // fieldStateType 属性优先级
   if (fieldStateType.value === 'WRITE') {
     return true;
   } else if (innerSchema.props?.hidden || fieldStateType.value === 'HIDE') {
@@ -295,8 +327,11 @@ const getFormItemProps = computed<ComponentSchema>(() => {
       return processedRule;
     });
 
+  const derivedRequired = derivedState.value?.required;
   const needsRequired =
-    fieldRequired.value === true || innerSchema.props?.required;
+    derivedRequired === undefined
+      ? fieldRequired.value === true || innerSchema.props?.required
+      : derivedRequired;
   const hasRequiredRule =
     Array.isArray(rules) && rules.some((rule) => rule.required !== undefined);
 
@@ -366,8 +401,8 @@ const hasFormItem = computed(() => {
 const getProps = computed(() => {
   const bindModel = getComponentConfig.value?.bindModel ?? 'modelValue';
   const onEvent: { [type: string]: Function } = {};
-  if (!pageManager.isDesignMode.value) {
-    // 设计模式下，不添加事件 防止误触发事件
+  if (!pageManager.isDesignMode.value || pageManager.isInteractiveMode?.value) {
+    // 渲染模式或交互演练模拟模式下挂载事件
     innerSchema.on &&
       Object.keys(innerSchema.on).forEach((item) => {
         onEvent[`on${capitalizeFirstLetter(item)}`] = (...args: unknown[]) =>
@@ -394,15 +429,22 @@ const getProps = computed(() => {
     bindModel,
     disabled:
       fieldStateType.value !== 'WRITE' &&
-      (fieldStateType.value === 'DISABLED' ||
-        disabled.value ||
-        innerSchema.props?.disabled),
+      (derivedState.value?.disabled === undefined
+        ? fieldStateType.value === 'DISABLED' ||
+          disabled.value ||
+          innerSchema.props?.disabled
+        : derivedState.value.disabled),
     hidden: !show.value,
     readonly:
       fieldStateType.value !== 'WRITE' &&
-      (fieldStateType.value === 'READ' ||
-        readonly.value ||
-        innerSchema.props?.readonly),
+      (derivedState.value?.readonly === undefined
+        ? fieldStateType.value === 'READ' ||
+          readonly.value ||
+          innerSchema.props?.readonly
+        : derivedState.value.readonly),
+    ...(derivedState.value?.options === undefined
+      ? {}
+      : { options: derivedState.value.options }),
     style: finalStyle,
     ...onEvent,
   };
@@ -443,6 +485,21 @@ function handleAddComponentInstance(vNode?: VNode) {
     innerSchema.props ??= {};
     const prev = innerSchema.props[key];
     innerSchema.props[key] = value;
+
+    // 同步到响应式状态字典，保持双向对齐
+    if (pageManager.reactiveStateMap) {
+      const sn = scopeName.value || 'default';
+      const keys = [`${sn}:${innerSchema.id}`, innerSchema.id as string];
+      if (innerSchema.field) {
+        keys.push(`${sn}:${innerSchema.field}`, innerSchema.field);
+      }
+      for (const k of keys) {
+        if (!pageManager.reactiveStateMap[k]) {
+          pageManager.reactiveStateMap[k] = {};
+        }
+        pageManager.reactiveStateMap[k][key] = value;
+      }
+    }
 
     // 初始化类属性 defaultValue：组件受控渲染（v-model 绑定 innerValue）下
     // 仅修改 props 不会生效（antd/elementPlus/naiveUi 的 defaultValue 只用于

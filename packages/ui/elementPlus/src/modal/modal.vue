@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, useAttrs } from 'vue';
+import { computed, ref, useAttrs } from 'vue';
 
 import { ElButton, ElDialog } from 'element-plus';
-// 定义 props
+
 const props = withDefaults(
   defineProps<{
     cancelText?: string;
@@ -20,16 +20,18 @@ const props = withDefaults(
     okText: '确定',
   },
 );
-// 定义 emits
+
 const emits = defineEmits(['ok', 'close', 'update:modelValue']);
 const attrs = useAttrs();
-// 计算属性
+const confirmLoading = ref(false);
+const customTitle = ref<null | string>(null);
+
 const getProps = computed<Record<string, any>>(() => ({
   ...props.componentSchema,
   ...attrs,
   class: 'aigen-el-modal aigen-scoped',
   'destroy-on-close': true,
-  title: props.componentSchema?.label ?? '',
+  title: customTitle.value ?? props.componentSchema?.label ?? '',
 }));
 
 const children = computed(() => props.componentSchema?.children ?? []);
@@ -45,12 +47,40 @@ function updateModelValue(value = false) {
 function handleClose() {
   emits('close');
 }
+
+function open() {
+  updateModelValue(true);
+}
+
+function close() {
+  updateModelValue(false);
+}
+
+function toggle() {
+  updateModelValue(!attrs.modelValue);
+}
+
+function setConfirmLoading(loading: boolean) {
+  confirmLoading.value = loading;
+}
+
+function setTitle(title: string) {
+  customTitle.value = title;
+}
+
+defineExpose({
+  close,
+  open,
+  setConfirmLoading,
+  setTitle,
+  toggle,
+});
 </script>
 
 <template>
   <ElDialog
     v-bind="getProps"
-    :title="getProps.label ?? ''"
+    :title="customTitle ?? getProps.label ?? ''"
     destroy-on-close
     append-to-body
     @update:model-value="updateModelValue"
@@ -69,7 +99,12 @@ function handleClose() {
     <template #footer>
       <div class="aigen-el-modal-footer">
         <ElButton @click="handleClose"> {{ props.cancelText }} </ElButton>
-        <ElButton v-if="!props.hideConfirm" type="primary" @click="handleOk">
+        <ElButton
+          v-if="!props.hideConfirm"
+          :loading="confirmLoading"
+          type="primary"
+          @click="handleOk"
+        >
           {{ props.okText }}
         </ElButton>
       </div>

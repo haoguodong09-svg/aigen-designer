@@ -1,13 +1,11 @@
 <script lang="ts" setup>
 import type { ActionType } from '../helper';
 
-import { ref } from 'vue';
+import { AigenIcon } from '@aigen-designer/base-ui';
 
 /**
- * Step1 · 动作类型：三选一卡片。
- * - 操作组件（推荐）：调用其他元素的方法、设置值/属性/显隐；
- * - 执行函数：二级选择 自定义函数（页面脚本 defineExpose）/ 公共函数（插件注册）；
- * - 页面能力：P3 占位，disabled 标注「即将支持」。
+ * Step1 · 动作类型：操作组件 / 执行函数 / 事件广播 / 调用接口 / 页面跳转。
+ * 所有类型均为一等公民，不再用「即将支持」占位。
  */
 const props = defineProps<{
   type: '' | ActionType;
@@ -17,30 +15,63 @@ const emit = defineEmits<{
   (e: 'update:type', value: '' | ActionType): void;
 }>();
 
-/** 「执行函数」卡片的二级展开状态 */
-const functionExpanded = ref(false);
+const TYPE_CARDS: Array<{
+  description: string;
+  icon: string;
+  name: string;
+  value: ActionType;
+}> = [
+  {
+    description: '调用组件方法，或设置值 / 属性 / 显隐',
+    icon: 'icon--behavior--container',
+    name: '操作组件',
+    value: 'component',
+  },
+  {
+    description: '广播页面事件，供其他动作或脚本订阅',
+    icon: 'icon--behavior--thunderbolt',
+    name: '事件广播',
+    value: 'event',
+  },
+  {
+    description: '发起 HTTP 请求，返回值可传给下一步',
+    icon: 'icon--behavior--database',
+    name: '调用接口',
+    value: 'api',
+  },
+  {
+    description: '打开链接或跳转页面',
+    icon: 'icon--behavior--arrowright',
+    name: '页面跳转',
+    value: 'navigate',
+  },
+];
 </script>
 
 <template>
   <div class="aigen-step-type">
-    <div class="aigen-step-type-title">请选择动作类型</div>
     <div class="aigen-step-type-cards">
       <button
+        v-for="card in TYPE_CARDS"
+        :key="card.value"
         type="button"
         class="aigen-step-type-card"
-        :class="{ 'aigen-step-type-card--checked': props.type === 'component' }"
-        @click="emit('update:type', 'component')"
+        :class="{ 'aigen-step-type-card--checked': props.type === card.value }"
+        @click="emit('update:type', card.value)"
       >
         <span
           class="aigen-step-type-radio"
           :class="{
-            'aigen-step-type-radio--checked': props.type === 'component',
+            'aigen-step-type-radio--checked': props.type === card.value,
           }"
         ></span>
         <span class="aigen-step-type-card-main">
-          <span class="aigen-step-type-card-name">🧩 操作组件（推荐）</span>
+          <span class="aigen-step-type-card-name">
+            <AigenIcon class="aigen-step-type-icon" :name="card.icon" />
+            {{ card.name }}
+          </span>
           <span class="aigen-step-type-card-desc">
-            调用其他元素的方法、设置值/属性/显隐
+            {{ card.description }}
           </span>
         </span>
       </button>
@@ -52,11 +83,7 @@ const functionExpanded = ref(false);
             props.type === 'custom' || props.type === 'public',
         }"
       >
-        <button
-          type="button"
-          class="aigen-step-type-card-head"
-          @click="functionExpanded = !functionExpanded"
-        >
+        <div class="aigen-step-type-card-head">
           <span
             class="aigen-step-type-radio"
             :class="{
@@ -65,19 +92,19 @@ const functionExpanded = ref(false);
             }"
           ></span>
           <span class="aigen-step-type-card-main">
-            <span class="aigen-step-type-card-name">⚙️ 执行函数</span>
+            <span class="aigen-step-type-card-name">
+              <AigenIcon
+                class="aigen-step-type-icon"
+                name="icon--behavior--experiment"
+              />
+              执行函数
+            </span>
             <span class="aigen-step-type-card-desc">
-              调用页面脚本或插件注册的函数
+              调用页面脚本或插件注册的函数，支持自由传参
             </span>
           </span>
-          <span
-            class="aigen-step-type-arrow"
-            :class="{ 'aigen-step-type-arrow--open': functionExpanded }"
-          >
-            ▸
-          </span>
-        </button>
-        <div v-show="functionExpanded" class="aigen-step-type-sub">
+        </div>
+        <div class="aigen-step-type-sub">
           <button
             type="button"
             class="aigen-step-type-sub-item"
@@ -86,7 +113,10 @@ const functionExpanded = ref(false);
             }"
             @click="emit('update:type', 'custom')"
           >
-            <span class="aigen-step-type-sub-name">自定义函数</span>
+            <span class="aigen-step-type-sub-name">
+              <AigenIcon name="icon--behavior--edit" />
+              自定义函数
+            </span>
             <span class="aigen-step-type-sub-desc">
               页面脚本 defineExpose 暴露的函数
             </span>
@@ -99,46 +129,31 @@ const functionExpanded = ref(false);
             }"
             @click="emit('update:type', 'public')"
           >
-            <span class="aigen-step-type-sub-name">公共函数</span>
+            <span class="aigen-step-type-sub-name">
+              <AigenIcon name="icon--behavior--database" />
+              公共函数
+            </span>
             <span class="aigen-step-type-sub-desc">插件注册的公共方法</span>
           </button>
         </div>
-      </div>
-
-      <div class="aigen-step-type-card aigen-step-type-card--disabled">
-        <span class="aigen-step-type-radio"></span>
-        <span class="aigen-step-type-card-main">
-          <span class="aigen-step-type-card-name">📄 页面能力</span>
-          <span class="aigen-step-type-card-desc">
-            提交/重置表单、广播事件、读写全局变量
-          </span>
-        </span>
-        <span class="aigen-step-type-badge">即将支持</span>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.aigen-step-type-title {
-  margin-bottom: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--aigen-text-main);
-}
-
 .aigen-step-type-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .aigen-step-type-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 8px 10px;
   font-size: 13px;
   color: var(--aigen-text-main);
   text-align: left;
@@ -159,26 +174,21 @@ const functionExpanded = ref(false);
 
 .aigen-step-type-card--expand {
   display: block;
+  grid-column: 1 / -1;
   padding: 0;
 }
 
 .aigen-step-type-card-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 8px 10px;
   font-size: 13px;
   color: var(--aigen-text-main);
   text-align: left;
-  cursor: pointer;
   background: transparent;
   border: none;
-}
-
-.aigen-step-type-card--disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .aigen-step-type-radio {
@@ -196,48 +206,53 @@ const functionExpanded = ref(false);
 .aigen-step-type-card-main {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
 .aigen-step-type-card-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--aigen-text-sm);
   font-weight: 500;
 }
 
-.aigen-step-type-card-desc {
-  font-size: 12px;
-  color: var(--aigen-text-helper);
-}
-
-.aigen-step-type-arrow {
+.aigen-step-type-icon {
   flex-shrink: 0;
-  margin-left: auto;
-  color: var(--aigen-text-helper);
-  transition: transform 0.18s ease;
+  color: var(--aigen-text-secondary);
+  font-size: 14px;
 }
 
-.aigen-step-type-arrow--open {
-  transform: rotate(90deg);
+.aigen-step-type-card--checked .aigen-step-type-icon {
+  color: var(--aigen-primary);
+}
+
+.aigen-step-type-card-desc {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--aigen-text-helper);
 }
 
 .aigen-step-type-sub {
-  padding: 0 14px 10px 38px;
+  display: flex;
+  gap: 6px;
+  padding: 0 10px 10px 32px;
 }
 
 .aigen-step-type-sub-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  margin-top: 6px;
-  font-size: 13px;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+  font-size: var(--aigen-text-sm);
   color: var(--aigen-text-main);
   text-align: left;
   cursor: pointer;
   background: transparent;
   border: 1px solid var(--aigen-border);
-  border-radius: 4px;
+  border-radius: var(--aigen-radius);
 }
 
 .aigen-step-type-sub-item:hover {
@@ -245,28 +260,29 @@ const functionExpanded = ref(false);
 }
 
 .aigen-step-type-sub-item--checked {
+  color: var(--aigen-primary);
   background: var(--aigen-primary-faded);
   border-color: var(--aigen-primary);
-  color: var(--aigen-primary);
 }
 
 .aigen-step-type-sub-name {
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-weight: 500;
 }
 
-.aigen-step-type-sub-desc {
+.aigen-step-type-sub-name .iconfont {
+  color: var(--aigen-text-secondary);
   font-size: 12px;
-  color: var(--aigen-text-helper);
 }
 
-.aigen-step-type-badge {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  margin-left: auto;
+.aigen-step-type-sub-item--checked .aigen-step-type-sub-name .iconfont {
+  color: var(--aigen-primary);
+}
+
+.aigen-step-type-sub-desc {
   font-size: 11px;
   color: var(--aigen-text-helper);
-  background: var(--aigen-muted);
-  border-radius: 8px;
 }
 </style>

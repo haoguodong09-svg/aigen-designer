@@ -9,6 +9,7 @@ interface ActionLike {
   args?: string;
   componentId?: null | string;
   methodName?: string;
+  target?: null | string;
   type?: string;
 }
 
@@ -102,7 +103,33 @@ export function getActionSummaryText(
   }
 
   if (type === 'public') {
+    if (methodName === 'emitEvent') {
+      const eventName = getArgsItem(action.args, 0);
+      return eventName ? `广播事件「${String(eventName)}」` : '广播页面事件';
+    }
+    if (methodName === 'setVar') {
+      const key = getArgsItem(action.args, 0);
+      return key ? `设置变量「${String(key)}」` : '设置全局变量';
+    }
+    if (methodName === 'getVar') {
+      const key = getArgsItem(action.args, 0);
+      return key ? `读取变量「${String(key)}」` : '读取全局变量';
+    }
     return `执行公共函数 ${methodName}`;
+  }
+
+  if (type === 'event') {
+    const eventName = action.target || methodName;
+    return eventName ? `广播事件「${eventName}」` : '广播页面事件';
+  }
+
+  if (type === 'api') {
+    const url = action.target || '未填写地址';
+    return `请求 ${methodName.toUpperCase() || 'GET'} ${url}`;
+  }
+
+  if (type === 'navigate') {
+    return `跳转到 ${action.target || '未填写地址'}`;
   }
 
   return methodName || '未配置动作';

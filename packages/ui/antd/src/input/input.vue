@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
+import { ref } from 'vue';
+
 import { useEventBus, useFormItem } from '@aigen-designer/hooks';
 import { Input } from 'ant-design-vue';
 
@@ -21,6 +23,8 @@ const props = withDefaults(
     placeholder: '请输入',
   },
 );
+
+const inputRef = ref();
 const { formData } = useFormItem();
 const eventBus = useEventBus();
 
@@ -38,14 +42,27 @@ eventBus?.on('dataSelector:selected', (data: any) => {
     formData[item.formField] = data.record[item.dataField];
   });
 });
+
+defineExpose({
+  blur: () => inputRef.value?.blur?.(),
+  clear: () => {
+    if (props.componentSchema?.field && formData) {
+      formData[props.componentSchema.field] = '';
+    }
+  },
+  focus: (options?: any) => inputRef.value?.focus?.(options),
+  getNativeRef: () => inputRef.value,
+  select: () => inputRef.value?.select?.(),
+});
 </script>
+
 <template>
-  <Input :placeholder="props.placeholder">
+  <Input ref="inputRef" :placeholder="props.placeholder">
     <template #suffix>
       <span
         v-if="props.dataSelector"
-        @click="handleDataSelector"
         class="iconfont icon--aigen icon--aigen--search-rounded"
+        @click="handleDataSelector"
       ></span>
       <slot name="suffix"></slot>
     </template>

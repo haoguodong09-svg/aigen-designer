@@ -1,179 +1,207 @@
 <script lang="ts" setup>
 import type {
-  ActionsModel,
   ComponentSchema,
   ConditionGroup,
-  FieldLink,
+  ReactiveRule,
 } from '@aigen-designer/types';
 
 import type {
   ExpressionField,
   ExpressionModel,
 } from '../../../components/AigenActionDrawer/helper';
-import type { ConditionOperator, LinkEntry } from './linkHelper';
+import type { RuleDraft, RuleOperator } from './ruleHelper';
 
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
-import { useBindModel } from '@aigen-designer/base-ui';
-import { useDesignerContext } from '@aigen-designer/hooks';
+import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
+import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import {
-  compileLinks,
-  findSchemas,
-  getUUID,
-  setValueByPath,
-} from '@aigen-designer/utils';
+import { deepClone, findSchemas } from '@aigen-designer/utils';
 
 import { isExpressionValue } from '../../../components/AigenActionDrawer/helper';
 import ExpressionInsert from '../../../components/ExpressionInsert/index.vue';
+import { getSchemaLabel } from './linkHelper';
 import {
-  collectLinkEntries,
-  getSchemaLabel,
-  LINK_BEHAVIOR_LABELS,
-  LINK_BEHAVIOR_OPTIONS,
-} from './linkHelper';
+  buildReactiveRule,
+  createEmptyRuleDraft,
+  getBehaviorLabel,
+  getRuleSimpleCondition,
+  getRuleSummary,
+  inferRuleBehavior,
+  migrateLegacyLinksToRules,
+  RULE_BEHAVIOR_OPTIONS,
+  RULE_OPERATOR_OPTIONS,
+  UNARY_OPERATORS,
+} from './ruleHelper';
 
 /**
- * 字段联动子模块（B4.2）：
- * - 列表视图平铺展示页面全部联动规则（聚合各元素 schema.links）；
- * - 新建 / 编辑表单：源字段 + 行为 + 目标元素 + 赋值内容（常量 / 表达式）+ 可选条件；
- * - 保存写入「源元素」schema.links（FieldLink，id = getUUID()，enabled 默认 true），经 revoke.push 入撤销栈。
- * 运行时编译契约（WP-B ↔ WP-C 接线，B4.5 双写策略）：
- *   import { compileLinks } from '@aigen-designer/utils';
- *   const actions = compileLinks(sourceSchema, pageSchema); // 动作携带 linkId = link.id
- * 保存 / 启停用时把源元素 links 重编译写回 on[change]（按 linkId 整体去重替换，
- * 保留无 linkId 的手工动作如快捷气泡 / 事件面板写入的动作）；
- * 删除时按 linkId 从源元素 on[change] 过滤编译动作。
- * 设计态安全：本模块只读写 schema 数据与求值展示，不触发任何运行时事件。
+ * 「字段联动」声明式规则编辑器。
+ *
+ * 设计目标：
+ * - 单一真相源：只读写 pageSchema.reactiveRules，不再生成 schema.links / on.change 编译动作；
+ * - 首屏即生效：运行时 ReactiveRuleEngine 在数据回填后立即求值，条件反转自动复位；
+ * - 自然语言心智：当「字段」「条件」「值」时 → 对「目标」显示/隐藏/禁用/赋值…；
+ * - 零门槛：当前选中字段自动预填、常用模板一键套用、比较值按字段类型提供选项。
  */
+
 const designer = useDesignerContext();
+const pageManager = usePageManager();
 const pageSchema = designer.pageSchema;
 const revoke = designer.revoke;
 
-/** 页面输入组件字段（label + field + type，复用 ExpressionInsert 的字段收集方式） */
-const inputFields = computed<ExpressionField[]>(() => {
-  const schemas = findSchemas(
-    pageSchema.schemas,
-    (item) => Boolean(item.input) && Boolean(item.field),
-  ) as ComponentSchema[];
-  return schemas.map((item) => ({
-    field: item.field as string,
-    label: item.label ?? (item.field as string),
-    type: item.type,
-  }));
-});
-
-/** 页面全部元素（label + id，联动目标候选） */
-const targetOptions = computed(() => {
-  const schemas = findSchemas(pageSchema.schemas, (item) =>
-    Boolean(item.id),
-  ) as ComponentSchema[];
-  return schemas.map((item) => ({
-    id: item.id as string,
-    label: getSchemaLabel(item),
-  }));
-});
-
-/** 聚合后的联动规则列表（按元素遍历顺序） */
-const linkEntries = computed<LinkEntry[]>(() => collectLinkEntries(pageSchema));
-
-/** 组件下拉（随当前 UI 库：antd Select / elementPlus / naiveUi），
- * 与动作配置向导一致；options 经 attrs fallthrough 由各适配组件透传 */
 const SelectComponent = pluginManager.component.get('select');
 const { bindModel } = useBindModel('select');
 
-/** 源字段下拉选项（label 拼接 field，保持与原生版一致的展示信息） */
+/** 页面输入组件字段（label + field + type + schema） */
+const inputSchemas = computed(
+  () =>
+    findSchemas(
+      pageSchema.schemas,
+      (item) => Boolean(item.input) && Boolean(item.field),
+    ) as ComponentSchema[],
+);
+
+const inputFields = computed<ExpressionField[]>(() =>
+  inputSchemas.value.map((item) => ({
+    field: item.field as string,
+    label: item.label ?? (item.field as string),
+    type: item.type,
+  })),
+);
+
+/** 页面全部元素（联动目标候选） */
+const allSchemas = computed(
+  () =>
+    findSchemas(pageSchema.schemas, (item) =>
+      Boolean(item.id),
+    ) as ComponentSchema[],
+);
+
+const targetOptions = computed(() =>
+  allSchemas.value.map((item) => ({
+    label: `${getSchemaLabel(item)}（${item.id}）`,
+    value: item.id as string,
+  })),
+);
+
 const sourceFieldOptions = computed(() =>
-  inputFields.value.map((item) => ({
+  inputSchemas.value.map((item) => ({
     label:
-      item.label === item.field ? item.label : `${item.label}（${item.field}）`,
-    value: item.field,
+      item.label && item.label !== item.field
+        ? `${item.label}（${item.field}）`
+        : String(item.field),
+    value: item.field as string,
   })),
 );
 
-/** 条件字段下拉选项 */
-const conditionFieldOptions = computed(() =>
-  inputFields.value.map((item) => ({ label: item.label, value: item.field })),
+const operatorOptions = RULE_OPERATOR_OPTIONS.map((item) => ({
+  label: item.label,
+  value: item.value,
+}));
+
+const behaviorOptions = RULE_BEHAVIOR_OPTIONS;
+
+/** 规则列表 */
+const ruleEntries = computed<ReactiveRule[]>(
+  () => pageSchema.reactiveRules ?? [],
 );
 
-/** 目标元素下拉选项（label 拼接 id） */
-const targetSelectOptions = computed(() =>
-  targetOptions.value.map((item) => ({
-    label: `${item.label}（${item.id}）`,
-    value: item.id,
-  })),
-);
+/* ---------------- 旧数据升轨 ---------------- */
 
-/** 条件比较运算符（简单版） */
-const CONDITION_OPERATORS = new Set<ConditionOperator>([
-  '!=',
-  '<',
-  '<=',
-  '==',
-  '>',
-  '>=',
-]);
+onMounted(() => {
+  // 存量 schema.links → reactiveRules（一次性、幂等）
+  migrateLegacyLinksToRules(pageSchema);
+});
 
-/** 条件运算符下拉选项 */
-const conditionOperatorOptions = computed(() =>
-  [...CONDITION_OPERATORS].map((op) => ({ label: op, value: op })),
-);
+/* ---------------- 表单草稿 ---------------- */
 
-/** 新建 / 编辑表单草稿 */
-interface LinkDraft {
-  behavior: '' | FieldLink['behavior'];
-  conditionField: string;
-  conditionOperator: ConditionOperator;
-  conditionValue: string;
-  constantValue: string;
-  expressionValue: string;
-  sourceField: string;
-  targetId: string;
-  useCondition: boolean;
-  valueMode: 'constant' | 'expression';
-}
-
-function createEmptyDraft(): LinkDraft {
-  return {
-    behavior: '',
-    conditionField: '',
-    conditionOperator: '==',
-    conditionValue: '',
-    constantValue: '',
-    expressionValue: '',
-    sourceField: '',
-    targetId: '',
-    useCondition: false,
-    valueMode: 'constant',
-  };
-}
-
+const draft = reactive<RuleDraft>(createEmptyRuleDraft());
 const formVisible = ref(false);
-const editingEntry = ref<LinkEntry | null>(null);
+const editingId = ref<null | string>(null);
 const formError = ref('');
-const draft = reactive<LinkDraft>(createEmptyDraft());
 
-/** 行为为联合类型（'' | behavior），经包装模型适配组件下拉的 string 值 */
 const behaviorModel = computed({
   get: () => draft.behavior,
   set: (value: string) => {
-    draft.behavior = value as LinkDraft['behavior'];
+    draft.behavior = value as RuleDraft['behavior'];
   },
 });
 
-/** 条件运算符联合类型包装 */
-const conditionOperatorModel = computed({
-  get: () => draft.conditionOperator,
+const operatorModel = computed({
+  get: () => draft.operator,
   set: (value: string) => {
-    draft.conditionOperator = value as ConditionOperator;
+    draft.operator = value as RuleOperator;
   },
 });
 
-/* ---------------- 表达式插入器 ---------------- */
+/** 源字段 schema（用于比较值控件类型与选项） */
+const sourceSchema = computed(
+  () =>
+    inputSchemas.value.find((item) => item.field === draft.sourceField) ?? null,
+);
+
+/** 比较值控件类型：select / boolean / number / text */
+const conditionValueKind = computed<'boolean' | 'number' | 'options' | 'text'>(
+  () => {
+    const type = sourceSchema.value?.type ?? '';
+    const hasOptions = Array.isArray(sourceSchema.value?.props?.options);
+    if (
+      hasOptions &&
+      ['cascader', 'checkbox', 'radio', 'select'].includes(type)
+    ) {
+      return 'options';
+    }
+    if (type === 'switch' || type === 'checkbox') return 'boolean';
+    if (['input-number', 'number', 'rate', 'slider'].includes(type)) {
+      return 'number';
+    }
+    return 'text';
+  },
+);
+
+/** 源字段可选项（select/radio 的 props.options） */
+const conditionValueOptions = computed(() => {
+  const options = sourceSchema.value?.props?.options;
+  if (!Array.isArray(options)) return [];
+  return options.map((item: any) =>
+    typeof item === 'object'
+      ? {
+          label: String(item.label ?? item.value ?? ''),
+          value: typeof item.value === 'object' ? item.value : item.value,
+        }
+      : { label: String(item), value: item },
+  );
+});
+
+/** 布尔比较值下拉 */
+const booleanOptions = [
+  { label: '是（true）', value: true },
+  { label: '否（false）', value: false },
+];
+
+/** 比较值统一模型：下拉可能返回布尔/数字/字符串，文本输入返回字符串 */
+const conditionValueModel = computed({
+  get: () => draft.conditionValue,
+  set: (value: any) => {
+    draft.conditionValue = value;
+  },
+});
+
+/** 是否需要输入比较值 */
+const needConditionValue = computed(
+  () => draft.operator !== 'always' && !UNARY_OPERATORS.has(draft.operator),
+);
+
+/** 当前行为是否需要配置“赋的值” */
+const needValue = computed(() => draft.behavior === 'SET_VALUE');
+
+/* ---------------- 表达式插入 ---------------- */
 
 const exprVisible = ref(false);
+const exprInitial = ref('');
 
 function openExpression() {
+  exprInitial.value = draft.expressionValue;
   exprVisible.value = true;
 }
 
@@ -182,284 +210,192 @@ function handleExpressionConfirm(value: ExpressionModel) {
   draft.expressionValue = value.content;
 }
 
-/* ---------------- 表单打开 / 关闭 ---------------- */
+/* ---------------- 新建 / 编辑 / 删除 ---------------- */
 
 function handleCreate() {
-  Object.assign(draft, createEmptyDraft());
-  editingEntry.value = null;
+  const selected = designer.state.selectedNode;
+  const defaultSource = selected?.field
+    ? String(selected.field)
+    : (inputSchemas.value[0]?.field ?? '');
+
+  Object.assign(draft, createEmptyRuleDraft(), {
+    sourceField: defaultSource,
+    targetId: selected && selected.id && !selected.input ? selected.id : '',
+  });
+  editingId.value = null;
   formError.value = '';
   formVisible.value = true;
 }
 
-/** 简单条件项（FieldLink.when 的第一条 items 解析结果） */
-interface SimpleConditionItem {
-  field: string;
-  operator: ConditionOperator;
-  value?: unknown;
-}
-
-function getConditionItem(when?: ConditionGroup): null | SimpleConditionItem {
-  const first = when?.items?.[0];
-  if (!first || !('field' in first)) return null;
-  const operator = CONDITION_OPERATORS.has(first.operator as ConditionOperator)
-    ? (first.operator as ConditionOperator)
-    : '==';
-  return { field: first.field, operator, value: first.value };
-}
-
-function handleEdit(entry: LinkEntry) {
-  editingEntry.value = entry;
-  const link = entry.link;
-  const value = link.value;
-  const isExpr = isExpressionValue(value);
-  const condition = getConditionItem(link.when);
-  Object.assign(draft, {
-    behavior: link.behavior,
-    conditionField: condition?.field ?? '',
-    conditionOperator: condition?.operator ?? '==',
-    conditionValue: typeof condition?.value === 'string' ? condition.value : '',
-    constantValue: isExpr || typeof value !== 'string' ? '' : value,
-    expressionValue: isExpr ? value.content : '',
-    sourceField: link.sourceField,
-    targetId: link.targetId,
-    useCondition: Boolean(condition),
-    valueMode: isExpr ? 'expression' : 'constant',
+/** 快捷模板：一键预填常用句式 */
+function applyTemplate(template: 'CLEAR' | 'DISABLE' | 'HIDE' | 'SET_VALUE') {
+  const selected = designer.state.selectedNode;
+  const defaultSource = selected?.field
+    ? String(selected.field)
+    : (inputSchemas.value[0]?.field ?? '');
+  Object.assign(draft, createEmptyRuleDraft(), {
+    behavior: template,
+    sourceField: defaultSource,
+    targetId: selected && selected.id && !selected.input ? selected.id : '',
   });
+  if (template === 'HIDE' || template === 'DISABLE') {
+    draft.operator = '==';
+  }
+  editingId.value = null;
+  formError.value = '';
+  formVisible.value = true;
+}
+
+function handleEdit(rule: ReactiveRule) {
+  const condition = getRuleSimpleCondition(rule);
+  const behavior = inferRuleBehavior(rule);
+  const computedValue = rule.effects.computedValue;
+  Object.assign(draft, createEmptyRuleDraft(), {
+    behavior,
+    conditionValue:
+      condition && condition.value !== undefined ? condition.value : '',
+    constantValue:
+      behavior === 'SET_VALUE' &&
+      !isExpressionValue(computedValue) &&
+      typeof computedValue !== 'object'
+        ? String(computedValue ?? '')
+        : '',
+    expressionValue: isExpressionValue(computedValue)
+      ? computedValue.content
+      : '',
+    operator: condition ? condition.operator : 'always',
+    sourceField: condition?.field ?? '',
+    targetId: rule.targetField,
+    valueMode: isExpressionValue(computedValue) ? 'expression' : 'constant',
+  });
+  editingId.value = rule.id;
   formError.value = '';
   formVisible.value = true;
 }
 
 function handleCancel() {
   formVisible.value = false;
-  editingEntry.value = null;
+  editingId.value = null;
+  formError.value = '';
 }
 
-/* ---------------- 保存 / 删除 / 启停用 ---------------- */
-
-/** 按 field 查找源元素 schema（findSchemas once 模式，未找到返回 null） */
-function findSchemaByField(field: string): ComponentSchema | null {
-  const found = findSchemas(
-    pageSchema.schemas,
-    (item) => item.field === field,
-    true,
-  );
-  return (found as ComponentSchema | false) || null;
-}
-
-/** 按 id 查找元素 schema（未找到返回 null，避免 findSchemaById 抛错） */
-function findSchemaByIdSafe(id: string): ComponentSchema | null {
-  const found = findSchemas(pageSchema.schemas, (item) => item.id === id, true);
-  return (found as ComponentSchema | false) || null;
-}
-
-/** 从指定元素的 links 中移除某条规则 */
-function removeLinkFromOwner(ownerId: string, linkId: string) {
-  const owner = findSchemaByIdSafe(ownerId);
-  if (!owner || !Array.isArray(owner.links)) return;
-  owner.links = owner.links.filter((item) => item.id !== linkId);
-}
-
-/**
- * 按 linkId 从元素 on[change] 过滤编译动作（WP-C 契约：删除 / 旧源清理）。
- * 仅当确实存在匹配的编译动作时才写回（避免产生无意义的 on.change 空数组）。
- */
-function removeCompiledActionsFromOwner(ownerId: string, linkId: string) {
-  const owner = findSchemaByIdSafe(ownerId);
-  if (!owner) return;
-  const on = (owner.on ?? {}) as Record<string, ActionsModel[]>;
-  const changeList = Array.isArray(on.change) ? on.change : [];
-  const rest = changeList.filter((item) => item.linkId !== linkId);
-  if (rest.length !== changeList.length) {
-    setValueByPath(owner, 'on', { ...on, change: rest });
-  }
-}
-
-/**
- * 把源元素 links 全部重编译写回 on[change]（WP-B ↔ WP-C 契约接线，B4.5 双写策略）：
- * - 保留无 linkId 的手工动作（快捷气泡 setAttr / 事件面板手动添加的动作）；
- * - 全部带 linkId 的编译动作按当前 links 重建（按 linkId 整体去重替换，自愈：
- *   编辑 / 启停用 / 删除后 on[change] 与 links 完全一致，无陈旧编译产物）；
- * - 停用规则不编译（compileLinks 语义），目标元素不存在的规则被过滤（fail-safe）；
- * - 无 on 且无任何动作时跳过写回，避免 schema 噪音。
- */
-function resyncLinksToOn(schema: ComponentSchema) {
-  const on = (schema.on ?? {}) as Record<string, ActionsModel[]>;
-  const changeList = Array.isArray(on.change) ? on.change : [];
-  const manual = changeList.filter((item) => !item.linkId);
-  const compiled = compileLinks(schema, pageSchema);
-  if (!schema.on && manual.length === 0 && compiled.length === 0) return;
-  setValueByPath(schema, 'on', { ...on, change: [...manual, ...compiled] });
+/** 替换整个规则数组并记录撤销栈 */
+function commitRules(nextRules: ReactiveRule[], message: string) {
+  const before = deepClone(pageSchema.reactiveRules ?? []);
+  const after = deepClone(nextRules);
+  pageSchema.reactiveRules = after;
+  // 设计态即时反馈：规则变化后立即重新求值（首屏/编辑时无需触发交互）
+  pageManager.reactiveEngine?.evaluateAllRules?.();
+  revoke.push({
+    redo: () => {
+      pageSchema.reactiveRules = deepClone(after);
+      pageManager.reactiveEngine?.evaluateAllRules?.();
+    },
+    type: message,
+    undo: () => {
+      pageSchema.reactiveRules = deepClone(before);
+      pageManager.reactiveEngine?.evaluateAllRules?.();
+    },
+  });
 }
 
 function handleSave() {
   formError.value = '';
-  const sourceField = draft.sourceField;
-  if (!sourceField) {
-    formError.value = '请选择源字段';
+  if (!draft.behavior) {
+    formError.value = '请选择联动效果';
     return;
   }
-  const behavior = draft.behavior;
-  if (!behavior) {
-    formError.value = '请选择联动行为';
+  if (!draft.targetId) {
+    formError.value = '请选择受影响的目标元素';
     return;
   }
-  const targetId = draft.targetId;
-  if (!targetId) {
-    formError.value = '请选择目标元素';
+  if (draft.operator !== 'always' && !draft.sourceField) {
+    formError.value = '请选择判断条件的字段';
     return;
   }
   if (
-    behavior === 'SET_VALUE' &&
+    draft.behavior === 'SET_VALUE' &&
     draft.valueMode === 'expression' &&
     !draft.expressionValue.trim()
   ) {
-    formError.value = '请输入赋值表达式';
-    return;
-  }
-  if (draft.useCondition && !draft.conditionField) {
-    formError.value = '请选择条件字段';
+    formError.value = '请输入赋值公式，或改用常量';
     return;
   }
 
-  const sourceSchema = findSchemaByField(sourceField);
-  if (!sourceSchema) {
-    formError.value = '未找到源字段对应的组件，请检查字段配置';
+  const rule = buildReactiveRule(draft, editingId.value ?? undefined);
+  if (!rule) {
+    formError.value = '规则配置不完整';
     return;
   }
 
-  // 构造 FieldLink（设计态视图模型；key 按字母序）
-  const link: FieldLink = {
-    behavior,
-    enabled: true,
-    id: editingEntry.value?.link.id ?? getUUID(),
-    sourceField,
-    targetId,
-  };
-  if (behavior === 'SET_VALUE') {
-    link.value =
-      draft.valueMode === 'expression'
-        ? { __isExpression__: true, content: draft.expressionValue.trim() }
-        : draft.constantValue;
+  const rules = [...(pageSchema.reactiveRules ?? [])];
+  const index = rules.findIndex((item) => item.id === rule.id);
+  if (index === -1) {
+    rules.push(rule);
+  } else {
+    rule.enabled = rules[index].enabled !== false;
+    rules.splice(index, 1, rule);
   }
-  if (draft.useCondition && draft.conditionField) {
-    link.when = {
-      logic: 'AND',
-      items: [
-        {
-          field: draft.conditionField,
-          operator: draft.conditionOperator,
-          value: draft.conditionValue,
-        },
-      ],
-    };
-  }
-
-  // 编辑时先从旧源元素移除，再写入新源元素（源字段可能已变更）
-  if (editingEntry.value) {
-    removeLinkFromOwner(editingEntry.value.ownerId, link.id);
-    // 旧源元素的 on[change] 编译产物按 linkId 清理（源字段变更后旧源不再持有该规则）
-    removeCompiledActionsFromOwner(editingEntry.value.ownerId, link.id);
-  }
-  const links = sourceSchema.links ?? [];
-  sourceSchema.links = [...links, link];
-  // WP-C 契约接线：把源元素 links 编译写回 on[change]（按 linkId 去重替换，
-  // 保留无 linkId 的手工动作；停用规则不编译），预览 / 发布环境运行时生效
-  resyncLinksToOn(sourceSchema);
-  revoke.push('关联编辑');
+  commitRules(rules, editingId.value ? '编辑联动规则' : '新增联动规则');
   formVisible.value = false;
-  editingEntry.value = null;
+  editingId.value = null;
 }
 
-function handleDelete(entry: LinkEntry) {
-  const snapshot = structuredClone(entry.link);
-  const ownerId = entry.ownerId;
-  removeLinkFromOwner(entry.ownerId, entry.link.id);
-  removeCompiledActionsFromOwner(entry.ownerId, entry.link.id);
-  if (editingEntry.value?.link.id === entry.link.id) {
-    formVisible.value = false;
-    editingEntry.value = null;
-  }
-  revoke.push({
-    redo: () => {
-      removeLinkFromOwner(ownerId, snapshot.id);
-      removeCompiledActionsFromOwner(ownerId, snapshot.id);
-    },
-    type: '关联编辑',
-    undo: () => {
-      const owner = findSchemaByIdSafe(ownerId);
-      if (owner) {
-        owner.links = owner.links || [];
-        owner.links.push(structuredClone(snapshot));
-        resyncLinksToOn(owner);
-      }
-    },
-  });
-}
-
-function handleToggle(entry: LinkEntry, enabled: boolean) {
-  const owner = findSchemaByIdSafe(entry.ownerId);
-  if (!owner || !Array.isArray(owner.links)) return;
-  const prevEnabled = entry.link.enabled;
-  owner.links = owner.links.map((item) =>
-    item.id === entry.link.id ? { ...item, enabled } : item,
+function handleDelete(rule: ReactiveRule) {
+  commitRules(
+    (pageSchema.reactiveRules ?? []).filter((item) => item.id !== rule.id),
+    '删除联动规则',
   );
-  // 启停用后同步编译产物：停用规则不编译（移除），启用规则重建（按 linkId 定位）
-  resyncLinksToOn(owner);
-  revoke.push({
-    redo: () => {
-      const o = findSchemaByIdSafe(entry.ownerId);
-      if (o && Array.isArray(o.links)) {
-        o.links = o.links.map((item) =>
-          item.id === entry.link.id ? { ...item, enabled } : item,
-        );
-        resyncLinksToOn(o);
-      }
-    },
-    type: '关联编辑',
-    undo: () => {
-      const o = findSchemaByIdSafe(entry.ownerId);
-      if (o && Array.isArray(o.links)) {
-        o.links = o.links.map((item) =>
-          item.id === entry.link.id ? { ...item, enabled: prevEnabled } : item,
-        );
-        resyncLinksToOn(o);
-      }
-    },
-  });
+  if (editingId.value === rule.id) {
+    formVisible.value = false;
+    editingId.value = null;
+  }
 }
 
-function handleToggleChange(entry: LinkEntry, event: Event) {
-  handleToggle(entry, (event.target as HTMLInputElement).checked);
+function handleToggle(rule: ReactiveRule, enabled: boolean) {
+  commitRules(
+    (pageSchema.reactiveRules ?? []).map((item) =>
+      item.id === rule.id ? { ...item, enabled } : item,
+    ),
+    '启停用联动规则',
+  );
+}
+
+function handleToggleChange(rule: ReactiveRule, event: Event) {
+  handleToggle(rule, (event.target as HTMLInputElement).checked);
 }
 
 /* ---------------- 展示辅助 ---------------- */
 
-function getBehaviorLabel(behavior: FieldLink['behavior']): string {
-  return LINK_BEHAVIOR_LABELS[behavior];
-}
-
-function getSourceFieldLabel(field: string): string {
-  const item = inputFields.value.find((f) => f.field === field);
-  return item ? item.label : field;
+function getFieldLabel(field: string): string {
+  const schema = inputSchemas.value.find((item) => item.field === field);
+  return schema ? getSchemaLabel(schema) : field;
 }
 
 function getTargetLabel(targetId: string): string {
-  const schema = findSchemaByIdSafe(targetId);
-  return schema ? getSchemaLabel(schema) : targetId;
+  const schema = allSchemas.value.find((item) => item.id === targetId);
+  return schema ? getSchemaLabel(schema) : `${targetId}（已删除）`;
 }
 
-function getValueText(link: FieldLink): string {
-  const value = link.value;
-  if (isExpressionValue(value)) {
-    return `表达式 ${value.content}`;
+function getSummary(rule: ReactiveRule): string {
+  return getRuleSummary(rule, getFieldLabel, getTargetLabel);
+}
+
+/** 规则是否引用已删除目标（设计态断链提示） */
+function isTargetMissing(rule: ReactiveRule): boolean {
+  return !allSchemas.value.some((item) => item.id === rule.targetField);
+}
+
+/** 展示当前条件的人话（列表卡片副标题） */
+function getConditionHint(rule: ReactiveRule): string {
+  const condition: ConditionGroup | undefined = rule.condition;
+  const first = condition?.items?.[0];
+  const behavior = inferRuleBehavior(rule);
+  if (behavior === 'SET_VALUE' || behavior === 'CLEAR') {
+    return '条件满足时执行赋值 / 清空';
   }
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (value === undefined || value === null) {
-    return '';
-  }
-  return JSON.stringify(value);
+  if (!first || !('field' in first)) return '始终生效';
+  return '条件满足时生效，不满足自动恢复';
 }
 </script>
 
@@ -467,210 +403,321 @@ function getValueText(link: FieldLink): string {
   <div class="aigen-link-field-editor">
     <!-- 模块头：标题 + 新建 -->
     <div class="aigen-link-module-head">
-      <span class="aigen-link-module-title">字段联动</span>
+      <div class="aigen-link-module-title-wrap">
+        <span class="aigen-link-module-title">
+          <AigenIcon
+            class="aigen-link-module-icon"
+            name="icon--behavior--thunderbolt"
+          />
+          字段联动
+        </span>
+        <span class="aigen-link-module-sub">条件满足时自动改变其它元素</span>
+      </div>
       <button type="button" class="aigen-link-add-btn" @click="handleCreate">
-        + 新建
+        <AigenIcon name="icon--aigen--add-rounded" />
+        新建规则
       </button>
     </div>
 
-    <!-- 联动规则列表 -->
-    <div v-if="linkEntries.length" class="aigen-link-list">
+    <!-- 规则列表 -->
+    <div v-if="ruleEntries.length" class="aigen-link-list">
       <div
-        v-for="entry in linkEntries"
-        :key="entry.link.id"
-        class="aigen-link-item"
-        :class="{ 'aigen-link-item--disabled': entry.link.enabled === false }"
+        v-for="rule in ruleEntries"
+        :key="rule.id"
+        class="aigen-rule-card"
+        :class="{ 'aigen-rule-card--disabled': rule.enabled === false }"
       >
-        <label
-          class="aigen-switch aigen-switch--small"
-          :class="{
-            'aigen-switch--checked': entry.link.enabled !== false,
-          }"
-          title="启停用"
-        >
-          <input
-            type="checkbox"
-            class="aigen-switch__input"
-            :checked="entry.link.enabled !== false"
-            @change="handleToggleChange(entry, $event)"
-          />
-          <span class="aigen-switch__slider"></span>
-        </label>
-        <div class="aigen-link-item__main">
-          <div class="aigen-link-item__summary" :title="entry.link.sourceField">
-            当「{{ getSourceFieldLabel(entry.link.sourceField) }}」变化
-          </div>
-          <div
-            class="aigen-link-item__summary aigen-link-item__summary--action"
+        <div class="aigen-rule-card__head">
+          <label
+            class="aigen-switch aigen-switch--small"
+            :class="{ 'aigen-switch--checked': rule.enabled !== false }"
+            title="启停用"
           >
-            → {{ getBehaviorLabel(entry.link.behavior) }}「{{
-              getTargetLabel(entry.link.targetId)
-            }}」
-            <span
-              v-if="entry.link.behavior === 'SET_VALUE'"
-              class="aigen-link-item__value"
-              :title="getValueText(entry.link)"
-            >
-              = {{ getValueText(entry.link) }}
-            </span>
-          </div>
+            <input
+              type="checkbox"
+              class="aigen-switch__input"
+              :checked="rule.enabled !== false"
+              @change="handleToggleChange(rule, $event)"
+            />
+            <span class="aigen-switch__slider"></span>
+          </label>
+          <span class="aigen-rule-card__summary" :title="getSummary(rule)">
+            <AigenIcon
+              class="aigen-rule-card__summary-icon"
+              name="icon--behavior--thunderbolt"
+            />
+            {{ getSummary(rule) }}
+          </span>
         </div>
-        <div class="aigen-link-item__ops">
-          <button type="button" title="编辑" @click="handleEdit(entry)">
-            编辑
-          </button>
-          <button
-            type="button"
-            class="aigen-link-item__del"
-            title="删除"
-            @click="handleDelete(entry)"
-          >
-            删除
-          </button>
+        <div class="aigen-rule-card__foot">
+          <span class="aigen-rule-card__hint">{{
+            getConditionHint(rule)
+          }}</span>
+          <span v-if="isTargetMissing(rule)" class="aigen-rule-card__warn">
+            <AigenIcon name="icon--behavior--warning-circle" />
+            目标元素已删除
+          </span>
+          <span class="aigen-rule-card__ops">
+            <button
+              type="button"
+              title="编辑"
+              aria-label="编辑规则"
+              @click="handleEdit(rule)"
+            >
+              <AigenIcon name="icon--behavior--edit" />
+            </button>
+            <button
+              type="button"
+              class="aigen-rule-card__del"
+              title="删除"
+              aria-label="删除规则"
+              @click="handleDelete(rule)"
+            >
+              <AigenIcon name="icon--behavior--delete" />
+            </button>
+          </span>
         </div>
       </div>
     </div>
     <div v-else class="aigen-link-empty">
-      暂无联动规则，点击右上角「+ 新建」添加
+      还没有联动规则。用一句自然语言即可配置：<br />
+      「当 客户类型 等于 企业 时，显示 税号」。
     </div>
 
-    <!-- 新建 / 编辑表单（内联展开） -->
-    <div v-if="formVisible" class="aigen-link-form">
-      <div class="aigen-link-form__row">
-        <span class="aigen-link-form__label">源字段</span>
-        <div class="aigen-link-form__control">
-          <component
-            :is="SelectComponent"
-            v-model:[bindModel]="draft.sourceField"
-            :options="sourceFieldOptions"
-            placeholder="请选择源字段"
-            style="width: 100%"
-          />
-        </div>
+    <!-- 快捷模板（仅空态展示，降低首次配置门槛） -->
+    <div
+      v-if="!ruleEntries.length && !formVisible"
+      class="aigen-rule-templates"
+    >
+      <div class="aigen-rule-templates__title">常用场景一键开始</div>
+      <button type="button" @click="applyTemplate('HIDE')">
+        <AigenIcon name="icon--aigen--visibility-off-outline-rounded" />
+        字段等于某值时隐藏另一个元素
+      </button>
+      <button type="button" @click="applyTemplate('DISABLE')">
+        <AigenIcon name="icon--aigen--lock-outline" />
+        字段等于某值时禁用另一个元素
+      </button>
+      <button type="button" @click="applyTemplate('SET_VALUE')">
+        <AigenIcon name="icon--aigen--edit-square-outline-rounded" />
+        根据公式给另一个元素赋值
+      </button>
+      <button type="button" @click="applyTemplate('CLEAR')">
+        <AigenIcon name="icon--behavior--clear" />
+        条件满足时清空另一个元素
+      </button>
+    </div>
+
+    <!-- 新建 / 编辑表单 -->
+    <div v-if="formVisible" class="aigen-rule-form">
+      <div class="aigen-rule-form__title">
+        {{ editingId ? '编辑联动规则' : '新建联动规则' }}
       </div>
 
-      <div class="aigen-link-form__row">
-        <span class="aigen-link-form__label">行为</span>
-        <div class="aigen-link-form__control">
-          <component
-            :is="SelectComponent"
-            v-model:[bindModel]="behaviorModel"
-            :options="LINK_BEHAVIOR_OPTIONS"
-            placeholder="请选择行为"
-            style="width: 100%"
-          />
+      <!-- IF 条件 -->
+      <div class="aigen-rule-form__section">
+        <div class="aigen-rule-form__section-title">
+          <span class="aigen-rule-form__section-index">1</span>
+          <span class="aigen-rule-form__section-label">当满足条件</span>
         </div>
-      </div>
-
-      <div class="aigen-link-form__row">
-        <span class="aigen-link-form__label">目标元素</span>
-        <div class="aigen-link-form__control">
-          <component
-            :is="SelectComponent"
-            v-model:[bindModel]="draft.targetId"
-            :options="targetSelectOptions"
-            placeholder="请选择目标元素"
-            style="width: 100%"
-          />
-        </div>
-      </div>
-
-      <!-- 赋值内容（行为 = 赋值时显示） -->
-      <div v-if="draft.behavior === 'SET_VALUE'" class="aigen-link-form__row">
-        <span class="aigen-link-form__label">赋值内容</span>
-        <div class="aigen-link-form__value">
-          <div class="aigen-link-form__value-mode">
-            <label class="aigen-radio">
-              <input v-model="draft.valueMode" type="radio" value="constant" />
-              常量
-            </label>
-            <label class="aigen-radio">
-              <input
-                v-model="draft.valueMode"
-                type="radio"
-                value="expression"
-              />
-              表达式
-            </label>
-          </div>
-          <input
-            v-if="draft.valueMode === 'constant'"
-            v-model="draft.constantValue"
-            type="text"
-            class="aigen-link-input"
-            placeholder="输入常量值"
-          />
-          <div v-else class="aigen-link-expr">
-            <input
-              v-model="draft.expressionValue"
-              type="text"
-              class="aigen-link-input"
-              placeholder="如：$formData.qty * $formData.price"
+        <div class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">判断字段</span>
+          <div class="aigen-rule-form__control">
+            <component
+              :is="SelectComponent"
+              v-model:[bindModel]="draft.sourceField"
+              :disabled="draft.operator === 'always'"
+              :options="sourceFieldOptions"
+              placeholder="选择要判断的字段"
+              style="width: 100%"
             />
-            <button
-              type="button"
-              class="aigen-link-fx"
-              title="使用表达式插入器"
-              @click="openExpression"
-            >
-              fx
-            </button>
+          </div>
+        </div>
+        <div class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">判断关系</span>
+          <div class="aigen-rule-form__control">
+            <component
+              :is="SelectComponent"
+              v-model:[bindModel]="operatorModel"
+              :options="operatorOptions"
+              style="width: 100%"
+            />
+          </div>
+        </div>
+
+        <div v-if="needConditionValue" class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">比较值</span>
+          <div class="aigen-rule-form__control">
+            <component
+              v-if="
+                conditionValueKind === 'options' && conditionValueOptions.length
+              "
+              :is="SelectComponent"
+              v-model:[bindModel]="conditionValueModel"
+              :options="conditionValueOptions"
+              placeholder="选择比较值"
+              style="width: 100%"
+            />
+            <component
+              v-else-if="conditionValueKind === 'boolean'"
+              :is="SelectComponent"
+              v-model:[bindModel]="conditionValueModel"
+              :options="booleanOptions"
+              placeholder="选择是 / 否"
+              style="width: 100%"
+            />
+            <input
+              v-else
+              v-model="draft.conditionValue"
+              :type="conditionValueKind === 'number' ? 'number' : 'text'"
+              class="aigen-rule-input"
+              placeholder="输入比较值"
+            />
+          </div>
+        </div>
+        <p v-if="draft.operator === 'always'" class="aigen-rule-form__tip">
+          无条件规则：页面加载后立即生效（如“始终禁用某元素”）。
+        </p>
+      </div>
+
+      <!-- THEN 效果 -->
+      <div class="aigen-rule-form__section">
+        <div class="aigen-rule-form__section-title">
+          <span class="aigen-rule-form__section-index">2</span>
+          <span class="aigen-rule-form__section-label">则执行联动</span>
+        </div>
+        <div class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">联动效果</span>
+          <div class="aigen-rule-form__control">
+            <div class="aigen-rule-behavior-grid">
+              <button
+                v-for="opt in behaviorOptions"
+                :key="opt.value"
+                type="button"
+                class="aigen-rule-behavior"
+                :class="{
+                  'aigen-rule-behavior--active': draft.behavior === opt.value,
+                }"
+                :title="opt.description"
+                @click="behaviorModel = opt.value"
+              >
+                <AigenIcon class="aigen-rule-behavior__icon" :name="opt.icon" />
+                <span class="aigen-rule-behavior__label">{{ opt.label }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 赋值内容 -->
+        <div v-if="needValue" class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">赋的值</span>
+          <div class="aigen-rule-form__control aigen-rule-form__value">
+            <div class="aigen-rule-form__value-mode">
+              <label class="aigen-radio">
+                <input
+                  v-model="draft.valueMode"
+                  type="radio"
+                  value="constant"
+                />
+                常量
+              </label>
+              <label class="aigen-radio">
+                <input
+                  v-model="draft.valueMode"
+                  type="radio"
+                  value="expression"
+                />
+                公式
+              </label>
+            </div>
+            <input
+              v-if="draft.valueMode === 'constant'"
+              v-model="draft.constantValue"
+              type="text"
+              class="aigen-rule-input"
+              placeholder="如：0、未填写、true"
+            />
+            <div v-else class="aigen-rule-expr">
+              <input
+                v-model="draft.expressionValue"
+                type="text"
+                class="aigen-rule-input"
+                placeholder="如：$formData.qty * $formData.price"
+              />
+              <button
+                type="button"
+                class="aigen-rule-fx"
+                title="打开公式插入器"
+                @click="openExpression"
+              >
+                ƒx
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="aigen-rule-form__row">
+          <span class="aigen-rule-form__label">影响目标</span>
+          <div class="aigen-rule-form__control">
+            <component
+              :is="SelectComponent"
+              v-model:[bindModel]="draft.targetId"
+              :options="targetOptions"
+              placeholder="选择要显示/隐藏/禁用/赋值的元素"
+              style="width: 100%"
+            />
           </div>
         </div>
       </div>
 
-      <!-- 可选条件（简单版：字段 + 运算符 + 值） -->
-      <div class="aigen-link-form__row">
-        <span class="aigen-link-form__label">条件</span>
-        <label class="aigen-link-condition-toggle">
-          <input v-model="draft.useCondition" type="checkbox" />
-          启用条件（可选）
-        </label>
-      </div>
-      <div v-if="draft.useCondition" class="aigen-link-form__condition">
-        <div class="aigen-link-form__control">
-          <component
-            :is="SelectComponent"
-            v-model:[bindModel]="draft.conditionField"
-            :options="conditionFieldOptions"
-            placeholder="条件字段"
-            style="width: 100%"
-          />
-        </div>
-        <div class="aigen-link-form__control aigen-link-form__control--op">
-          <component
-            :is="SelectComponent"
-            v-model:[bindModel]="conditionOperatorModel"
-            :options="conditionOperatorOptions"
-            style="width: 100%"
-          />
-        </div>
-        <input
-          v-model="draft.conditionValue"
-          type="text"
-          class="aigen-link-input"
-          placeholder="条件值"
-        />
+      <!-- 预览句 -->
+      <div class="aigen-rule-preview">
+        <span class="aigen-rule-preview__label">
+          <AigenIcon name="icon--behavior--eye" />
+          规则预览
+        </span>
+        <span class="aigen-rule-preview__text">
+          <template v-if="!draft.behavior || !draft.targetId">
+            选择判断条件、联动效果和目标元素后，这里会生成一句可读的规则说明。
+          </template>
+          <template v-else-if="draft.operator === 'always'">
+            始终 {{ getBehaviorLabel(draft.behavior) }}「{{
+              getTargetLabel(draft.targetId)
+            }}」
+          </template>
+          <template v-else>
+            当「{{ getFieldLabel(draft.sourceField) }}」
+            {{
+              operatorOptions.find((item) => item.value === draft.operator)
+                ?.label
+            }}{{
+              needConditionValue ? `「${String(draft.conditionValue)}」` : ''
+            }}
+            时， {{ getBehaviorLabel(draft.behavior) }}「{{
+              getTargetLabel(draft.targetId)
+            }}」
+          </template>
+        </span>
       </div>
 
-      <div class="aigen-link-form__footer">
-        <span v-if="formError" class="aigen-link-form__error">
+      <div class="aigen-rule-form__footer">
+        <span v-if="formError" class="aigen-rule-form__error">
           {{ formError }}
         </span>
-        <div class="aigen-link-form__actions">
+        <div class="aigen-rule-form__actions">
           <button
             type="button"
-            class="aigen-btn aigen-btn--secondary"
+            class="aigen-button small"
             @click="handleCancel"
           >
             取消
           </button>
           <button
             type="button"
-            class="aigen-btn aigen-btn--primary"
+            class="aigen-button small primary"
             @click="handleSave"
           >
-            保存
+            保存规则
           </button>
         </div>
       </div>
@@ -679,6 +726,7 @@ function getValueText(link: FieldLink): string {
     <ExpressionInsert
       v-model:visible="exprVisible"
       :fields="inputFields"
+      :initial-content="exprInitial"
       @confirm="handleExpressionConfirm"
     />
   </div>
@@ -688,170 +736,323 @@ function getValueText(link: FieldLink): string {
 /* 模块头 */
 .aigen-link-module-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.aigen-link-module-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .aigen-link-module-title {
-  font-size: 13px;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--aigen-text-sm);
+  font-weight: 600;
   color: var(--aigen-text-main);
 }
 
+.aigen-link-module-icon {
+  color: var(--aigen-primary);
+  font-size: 14px;
+}
+
+.aigen-link-module-sub {
+  font-size: 11px;
+  color: var(--aigen-text-helper);
+}
+
 .aigen-link-add-btn {
-  padding: 3px 10px;
-  font-size: 12px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--aigen-text-sm);
   color: var(--aigen-primary);
   cursor: pointer;
   background: transparent;
-  border: 1px solid var(--aigen-primary);
-  border-radius: var(--aigen-radius, 6px);
+  border: 1px solid var(--aigen-border);
+  border-radius: calc(var(--aigen-radius) - 2px);
+  transition: all 0.2s ease-out-quart;
 }
 
 .aigen-link-add-btn:hover {
-  opacity: 0.85;
+  background: var(--aigen-primary-faded);
+  border-color: var(--aigen-primary);
 }
 
-/* 规则列表 */
+/* 规则卡片 */
 .aigen-link-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.aigen-link-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.aigen-rule-card {
   padding: 8px 10px;
   background: var(--aigen-background, #fff);
   border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius, 6px);
+  transition: border-color 0.2s;
 }
 
-.aigen-link-item--disabled {
+.aigen-rule-card:hover {
+  border-color: var(--aigen-primary);
+}
+
+.aigen-rule-card--disabled {
   opacity: 0.55;
 }
 
-.aigen-link-item__main {
-  flex: 1;
-  min-width: 0;
+.aigen-rule-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.aigen-link-item__summary {
-  overflow: hidden;
-  font-size: 12px;
+.aigen-rule-card__summary {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--aigen-text-sm);
   line-height: 1.6;
   color: var(--aigen-text-main);
+  word-break: break-all;
+}
+
+.aigen-rule-card__summary-icon {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--aigen-primary);
+}
+
+.aigen-rule-card__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-left: 34px;
+}
+
+.aigen-rule-card__hint {
+  flex: 1;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--aigen-text-helper);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.aigen-link-item__summary--action {
-  color: var(--aigen-text-secondary);
+.aigen-rule-card__warn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--aigen-destructive);
 }
 
-.aigen-link-item__value {
-  color: var(--aigen-primary);
-  font-family: monospace;
-}
-
-.aigen-link-item__ops {
+.aigen-rule-card__ops {
   display: flex;
   flex-shrink: 0;
-  gap: 4px;
+  gap: 2px;
 }
 
-.aigen-link-item__ops button {
-  padding: 2px 6px;
-  font-size: 12px;
+.aigen-rule-card__ops button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 14px;
   color: var(--aigen-text-secondary);
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
+  transition: all 0.2s ease-out-quart;
 }
 
-.aigen-link-item__ops button:hover {
+.aigen-rule-card__ops button:hover {
   color: var(--aigen-primary);
+  background: var(--aigen-primary-faded);
 }
 
-.aigen-link-item__ops .aigen-link-item__del:hover {
+.aigen-rule-card__ops .aigen-rule-card__del:hover {
   color: var(--aigen-destructive);
 }
 
 .aigen-link-empty {
-  padding: 16px 0;
+  padding: 14px 12px;
   font-size: 12px;
+  line-height: 1.8;
   color: var(--aigen-text-helper);
   text-align: center;
-}
-
-/* 新建 / 编辑表单 */
-.aigen-link-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 10px;
-  background: var(--aigen-secondary, #f5f6f8);
+  background: var(--aigen-secondary, #f8f9fa);
   border: 1px dashed var(--aigen-border);
   border-radius: var(--aigen-radius, 6px);
 }
 
-.aigen-link-form__row {
+/* 快捷模板 */
+.aigen-rule-templates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.aigen-rule-templates__title {
+  margin-bottom: 2px;
+  font-size: 11px;
+  color: var(--aigen-text-helper);
+}
+
+.aigen-rule-templates button {
   display: flex;
   align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  font-size: var(--aigen-text-sm);
+  color: var(--aigen-text-main);
+  text-align: left;
+  cursor: pointer;
+  background: var(--aigen-background, #fff);
+  border: 1px solid var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+  transition: all 0.2s ease-out-quart;
+}
+
+.aigen-rule-templates button .iconfont {
+  color: var(--aigen-text-secondary);
+}
+
+.aigen-rule-templates button:hover {
+  color: var(--aigen-primary);
+  border-color: var(--aigen-primary);
+  background: var(--aigen-primary-faded);
+}
+
+.aigen-rule-templates button:hover .iconfont {
+  color: var(--aigen-primary);
+}
+
+/* 表单 */
+.aigen-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--aigen-secondary, #f5f6f8);
+  border: 1px solid var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+}
+
+.aigen-rule-form__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aigen-text-main);
+}
+
+.aigen-rule-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--aigen-border);
+}
+
+.aigen-rule-form__section:last-of-type {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.aigen-rule-form__section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--aigen-text-main);
+}
+
+.aigen-rule-form__section-index {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--aigen-primary);
+  background: var(--aigen-primary-faded);
+  border-radius: 50%;
+}
+
+.aigen-rule-form__section-label {
+  flex-shrink: 0;
+}
+
+.aigen-rule-form__row {
+  display: flex;
+  align-items: flex-start;
   gap: 8px;
 }
 
-.aigen-link-form__label {
+.aigen-rule-form__label {
   flex-shrink: 0;
-  width: 64px;
+  width: 60px;
+  padding-top: 9px;
   font-size: 12px;
   color: var(--aigen-text-main);
 }
 
-/* 组件下拉容器：占据行内剩余宽度 */
-.aigen-link-form__control {
+.aigen-rule-form__control {
   flex: 1;
   min-width: 0;
 }
 
-/* 条件行内运算符下拉：固定窄宽度 */
-.aigen-link-form__control--op {
-  flex: 0 0 84px;
+.aigen-rule-form__value {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.aigen-link-input {
-  flex: 1;
-  min-width: 0;
-  padding: 5px 8px;
-  font-size: 13px;
+.aigen-rule-form__value-mode {
+  display: flex;
+  gap: 12px;
+}
+
+.aigen-rule-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 14px;
   color: var(--aigen-text-main);
   outline: none;
   background: var(--aigen-background, #fff);
   border: 1px solid var(--aigen-border);
   border-radius: var(--aigen-radius, 6px);
-  box-sizing: border-box;
 }
 
-.aigen-link-input:focus {
+.aigen-rule-input:focus {
   border-color: var(--aigen-primary);
-}
-
-.aigen-link-form__value {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  gap: 6px;
-}
-
-.aigen-link-form__value-mode {
-  display: flex;
-  gap: 12px;
 }
 
 .aigen-radio {
@@ -863,14 +1064,20 @@ function getValueText(link: FieldLink): string {
   cursor: pointer;
 }
 
-.aigen-link-expr {
+.aigen-rule-expr {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.aigen-link-fx {
+.aigen-rule-fx {
+  display: inline-flex;
   flex-shrink: 0;
-  padding: 2px 8px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
   font-size: 12px;
   font-family: monospace;
   color: var(--aigen-primary);
@@ -880,50 +1087,120 @@ function getValueText(link: FieldLink): string {
   border-radius: 4px;
 }
 
-.aigen-link-fx:hover {
-  opacity: 0.85;
+/* 行为选择网格 */
+.aigen-rule-behavior-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.aigen-link-condition-toggle {
+.aigen-rule-behavior {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  font-size: 11px;
+  color: var(--aigen-text-secondary);
+  cursor: pointer;
+  background: var(--aigen-secondary, #f8f9fa);
+  border: 1px solid var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+  transition: all 0.2s;
+}
+
+/* 悬停仅作用于未选中项，避免选中态（主色底）被主色文字覆盖导致文字不可见 */
+.aigen-rule-behavior:not(.aigen-rule-behavior--active):hover {
+  color: var(--aigen-primary);
+  border-color: var(--aigen-primary);
+}
+
+.aigen-rule-behavior--active {
+  color: var(--aigen-primary-foreground);
+  background: var(--aigen-primary);
+  border-color: var(--aigen-primary);
+}
+
+.aigen-rule-behavior__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.aigen-rule-behavior--active .aigen-rule-behavior__icon {
+  filter: grayscale(0.1);
+}
+
+.aigen-rule-behavior__label {
+  white-space: nowrap;
+}
+
+.aigen-rule-form__tip {
+  margin: 0;
+  padding-left: 68px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--aigen-text-helper);
+}
+
+/* 规则预览 */
+.aigen-rule-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--aigen-primary-faded);
+  border-left: 3px solid var(--aigen-primary);
+  border-radius: 4px;
+}
+
+.aigen-rule-preview__label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--aigen-primary);
+}
+
+.aigen-rule-preview__text {
   font-size: 12px;
-  color: var(--aigen-text-secondary);
-  cursor: pointer;
+  line-height: 1.6;
+  color: var(--aigen-text-main);
+  word-break: break-all;
 }
 
-.aigen-link-form__condition {
-  display: flex;
-  gap: 6px;
-  padding-left: 72px;
-}
-
-.aigen-link-form__footer {
+.aigen-rule-form__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.aigen-link-form__error {
+.aigen-rule-form__error {
   font-size: 12px;
   color: var(--aigen-destructive);
 }
 
-.aigen-link-form__actions {
+.aigen-rule-form__actions {
   display: flex;
+  flex-shrink: 0;
   gap: 8px;
+  margin-left: auto;
 }
 
-/* 启停用 switch（aigen 风格，不依赖具体 UI 库） */
+.aigen-rule-form__actions .aigen-button {
+  font-family: inherit;
+  font-size: var(--aigen-text-sm);
+}
+
+/* 启停用 switch */
 .aigen-switch {
   position: relative;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   width: 30px;
   height: 16px;
-  flex-shrink: 0;
   cursor: pointer;
   user-select: none;
 }
@@ -943,8 +1220,8 @@ function getValueText(link: FieldLink): string {
 .aigen-switch__slider {
   position: absolute;
   inset: 0;
-  border-radius: 999px;
   background-color: var(--aigen-border);
+  border-radius: 999px;
   transition: background-color 0.2s;
 }
 
@@ -954,8 +1231,8 @@ function getValueText(link: FieldLink): string {
   left: 2px;
   width: 12px;
   height: 12px;
-  border-radius: 50%;
   background-color: var(--aigen-background);
+  border-radius: 50%;
   content: '';
   transition: transform 0.2s;
 }
@@ -975,31 +1252,5 @@ function getValueText(link: FieldLink): string {
 
 .aigen-switch--small.aigen-switch--checked .aigen-switch__slider::before {
   transform: translateX(12px);
-}
-
-/* 按钮（本地定义，避免依赖全局样式） */
-.aigen-btn {
-  padding: 5px 14px;
-  font-size: 13px;
-  color: var(--aigen-text-main);
-  cursor: pointer;
-  background: var(--aigen-background, #fff);
-  border: 1px solid var(--aigen-border);
-  border-radius: var(--aigen-radius, 6px);
-}
-
-.aigen-btn--primary {
-  color: var(--aigen-primary-foreground);
-  background: var(--aigen-primary);
-  border-color: var(--aigen-primary);
-}
-
-.aigen-btn--primary:hover {
-  opacity: 0.9;
-}
-
-.aigen-btn--secondary:hover {
-  color: var(--aigen-primary);
-  border-color: var(--aigen-primary);
 }
 </style>

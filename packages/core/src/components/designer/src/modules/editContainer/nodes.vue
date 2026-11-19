@@ -30,6 +30,10 @@ const contextMenu = inject('contextMenu', {
   close: () => {},
   open: (_event: Event, _schema: ComponentSchema) => {},
 });
+// 画布交互演练模式：禁用拖拽与节点级点击遮罩，让组件接收真实交互事件
+const interactiveMode = computed(
+  () => pageManager.isInteractiveMode?.value === true,
+);
 const modelSchemas = computed({
   get: () => props.schemas,
   set: (val) => emit('update:schemas', val.filter(Boolean)),
@@ -180,8 +184,9 @@ onUnmounted(() => {
   <VueDraggable
     v-model="modelSchemas"
     class="aigen-draggable-range"
+    :class="{ 'aigen-interactive-mode': interactiveMode }"
     :animation="200"
-    :disabled="linkMode.isActive.value"
+    :disabled="linkMode.isActive.value || interactiveMode"
     group="edit-draggable"
     ghost-class="aigen-moveing"
     @mouseover.stop="setHoverNode"

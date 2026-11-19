@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, useAttrs } from 'vue';
+import { computed, ref, useAttrs } from 'vue';
 
 import { Button, Modal, Space, version } from 'ant-design-vue';
 
@@ -26,10 +26,12 @@ const props = withDefaults(
 );
 const emits = defineEmits(['ok', 'close', 'update:modelValue']);
 const versionArray = version.split('.');
-// 获取版本号第一个数字
 const firstNumber = Number.parseInt(versionArray[0]);
 
 const attrs = useAttrs();
+const confirmLoading = ref(false);
+const customTitle = ref<null | string>(null);
+
 const dialogStyle = {
   bottom: '30px',
   left: '150px',
@@ -48,13 +50,14 @@ const getProps = computed<Record<string, any>>(() => ({
     height: props.fixedHeight ? 'calc(100vh - 108px)' : 'auto',
     padding: 0,
   },
+  confirmLoading: confirmLoading.value,
   dialogStyle,
   footer: null,
   'onUpdate:open': updateModelValue,
   'onUpdate:visible': updateModelValue,
   open: attrs.modelValue,
   style: props.fixedHeight ? 'top:20px' : '',
-  title: props.componentSchema?.label ?? '',
+  title: customTitle.value ?? props.componentSchema?.label ?? '',
   visible: firstNumber > 3 ? undefined : attrs.modelValue,
   wrapClassName: 'aigen-modal-ant',
   children: null,
@@ -73,6 +76,34 @@ function updateModelValue(value = false) {
 function handleClose() {
   emits('close');
 }
+
+function open() {
+  updateModelValue(true);
+}
+
+function close() {
+  updateModelValue(false);
+}
+
+function toggle() {
+  updateModelValue(!attrs.modelValue);
+}
+
+function setConfirmLoading(loading: boolean) {
+  confirmLoading.value = loading;
+}
+
+function setTitle(title: string) {
+  customTitle.value = title;
+}
+
+defineExpose({
+  close,
+  open,
+  setConfirmLoading,
+  setTitle,
+  toggle,
+});
 </script>
 
 <template>
@@ -91,7 +122,12 @@ function handleClose() {
     <div v-if="props.footer" class="aigen-modal-footer">
       <Space align="end">
         <Button @click="handleClose"> {{ props.cancelText }} </Button>
-        <Button v-if="!props.hideConfirm" type="primary" @click="handleOk">
+        <Button
+          v-if="!props.hideConfirm"
+          :loading="confirmLoading"
+          type="primary"
+          @click="handleOk"
+        >
           {{ props.okText }}
         </Button>
       </Space>

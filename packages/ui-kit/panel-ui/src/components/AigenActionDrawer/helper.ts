@@ -2,8 +2,14 @@ import type { ComponentSchema, ConditionGroup } from '@aigen-designer/types';
 
 import { findSchemas } from '@aigen-designer/utils';
 
-/** 动作类型：组件方法 / 自定义函数 / 公共函数 */
-export type ActionType = 'component' | 'custom' | 'public';
+/** 动作类型：组件方法 / 自定义函数 / 公共函数 / 事件广播 / API请求 / 路由跳转 */
+export type ActionType =
+  | 'api'
+  | 'component'
+  | 'custom'
+  | 'event'
+  | 'navigate'
+  | 'public';
 
 /**
  * 动作配置草稿：向导各步骤共享的状态模型。
@@ -24,8 +30,12 @@ export interface ActionDraft {
   methodName: string;
   /** 动作命名（人话，用于摘要/搜索），可选 */
   name: string;
+  /** 错误处理策略：中断 / 继续 */
+  onError: 'abort' | 'continue' | 'retry';
   /** 备注，可选 */
   remark: string;
+  /** 动作目标（API URL / 跳转地址 / 事件名），可选 */
+  target: null | string;
   /** 动作类型：'' 表示尚未选择 */
   type: '' | ActionType;
 }
@@ -53,7 +63,9 @@ export function createEmptyDraft(): ActionDraft {
     enabled: true,
     methodName: '',
     name: '',
+    onError: 'abort',
     remark: '',
+    target: null,
     type: '',
   };
 }
@@ -89,15 +101,35 @@ export function stringifyArgs(values: unknown[]): string {
   return JSON.stringify(values);
 }
 
-/** 设置指定下标（field）的参数值，返回新的 args 字符串 */
+/** 设置指定下标或具名字段名（field）的参数值，返回新的 args 字符串 */
 export function setArgsValue(
   args: null | string | undefined,
   field: number | string,
   value: unknown,
 ): string {
-  const values = getArgsArray(args);
-  values[Number(field)] = value;
-  return stringifyArgs(values);
+  if (typeof field === 'number' || /^\d+$/.test(String(field))) {
+    const values = getArgsArray(args);
+    values[Number(field)] = value;
+    return stringifyArgs(values);
+  }
+  // 具名字段参数模式
+  let obj: Record<string, unknown> = {};
+  if (args) {
+    try {
+      const parsed = JSON.parse(args);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        obj = parsed;
+      }
+    } catch {
+      // 保持空对象
+    }
+  }
+  obj[String(field)] = value;
+  return JSON.stringify(obj);
 }
 
 /** 参数缓存键：componentId + methodName（与旧 aigenActionModal 的缓存约定一致） */

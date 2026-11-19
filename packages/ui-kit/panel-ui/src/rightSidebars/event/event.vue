@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { EventModel } from '@aigen-designer/types';
 
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 
-import { useDesignerContext } from '@aigen-designer/hooks';
+import { AigenIcon } from '@aigen-designer/base-ui';
+import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { getValueByPath, setValueByPath } from '@aigen-designer/utils';
 
@@ -11,25 +12,45 @@ import EventBusView from '../link/modules/EventBusView.vue';
 import FieldLinkEditor from '../link/modules/FieldLinkEditor.vue';
 
 const designer = useDesignerContext();
+const pageManager = usePageManager();
 const revoke = designer.revoke;
 const AigenActionEditor = pluginManager.component.get('AigenActionEditor');
 
-// 与 AigenActionEditor 的协调接口（其 defineExpose 暴露 openAdd，供空状态引导直达添加流程）
+// 与 AigenActionEditor 的协调接口（其 defineExpose 暴露 openAdd，供快捷模板直达添加流程）
 interface AigenActionEditorExpose {
   openAdd: (type: string) => void;
 }
 const editorRef = ref<AigenActionEditorExpose | null>(null);
 
-// 行为面板内部页签（方案C-E1）：行为（事件动作）| 联动（字段联动 + 事件总线）
+// 交互面板内部页签：字段联动（常用，声明式）| 事件与动作（高级，命令式）
 type EventTab = 'behavior' | 'link';
 
-const TABS: Array<{ key: EventTab; title: string }> = [
-  { key: 'behavior', title: '行为' },
-  { key: 'link', title: '联动' },
+const TABS: Array<{ icon: string; key: EventTab; title: string }> = [
+  {
+    icon: 'icon--behavior--thunderbolt',
+    key: 'link',
+    title: '字段联动',
+  },
+  {
+    icon: 'icon--behavior--experiment',
+    key: 'behavior',
+    title: '事件与动作',
+  },
 ];
 
-// 默认展示「行为」页；切到「联动」时 v-if 切换使子模块重新挂载，联动列表天然自动刷新
-const activeTab = ref<EventTab>('behavior');
+// 默认展示「字段联动」页（80% 常用场景直达）
+const activeTab = ref<EventTab>('link');
+const showEventBus = ref(false);
+
+/**
+ * 画布试运行（交互演练）：
+ * 设计态默认屏蔽组件事件，配置完联动只能反复打开预览验证。
+ * 打开后画布中的组件可直接交互，联动规则与动作即时生效（仅内存态，不写入 schema）。
+ */
+const interactiveMode = computed({
+  get: () => pageManager.isInteractiveMode?.value === true,
+  set: (value: boolean) => pageManager.setInteractiveMode(value),
+});
 
 const componentConfigs = pluginManager.component.getComponentConfigs();
 const selectedNode = computed(() => {
@@ -154,17 +175,6 @@ const eventList = computed<EventGroup[]>(() => {
   ];
 });
 
-// 当前选中元素是否已存在事件动作（空状态判断；停用动作也计入）
-const hasAnyAction = computed(() => {
-  const on = getValueByPath(selectedNode.value, 'on') as
-    | Record<string, unknown[]>
-    | undefined;
-  if (!on) return false;
-  return Object.values(on).some(
-    (list) => Array.isArray(list) && list.length > 0,
-  );
-});
-
 // 当前元素实际可用的事件类型（组件事件 ∪ 生命周期），用于过滤快捷模板，
 // 避免出现"模板配完后面板无对应事件行"的困惑（如 switch 没有 click 事件）
 const availableEventTypes = computed(() => {
@@ -177,9 +187,9 @@ const availableEventTypes = computed(() => {
 
 // 快捷上手模板：点击后直达对应事件的添加流程（设计态仅打开动作配置，不触发运行时事件）
 const emptyTemplates = [
-  { eventType: 'click', text: '点击时显示/隐藏其他元素' },
-  { eventType: 'change', text: '值变化时计算合计' },
-  { eventType: 'aigenReady', text: '页面加载时填充默认值' },
+  { eventType: 'click', text: '点击时执行动作（打开弹窗 / 调用接口）' },
+  { eventType: 'change', text: '值变化时执行动作（校验 / 联动 / 请求）' },
+  { eventType: 'aigenReady', text: '页面加载完成后执行动作' },
 ] as const;
 
 const filteredTemplates = computed(() =>
@@ -195,6 +205,11 @@ function handleEmptyTemplateClick(eventType: string) {
   editorRef.value?.openAdd(eventType);
 }
 
+// 离开交互面板时关闭画布试运行，避免用户误触画布元素时继续触发动作
+onBeforeUnmount(() => {
+  pageManager.setInteractiveMode(false);
+});
+
 /**
  * 设置属性值
  */
@@ -208,7 +223,7 @@ function handleSetValue(value: any, field: string) {
 
 <template>
   <div class="aigen-event-view">
-    <!-- 内部页签：行为 | 联动（原「关联与计算」右侧页签已并入本面板，方案C-E1） -->
+    <!-- 内部页签：字段联动 | 事件与动作 -->
     <div class="aigen-event-tabs">
       <button
         v-for="tab in TABS"
@@ -218,31 +233,57 @@ function handleSetValue(value: any, field: string) {
         :class="{ 'aigen-event-tab--active': activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
+        <AigenIcon class="aigen-event-tab__icon" :name="tab.icon" />
         {{ tab.title }}
       </button>
     </div>
 
-    <!-- 行为页：快捷上手模板 + 事件动作编辑（保持原样） -->
-    <div v-if="activeTab === 'behavior'">
-      <div v-if="selectedNode">
-        <!-- 快捷上手模板：仅当没有任何动作时作为辅助入口展示（事件列表始终可见） -->
-        <div
-          v-if="!hasAnyAction && filteredTemplates.length"
-          class="aigen-event-empty"
+    <!-- 联动页：声明式规则 + 画布试运行（默认展示） -->
+    <div v-if="activeTab === 'link'" class="aigen-event-link-body">
+      <div class="aigen-interactive-bar">
+        <div class="aigen-interactive-bar__text">
+          <span class="aigen-interactive-bar__title">
+            <AigenIcon name="icon--behavior--eye" />
+            画布试运行
+          </span>
+          <span class="aigen-interactive-bar__desc">
+            开启后可直接在画布操作组件验证联动，不会写入页面数据
+          </span>
+        </div>
+        <label
+          class="aigen-switch"
+          :class="{ 'aigen-switch--checked': interactiveMode }"
+          title="画布试运行"
         >
-          <div class="aigen-event-empty__title">快捷上手</div>
-          <div class="aigen-event-empty__desc">
-            从常用场景开始，或点击下方事件旁的 ＋ 手动添加
-          </div>
-          <div
+          <input
+            v-model="interactiveMode"
+            type="checkbox"
+            class="aigen-switch__input"
+          />
+          <span class="aigen-switch__slider"></span>
+        </label>
+      </div>
+      <FieldLinkEditor />
+    </div>
+
+    <!-- 事件页：快捷模板 + 事件动作编辑 + 事件总线 -->
+    <div v-else-if="activeTab === 'behavior'">
+      <div v-if="selectedNode">
+        <!-- 常用事件快捷入口（始终展示，点击直达对应事件的添加流程） -->
+        <div v-if="filteredTemplates.length" class="aigen-event-quick">
+          <span class="aigen-event-quick__title">常用事件</span>
+          <button
             v-for="template in filteredTemplates"
             :key="template.eventType"
-            class="aigen-event-empty__item"
+            type="button"
+            class="aigen-event-quick__item"
             @click="handleEmptyTemplateClick(template.eventType)"
           >
+            <AigenIcon name="icon--aigen--add-rounded" />
             {{ template.text }}
-          </div>
+          </button>
         </div>
+
         <AigenActionEditor
           ref="editorRef"
           :key="selectedNode.id"
@@ -250,17 +291,43 @@ function handleSetValue(value: any, field: string) {
           :model-value="getValueByPath(selectedNode!, `on`)"
           @update:model-value="handleSetValue($event, `on`)"
         />
-      </div>
-    </div>
 
-    <!-- 联动页：字段联动 + 事件总线（设计态仅保存与预览，不触发运行时事件） -->
-    <div v-else class="aigen-event-link-body">
-      <div class="aigen-event-link-desc">
-        联动规则在设计态仅保存与预览，不触发任何运行时事件；保存后经运行时编译，在预览与发布环境生效。
+        <div class="aigen-event-link-separator"></div>
+        <div class="aigen-event-bus-collapsible">
+          <button
+            type="button"
+            class="aigen-event-bus-toggle"
+            @click="showEventBus = !showEventBus"
+          >
+            <span class="aigen-event-bus-title">
+              <AigenIcon name="icon--behavior--wifi" />
+              页面事件总线
+            </span>
+            <span class="aigen-event-bus-state">
+              {{ showEventBus ? '收起' : '展开' }}
+              <AigenIcon
+                :name="
+                  showEventBus
+                    ? 'icon--behavior--arrowup'
+                    : 'icon--behavior--arrowdown'
+                "
+              />
+            </span>
+          </button>
+          <div v-if="showEventBus" class="aigen-event-bus-body">
+            <EventBusView />
+          </div>
+        </div>
       </div>
-      <FieldLinkEditor />
-      <div class="aigen-event-link-separator"></div>
-      <EventBusView />
+      <div v-else class="aigen-event-no-selected">
+        <AigenIcon
+          class="aigen-event-no-selected__icon"
+          name="icon--behavior--container"
+        />
+        <span class="aigen-event-no-selected__text">
+          请在画布中选中组件以配置事件
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -270,26 +337,31 @@ function handleSetValue(value: any, field: string) {
   padding: 4px 0 12px;
 }
 
-/* 内部页签栏（样式与 link.vue 页签一致：aigen-* 前缀 + 激活态高亮） */
+/* 内部页签栏：与设计器右侧主标签一致的底部高亮样式 */
 .aigen-event-tabs {
   display: flex;
-  gap: 4px;
-  margin: 0 12px 8px;
-  padding: 3px;
-  background: var(--aigen-secondary, #f5f6f8);
-  border: 1px solid var(--aigen-border);
-  border-radius: var(--aigen-radius, 6px);
+  margin: 0 12px 10px;
+  border-bottom: 1px solid var(--aigen-border);
 }
 
 .aigen-event-tab {
+  position: relative;
+  display: inline-flex;
   flex: 1;
-  padding: 5px 0;
-  font-size: 13px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 0;
+  font-size: var(--aigen-text-sm);
   color: var(--aigen-text-secondary);
   cursor: pointer;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  transition: color 0.2s ease-out-quart;
+}
+
+.aigen-event-tab__icon {
+  font-size: 14px;
 }
 
 .aigen-event-tab:hover {
@@ -299,68 +371,213 @@ function handleSetValue(value: any, field: string) {
 .aigen-event-tab--active {
   color: var(--aigen-primary);
   font-weight: 500;
-  background: var(--aigen-background, #fff);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-/* 联动页：说明文案 + 子模块左右留白（与旧 link 面板 body 一致） */
+.aigen-event-tab--active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background-color: var(--aigen-primary);
+  content: '';
+}
+
+/* 联动页：子模块左右留白 */
 .aigen-event-link-body {
   padding: 0 12px 12px;
-}
-
-.aigen-event-link-desc {
-  margin-bottom: 10px;
-  padding: 8px 10px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--aigen-text-helper);
-  background: var(--aigen-secondary, #f5f6f8);
-  border: 1px solid var(--aigen-border);
-  border-radius: var(--aigen-radius, 6px);
 }
 
 /* 字段联动 与 事件总线 之间的分隔线 */
 .aigen-event-link-separator {
   height: 1px;
-  margin: 12px 0;
+  margin: 16px 0 10px;
   background: var(--aigen-border);
 }
 
-/* 快捷上手模板（事件列表上方，仅无动作时展示） */
-.aigen-event-empty {
-  padding: 12px 12px 4px;
+/* 事件总线折叠区 */
+.aigen-event-bus-collapsible {
+  margin-top: 8px;
 }
 
-.aigen-event-empty__title {
-  margin-bottom: 2px;
-  color: var(--aigen-text-main);
-  font-size: var(--aigen-text-sm);
+.aigen-event-bus-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--aigen-secondary, #f8f9fa);
+  border: 1px dashed var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+  color: var(--aigen-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aigen-event-bus-toggle:hover {
+  color: var(--aigen-primary);
+  border-color: var(--aigen-primary);
+}
+
+.aigen-event-bus-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 500;
 }
 
-.aigen-event-empty__desc {
-  margin-bottom: 4px;
-  color: var(--aigen-text-helper);
-  font-size: var(--aigen-text-xs);
+.aigen-event-bus-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  opacity: 0.7;
 }
 
-.aigen-event-empty__item {
-  width: 100%;
-  margin-top: 6px;
-  padding: 8px 12px;
-  border: 1px solid var(--aigen-border);
-  border-radius: var(--aigen-radius);
-  color: var(--aigen-text-main);
-  background-color: var(--aigen-background);
-  font-size: var(--aigen-text-sm);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
+.aigen-event-bus-body {
+  margin-top: 8px;
+}
 
-  &:hover {
-    border-color: var(--aigen-primary);
-    color: var(--aigen-primary);
-  }
+/* 画布试运行开关条 */
+.aigen-interactive-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--aigen-secondary, #f5f6f8);
+  border: 1px solid var(--aigen-border);
+  border-radius: var(--aigen-radius, 6px);
+}
+
+.aigen-interactive-bar__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aigen-interactive-bar__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--aigen-text-sm);
+  font-weight: 500;
+  color: var(--aigen-text-main);
+}
+
+.aigen-interactive-bar__title .iconfont {
+  color: var(--aigen-text-secondary);
+}
+
+.aigen-interactive-bar__desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--aigen-text-helper);
+}
+
+/* 常用事件快捷入口 */
+.aigen-event-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 12px 8px;
+}
+
+.aigen-event-quick__title {
+  font-size: 11px;
+  color: var(--aigen-text-helper);
+}
+
+.aigen-event-quick__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--aigen-text-sm);
+  color: var(--aigen-text-secondary);
+  cursor: pointer;
+  background: var(--aigen-background);
+  border: 1px solid var(--aigen-border);
+  border-radius: calc(var(--aigen-radius) - 2px);
+  transition: all 0.2s ease-out-quart;
+}
+
+.aigen-event-quick__item:hover {
+  color: var(--aigen-primary);
+  background: var(--aigen-primary-faded);
+  border-color: var(--aigen-primary);
+}
+
+/* 启停用 switch（aigen 风格，不依赖具体 UI 库） */
+.aigen-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: 30px;
+  height: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.aigen-switch__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.aigen-switch__slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--aigen-border);
+  border-radius: 999px;
+  transition: background-color 0.2s;
+}
+
+.aigen-switch__slider::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--aigen-background);
+  border-radius: 50%;
+  content: '';
+  transition: transform 0.2s;
+}
+
+.aigen-switch--checked .aigen-switch__slider {
+  background-color: var(--aigen-primary);
+}
+
+.aigen-switch--checked .aigen-switch__slider::before {
+  transform: translateX(14px);
+}
+
+/* 未选组件提示 */
+.aigen-event-no-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  color: var(--aigen-text-helper);
+  text-align: center;
+}
+
+.aigen-event-no-selected__icon {
+  margin-bottom: 8px;
+  color: var(--aigen-text-helper);
+  font-size: 24px;
+}
+
+.aigen-event-no-selected__text {
+  font-size: var(--aigen-text-sm);
 }
 </style>

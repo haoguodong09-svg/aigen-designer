@@ -45,7 +45,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: color-mix(in oklch, var(--aigen-foreground), transparent 95%);
+        background: color-mix(
+          in oklch,
+          var(--aigen-foreground),
+          transparent 95%
+        );
         border-radius: 4px;
         pointer-events: none;
       }
@@ -155,7 +159,10 @@
   }
 
   background-image:
-    linear-gradient(var(--aigen-canvas-container-background) 14px, transparent 0),
+    linear-gradient(
+      var(--aigen-canvas-container-background) 14px,
+      transparent 0
+    ),
     linear-gradient(90deg, transparent 14px, var(--aigen-container-dot-color) 0);
 }
 
@@ -176,7 +183,20 @@
   }
 }
 
-.aigen-node-item{
+// 画布交互演练模式：移除节点级透明点击遮罩，让组件接收真实点击/输入事件；
+// 拖拽同时由 VueDraggable 的 disabled 关闭，避免与组件交互冲突。
+.aigen-draggable-range.aigen-interactive-mode {
+  .aigen-node-leaf::before {
+    content: none;
+  }
+
+  .edit-draggable-widget,
+  .edit-draggable-widget * {
+    cursor: auto;
+  }
+}
+
+.aigen-node-item {
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
   &.aigen-inline {
