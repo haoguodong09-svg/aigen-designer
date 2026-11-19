@@ -68,13 +68,27 @@ describe('createPatch / applyPatch', () => {
     const before = { list: ['a', 'b', 'c'] };
     const after = { list: ['a', 'c'] };
     const ops = createPatch(before, after);
-    expect(ops).toContainEqual({ op: 'remove', path: '/list/1', oldValue: 'b' });
+    expect(ops).toContainEqual({
+      op: 'remove',
+      path: '/list/1',
+      oldValue: 'b',
+    });
     expectRoundTrip(before, after);
   });
 
   it('数组元素修改应生成替换操作', () => {
-    const before = { list: [{ id: 1, v: 'a' }, { id: 2, v: 'b' }] };
-    const after = { list: [{ id: 1, v: 'x' }, { id: 2, v: 'b' }] };
+    const before = {
+      list: [
+        { id: 1, v: 'a' },
+        { id: 2, v: 'b' },
+      ],
+    };
+    const after = {
+      list: [
+        { id: 1, v: 'x' },
+        { id: 2, v: 'b' },
+      ],
+    };
     const ops = createPatch(before, after);
     expect(ops).toEqual([
       { op: 'replace', path: '/list/0/v', oldValue: 'a', value: 'x' },
@@ -176,7 +190,9 @@ describe('createPatch / applyPatch', () => {
     const target = clone(after);
     const removeOp = ops.find((op) => op.op === 'remove');
     expect(removeOp).toBeDefined();
-    applyPatch(target, [{ op: 'add', path: '/removed', value: removeOp!.oldValue }]);
+    applyPatch(target, [
+      { op: 'add', path: '/removed', value: removeOp!.oldValue },
+    ]);
     expect(target).toEqual(before);
   });
 
@@ -246,5 +262,4 @@ describe('createPatch / applyPatch', () => {
     applyPatch(target, [{ op: 'add', path: '/list/2', value: 'c' }]);
     expect(target.list).toEqual(['a', 'b', 'c']);
   });
-
 });

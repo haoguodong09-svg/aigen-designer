@@ -64,7 +64,9 @@ describe('旧格式 importHistory 完全可替换（旧代码生成 → 新代�
     legacy.undo();
     legacy.redo();
     const exported = legacy.exportHistory();
-    expect(JSON.parse(JSON.stringify(exported.recordList[0])).pageSchema).toBeDefined();
+    expect(
+      JSON.parse(JSON.stringify(exported.recordList[0])).pageSchema,
+    ).toBeDefined();
     expect(legacyPage.schemas).toEqual(states[4]);
 
     // 新实现消费旧数据

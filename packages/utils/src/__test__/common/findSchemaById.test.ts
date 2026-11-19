@@ -5,9 +5,7 @@ import { findSchemaById } from '../../';
 describe('findSchemaById 函数测试', () => {
   const schemas = [
     {
-      props: {
-        
-      },
+      props: {},
       id: 'root',
       label: '页面',
       type: 'page',

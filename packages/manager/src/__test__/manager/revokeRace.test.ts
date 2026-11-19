@@ -4,7 +4,12 @@ import type { DesignerState } from '@aigen-designer/types';
 import { useRevoke } from '../../';
 
 describe('防抖竞态', () => {
-  const mockState: DesignerState = { disabledHover: false, hoverNode: null, matched: [], selectedNode: null };
+  const mockState: DesignerState = {
+    disabledHover: false,
+    hoverNode: null,
+    matched: [],
+    selectedNode: null,
+  };
   const mockSetSelectedNode = vi.fn();
 
   beforeEach(() => {

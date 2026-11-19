@@ -4,7 +4,12 @@ import type { DesignerState } from '@aigen-designer/types';
 import { useRevoke } from '../../';
 
 describe('历史记录导入兼容性（旧格式/导出往返）', () => {
-  const mockState: DesignerState = { disabledHover: false, hoverNode: null, matched: [], selectedNode: null };
+  const mockState: DesignerState = {
+    disabledHover: false,
+    hoverNode: null,
+    matched: [],
+    selectedNode: null,
+  };
   const mockSetSelectedNode = vi.fn();
 
   beforeEach(() => {
@@ -28,9 +33,21 @@ describe('历史记录导入兼容性（旧格式/导出往返）', () => {
         type: '记录3',
       },
       recordList: [
-        { pageSchema: JSON.stringify({ schemas: [] }), timestamp: 1, type: '初始化' },
-        { pageSchema: JSON.stringify({ schemas: [{ id: '1', type: 'input' }] }), timestamp: 2, type: '记录1' },
-        { pageSchema: JSON.stringify({ schemas: [{ id: '1' }, { id: '2' }] }), timestamp: 3, type: '记录2' },
+        {
+          pageSchema: JSON.stringify({ schemas: [] }),
+          timestamp: 1,
+          type: '初始化',
+        },
+        {
+          pageSchema: JSON.stringify({ schemas: [{ id: '1', type: 'input' }] }),
+          timestamp: 2,
+          type: '记录1',
+        },
+        {
+          pageSchema: JSON.stringify({ schemas: [{ id: '1' }, { id: '2' }] }),
+          timestamp: 3,
+          type: '记录2',
+        },
       ],
       undoList: [],
     };

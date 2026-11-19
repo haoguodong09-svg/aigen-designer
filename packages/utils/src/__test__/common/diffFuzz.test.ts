@@ -19,7 +19,20 @@ const rand = mulberry32(42);
 function randomValue(depth = 0): unknown {
   const r = rand();
   if (depth > 3 || r < 0.3) {
-    const prims = [0, 1, -1, '', 'a', true, false, null, '中文', 'a/b', 'c~d', 3.14];
+    const prims = [
+      0,
+      1,
+      -1,
+      '',
+      'a',
+      true,
+      false,
+      null,
+      '中文',
+      'a/b',
+      'c~d',
+      3.14,
+    ];
     return prims[Math.floor(rand() * prims.length)];
   }
   if (r < 0.65) {
@@ -45,7 +58,11 @@ function mutate(value: unknown, depth = 0): unknown {
     if (action < 0.3 && arr.length > 0) {
       arr.splice(Math.floor(rand() * arr.length), 1); // 删除
     } else if (action < 0.6) {
-      arr.splice(Math.floor(rand() * (arr.length + 1)), 0, randomValue(depth + 1)); // 插入
+      arr.splice(
+        Math.floor(rand() * (arr.length + 1)),
+        0,
+        randomValue(depth + 1),
+      ); // 插入
     } else if (action < 0.8 && arr.length > 0) {
       const i = Math.floor(rand() * arr.length);
       const j = Math.floor(rand() * arr.length);
@@ -54,7 +71,9 @@ function mutate(value: unknown, depth = 0): unknown {
     return arr;
   }
   if (typeof value === 'object' && value !== null) {
-    const obj: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+    const obj: Record<string, unknown> = {
+      ...(value as Record<string, unknown>),
+    };
     const keys = Object.keys(obj);
     const action = rand();
     if (action < 0.3 && keys.length > 0) {
@@ -78,7 +97,9 @@ describe('diff 引擎随机模糊测试（对象根）', () => {
       const beforeRoot = { data: before };
       const afterRoot = { data: after };
       const ops = createPatch(beforeRoot, afterRoot);
-      const target: Record<string, unknown> = JSON.parse(JSON.stringify(beforeRoot));
+      const target: Record<string, unknown> = JSON.parse(
+        JSON.stringify(beforeRoot),
+      );
       applyPatch(target, ops);
       expect(target).toEqual(afterRoot);
     }
@@ -91,7 +112,9 @@ describe('diff 引擎随机模糊测试（对象根）', () => {
       const beforeRoot = { data: before };
       const afterRoot = { data: after };
       const ops = createPatch(beforeRoot, afterRoot);
-      const target: Record<string, unknown> = JSON.parse(JSON.stringify(beforeRoot));
+      const target: Record<string, unknown> = JSON.parse(
+        JSON.stringify(beforeRoot),
+      );
       applyPatch(target, ops);
       expect(deepEqual(target, afterRoot)).toBe(true);
     }
@@ -103,8 +126,12 @@ describe('diff 引擎随机模糊测试（对象根）', () => {
       const after = mutate(before);
       const beforeRoot = { data: before };
       const afterRoot = { data: after };
-      const ops = JSON.parse(JSON.stringify(createPatch(beforeRoot, afterRoot)));
-      const target: Record<string, unknown> = JSON.parse(JSON.stringify(beforeRoot));
+      const ops = JSON.parse(
+        JSON.stringify(createPatch(beforeRoot, afterRoot)),
+      );
+      const target: Record<string, unknown> = JSON.parse(
+        JSON.stringify(beforeRoot),
+      );
       applyPatch(target, ops);
       expect(target).toEqual(afterRoot);
     }
@@ -112,7 +139,9 @@ describe('diff 引擎随机模糊测试（对象根）', () => {
 
   it('applyPatch 对根节点整体替换应给出明确错误（不支持原地替换根）', () => {
     const ops = createPatch({ a: 1 }, [1, 2]);
-    expect(ops).toEqual([{ op: 'replace', oldValue: { a: 1 }, path: '', value: [1, 2] }]);
+    expect(ops).toEqual([
+      { op: 'replace', oldValue: { a: 1 }, path: '', value: [1, 2] },
+    ]);
     expect(() =>
       applyPatch({ a: 1 } as Record<string, unknown>, ops),
     ).toThrow();

@@ -82,7 +82,10 @@ describe('useRevoke 审计回归', () => {
     expect(revoke.getRedoCount()).toBe(2);
 
     // 加载全新数据（替换基线）
-    pageSchema.schemas = [{ id: 'L1', type: 'table' }, { id: 'L2', type: 'table' }];
+    pageSchema.schemas = [
+      { id: 'L1', type: 'table' },
+      { id: 'L2', type: 'table' },
+    ];
     revoke.push('加载数据');
     vi.advanceTimersByTime(200);
 
@@ -140,7 +143,11 @@ describe('useRevoke 审计回归', () => {
       ...mockState,
       selectedNode: selectedNode as any,
     };
-    const revoke = useRevoke(pageSchema, stateWithSelection, mockSetSelectedNode);
+    const revoke = useRevoke(
+      pageSchema,
+      stateWithSelection,
+      mockSetSelectedNode,
+    );
 
     revoke.push('初始化');
     vi.advanceTimersByTime(200);
@@ -165,7 +172,9 @@ describe('useRevoke 审计回归', () => {
     // 非法数据：recordList[0] 是 diff 记录（无基线快照）
     revoke.importHistory({
       currentRecord: {
-        diff: JSON.stringify([{ op: 'add', path: '/schemas/0', value: { id: 'bad', type: 'x' } }]),
+        diff: JSON.stringify([
+          { op: 'add', path: '/schemas/0', value: { id: 'bad', type: 'x' } },
+        ]),
         timestamp: 1,
         type: '坏记录',
       },
