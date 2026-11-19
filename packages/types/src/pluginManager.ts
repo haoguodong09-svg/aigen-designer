@@ -43,6 +43,9 @@ export interface EventModel {
 export interface ActionModel extends EventModel {
   args?: unknown[];
   argsConfigs?: ComponentSchema[];
+  isAsync?: boolean;
+  parameters?: import('./aigen-designer').MethodParamSchema[];
+  returnType?: 'array' | 'boolean' | 'object' | 'string' | 'void';
 }
 
 export interface EditConstraintsModel {

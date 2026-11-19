@@ -221,7 +221,7 @@ describe('pageManager 页面事件总线（emitEvent/onEvent）', () => {
   it('注册 handler 后 emit 触发，携带 payload', () => {
     const pageManager = createPageManager();
     const received: unknown[] = [];
-    pageManager.onEvent('order-changed-test', (payload) => {
+    pageManager.onEvent('order-changed-test', (payload: unknown) => {
       received.push(payload);
     });
 

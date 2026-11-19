@@ -24,9 +24,88 @@ export interface ActionsModel {
   methodName: string;
   /** 动作命名（人话，用于摘要/搜索/下拉展示），可选 */
   name?: string;
+  /** 错误处理策略：中断(abort) / 忽略继续(continue) / 重试(retry) */
+  onError?: 'abort' | 'continue' | 'retry';
   /** 备注，可选 */
   remark?: string;
-  type: 'component' | 'custom' | 'public';
+  /** 目标标识（如组件 ID、API URL 或事件名） */
+  target?: string;
+  type: 'api' | 'component' | 'custom' | 'event' | 'navigate' | 'public';
+}
+
+export type ParamDataType =
+  | 'boolean'
+  | 'expression'
+  | 'json'
+  | 'number'
+  | 'object'
+  | 'string';
+
+export interface MethodParamSchema {
+  /** 默认值 */
+  defaultValue?: unknown;
+  /** 描述说明 */
+  description?: string;
+  /** 参数展示标签（中文人话） */
+  label: string;
+  /** 参数名（语义化 key，如 targetDate, message, options） */
+  name: string;
+  /** 占位提示文案 */
+  placeholder?: string;
+  /** 是否必填，默认 false */
+  required?: boolean;
+  /** 参数数据类型 */
+  type: ParamDataType;
+  /** 渲染该参数所使用的控件类型 */
+  widget?:
+    | 'code-editor'
+    | 'input'
+    | 'input-number'
+    | 'json'
+    | 'select'
+    | 'switch';
+  /** 控件专用配置（如下拉选项 options） */
+  widgetProps?: Record<string, unknown>;
+}
+
+export interface StandardActionModel {
+  /** 详细功能说明 */
+  description: string;
+  /** 是否为异步方法（返回 Promise） */
+  isAsync?: boolean;
+  /** 描述文案 */
+  label: string;
+  /** 方法名（如 reload, open, insertText, setOptions） */
+  methodName: string;
+  /** 参数定义列表 */
+  parameters?: MethodParamSchema[];
+  /** 返回值类型说明 */
+  returnType?: 'array' | 'boolean' | 'object' | 'string' | 'void';
+}
+
+export interface TraceContext {
+  causalChain: string[];
+  depth: number;
+  traceId: string;
+}
+
+export interface PipelineContext {
+  activeStack: string[];
+  causalChain: string[];
+  formData: Record<string, unknown>;
+  prevResult: unknown;
+  stepResults: Record<string, unknown>;
+  traceId: string;
+  triggerEvent: unknown[];
+  vars: Record<string, unknown>;
+}
+
+export interface PipelineResult {
+  error?: unknown;
+  failedActionId?: string;
+  finalResult?: unknown;
+  stepResults?: Record<string, unknown>;
+  success: boolean;
 }
 
 /**
@@ -41,7 +120,17 @@ export interface ConditionGroup {
         /** 取值字段（formData 等上下文中的字段路径） */
         field: string;
         /** 比较运算符 */
-        operator: '!=' | '<' | '<=' | '==' | '>' | '>=' | 'empty' | 'in';
+        operator:
+          | '!='
+          | '<'
+          | '<='
+          | '=='
+          | '>'
+          | '>='
+          | 'contains'
+          | 'empty'
+          | 'in'
+          | 'notEmpty';
         /** 比较值（'empty' 等一元运算符可缺省），可选 */
         value?: unknown;
       }
@@ -156,12 +245,46 @@ export interface DesignerState {
   selectedNode: ComponentSchema | null;
 }
 
+export interface ReactiveRule {
+  /** 先验触发条件 */
+  condition?: ConditionGroup;
+  /** 描述说明 */
+  description?: string;
+  /** 派生效应集合（属性覆盖或派生值） */
+  effects: {
+    computedValue?: any;
+    disabled?: boolean | { __isExpression__: boolean; content: string };
+    hidden?: boolean | { __isExpression__: boolean; content: string };
+    options?: any[] | { __isExpression__: boolean; content: string };
+    readonly?: boolean | { __isExpression__: boolean; content: string };
+    required?: boolean | { __isExpression__: boolean; content: string };
+  };
+  /** 是否启用 */
+  enabled?: boolean;
+  /** 规则唯一 ID */
+  id: string;
+  /** 作用域，默认为 'root' 或 'default' */
+  scopeName?: string;
+  /** 目标字段标识（field 或 id） */
+  targetField: string;
+}
+
+export interface ComponentDerivedState {
+  disabled?: boolean;
+  hidden?: boolean;
+  options?: any[];
+  readonly?: boolean;
+  required?: boolean;
+}
+
 export interface PageSchema {
   canvas?: {
     height?: string;
     mode?: 'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet'; // 支持新旧模式  'pad' | 'pc' 为旧数据
     width?: string;
   };
+  /** 响应式联动规则（新一代声明式属性联动模型） */
+  reactiveRules?: ReactiveRule[];
   schemas: ComponentSchema[];
   script?: string;
   // 全局状态初值（公式 $vars 上下文，P3 运行时），可选

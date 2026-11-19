@@ -2,6 +2,7 @@ import type {
   ActionsModel,
   AigenNodeInstance,
   ComponentSchema,
+  PageSchema,
 } from '@aigen-designer/types';
 
 import { reactive, ref, shallowRef, watch } from 'vue';
@@ -13,13 +14,17 @@ import {
   usePageSchema,
 } from '@aigen-designer/hooks';
 import {
-  evaluateCondition,
+  adaptLegacySchema,
   findSchemas,
   FormulaEngine,
   getValueByPath,
+  setValueByPath,
 } from '@aigen-designer/utils';
 
+import { ActionExecutionEngine } from './actionExecutionEngine';
 import { pluginManager } from './pluginManager';
+import { createReactiveEngine } from './reactiveRuleEngine';
+import { createSafeComponentProxy } from './safeComponentProxy';
 
 // ActionsModel 由 types 包定义（避免反向依赖），此处 re-export 保持 manager 的既有导出面
 export type { ActionsModel } from '@aigen-designer/types';
@@ -30,46 +35,133 @@ export type ComponentInstances = Record<
 export const DEFAULT_SCOPE = 'default';
 
 export function createPageManager() {
+  const pageManagerApi: any = {};
   const formulaEngine = new FormulaEngine();
   const componentInstances = ref<ComponentInstances>({});
   const funcs = ref<Record<string, Function>>({});
   // 当前模式 true 设计模式, false 渲染模式
   const isDesignMode = ref(false);
+  // 画布交互模拟演练模式（在设计模式下亦可安全模拟事件响应与联动）
+  const isInteractiveMode = ref(false);
   // script 错误状态
   const scriptError = ref<Error | null>(null);
 
   const defaultComponentIds = ref<string[]>([]);
 
+  // 待决操作队列：组件未挂载时的操作暂存，挂载后重放
+  const pendingOperations = ref<
+    Record<
+      string,
+      Array<{ args: unknown[]; methodName: string; timestamp: number }>
+    >
+  >({});
+
+  function enqueuePendingOperation(
+    id: string,
+    op: { args: unknown[]; methodName: string; timestamp: number },
+  ) {
+    if (!pendingOperations.value[id]) {
+      pendingOperations.value[id] = [];
+    }
+    pendingOperations.value[id].push(op);
+  }
+
+  function replayPendingOperations(id: string, instance: AigenNodeInstance) {
+    const queue = pendingOperations.value[id];
+    if (queue && queue.length > 0 && instance.exposed) {
+      while (queue.length > 0) {
+        const op = queue.shift();
+        if (!op) break;
+        if (typeof instance.exposed[op.methodName] === 'function') {
+          try {
+            instance.exposed[op.methodName](...op.args);
+          } catch (error) {
+            console.error(
+              `[Aigen Replay Error] Failed to replay ${op.methodName} on ${id}:`,
+              error,
+            );
+          }
+        }
+      }
+    }
+  }
+
   // 性能文档 P-W7：forms 容器改用 shallowRef，避免容器被深度代理
   // （容器内每个表单数据仍通过 reactive() 保持响应式，见 setFormData）
   const forms = shallowRef<Record<string, unknown>>({});
+  // 页面级表单数据：不属于任何 <form> 的元素（直接放在页面/布局容器中）共享此对象。
+  // 修复：此前 useFormItem 在无 Form 上下文时回退为「每个节点各自 reactive({})」，
+  // 导致字段联动条件 / 公式 $formData 读不到页面级字段，条件联动完全失效。
+  const pageFormData = reactive<Record<string, unknown>>({});
   const mountMonitor = useMountMonitor();
 
   // 初始化
-  const { pageSchema, setPageSchema } = usePageSchema();
+  const { pageSchema, setPageSchema: rawSetPageSchema } = usePageSchema();
+  // 存量 Schema 零中断双轨兼容解析
+  adaptLegacySchema(pageSchema);
+
   const hook = useHookManager();
 
   // P3 页面事件总线（页面级通道）：元素之间解耦通信（B4.4）。
-  // createEventBus 为 hooks 包纯函数（内部提供/清理与组件生命周期相关，
-  // 在非组件上下文调用仅产生告警不影响功能），不引入 hooks ↔ manager 新循环依赖。
   const pageEventBus = createEventBus('page');
   // P3 全局变量：公式 $vars 上下文与 setVar/getVar 的存储，初值取 pageSchema.vars
   const vars = ref<Record<string, unknown>>(pageSchema.vars ?? {});
 
+  // 新一代响应式规则引擎（首屏即计算 + 条件反转自愈 + computed 脏检查）
+  // 显式注入数据源：引擎创建早于 pageManagerApi 组装，若从 pageManager 读取属性会拿到 undefined，
+  // 导致 watch 无法追踪表单数据变化（历史缺陷：条件联动/首屏联动不生效的根本原因）。
+  const reactiveEngine = createReactiveEngine(pageSchema, pageManagerApi, {
+    forms,
+    formulaEngine,
+    getFieldValue,
+    getFormData,
+    pageFormData,
+    setFieldValue,
+    vars,
+  });
+
+  function setPageSchema(schema: PageSchema) {
+    adaptLegacySchema(schema);
+    rawSetPageSchema(schema);
+    reactiveEngine.evaluateAllRules();
+  }
+
   /**
-   * 查找组件的exposed属性
+   * 查找组件的exposed属性（集成 SafeComponentProxy 生命周期安全代理）
    * @param queryValue - 要查找的查询值
    * @param queryField - 要查找的查询字段，默认为 "id"
-   * @returns - 匹配组件的exposed属性，若无匹配则返回 null
+   * @returns - 匹配组件的 SafeComponentProxy 代理或 null
    */
   function find(
     queryValue: string,
     queryField = 'id',
     scopeName = DEFAULT_SCOPE,
-  ): AigenNodeInstance['exposed'] | null {
+  ): AigenNodeInstance['exposed'] | any {
+    if (queryField === 'id') {
+      return createSafeComponentProxy({
+        componentId: queryValue,
+        pageManager: pageManagerApi,
+        scopeName,
+      });
+    }
+
     const instance = findInstance(queryValue, queryField, scopeName);
-    // 返回组件实例的 exposed 属性
-    return instance?.exposed ?? null;
+    if (instance) {
+      const matchingSchema = findSchemas(
+        pageSchema.schemas,
+        (schema) => getValueByPath(schema, queryField) === queryValue,
+        true,
+      ) as ComponentSchema | false;
+      const compId =
+        matchingSchema && matchingSchema.id ? matchingSchema.id : queryValue;
+      return createSafeComponentProxy({
+        componentId: compId,
+        pageManager: pageManagerApi,
+        scopeName,
+      });
+    }
+
+    return null;
   }
 
   /**
@@ -179,6 +271,7 @@ export function createPageManager() {
 
     // 现在可以安全地存入特定 scopeName 的实例了
     componentInstances.value[id][scopeName] = instance;
+    replayPendingOperations(id, instance);
   }
   /**
    * 移除组件实例
@@ -267,8 +360,18 @@ export function createPageManager() {
     funcs.value = filtered;
   }
 
+  const actionExecutionEngine = new ActionExecutionEngine({
+    formulaEngine,
+    funcs,
+    getFormData: () => pageManagerApi.getFormData(),
+    pageEventBus,
+    pageManager: pageManagerApi,
+    pluginManager,
+    vars,
+  });
+
   /**
-   * 执行一组操作
+   * 执行一组操作（支持原生异步 Promise 管道与活动调用栈防环）
    *
    * @param actions 操作数组
    * @param scopeName 作用域名称，默认值为 DEFAULT_SCOPE
@@ -278,216 +381,13 @@ export function createPageManager() {
     actions: ActionsModel[],
     scopeName = DEFAULT_SCOPE,
     ...args: unknown[]
-  ): void {
-    // 递归深度保护（doActions 每次调用独立计数，避免跨调用累积）
-    const MAX_RECURSION_DEPTH = 20;
-    let depth = 0;
-
-    function executeActions(
-      acts: ActionsModel[],
-      sn: string,
-      a: unknown[],
-    ): void {
-      depth++;
-      if (depth > MAX_RECURSION_DEPTH) {
-        console.error('[Aigen:doActions] 递归深度超过限制，中止执行');
-        return;
-      }
-
-      try {
-        // 检查是否提供了操作数组，如果没有提供，则发出警告并返回
-        if (!acts || acts.length === 0) {
-          console.warn('未提供任何动作');
-          return;
-        }
-
-        // 追踪延迟执行的 timer，便于后续清理（如页面卸载时 clear 防止内存泄漏）
-        const pendingTimers = new Set<number>();
-
-        // 遍历每个操作
-        acts.forEach((action) => {
-          // 动作级启停用：enabled === false 时跳过该动作，不中断整条动作链。
-          // 缺省（undefined）视为启用，兼容旧数据（与 normalizeAction 的 enabled 缺省 true 语义一致）
-          if (action.enabled === false) {
-            return;
-          }
-
-          const formNames = Object.keys(forms.value);
-          // 处理数据参数（表单数据 + 触发事件参数 + 全局变量，供条件求值与表达式计算使用）
-          const context = {
-            event: a,
-            formData: (formNames.length === 1
-              ? forms.value[formNames[0]]
-              : forms.value) as Record<string, any>,
-            // P3：全局变量注入公式上下文（$vars.xxx）
-            vars: vars.value,
-          };
-
-          // P3：动作条件求值——不满足时跳过该动作，不中断整条动作链。
-          // evaluateCondition 内部 fail-safe（求值异常返回 false 并告警）
-          if (
-            !evaluateCondition(action.condition, {
-              event: a,
-              formData: context.formData,
-              vars: vars.value,
-            })
-          ) {
-            return;
-          }
-
-          // 尝试解析操作参数，如果没有提供，则使用传入的参数。
-          // 单个动作的 args 为非法 JSON 时仅跳过该动作并告警，不中断整条动作链（W6-6.1）
-          let methodArgs: unknown[];
-          if (action.args) {
-            try {
-              const parsed = JSON.parse(action.args);
-              // 兼容非数组 JSON（如对象字面量），统一包装为数组
-              methodArgs = Array.isArray(parsed) ? parsed : [parsed];
-            } catch (error) {
-              console.warn(
-                `[Aigen：动作(${action.methodName})]args 非法 JSON，已跳过该动作`,
-                { args: action.args, error },
-              );
-              return;
-            }
-          } else {
-            methodArgs = a;
-          }
-
-          methodArgs = methodArgs.map((arg: any) => {
-            // 如果是对象且标记为表达式，调用 jsep 计算
-            if (arg && typeof arg === 'object' && arg.__isExpression__) {
-              return formulaEngine.calculate(arg.content, context);
-            }
-
-            // 否则（字符串、数字等），直接返回原值（兼容旧数据）
-            return arg;
-          });
-
-          // 实际执行体：按动作类型分发到对应执行函数（各执行函数内部均有 try/catch，
-          // 此处兜底保证单动作异常不中断动作链）
-          const executeAction = (): void => {
-            try {
-              // 根据操作的类型，调用不同的执行函数
-              switch (action.type) {
-                case 'component': {
-                  // 执行组件方法
-                  executeComponentMethod(action, sn, methodArgs);
-                  break;
-                }
-
-                case 'custom': {
-                  // 执行自定义方法
-                  executeCustomMethod(action, methodArgs);
-                  break;
-                }
-
-                case 'public': {
-                  // 执行公共方法
-                  executePublicMethod(action, methodArgs);
-                  break;
-                }
-
-                default: {
-                  // 如果遇到未知的操作类型，发出警告
-                  console.warn(`未知的动作类型: ${action.type}`);
-                  break;
-                }
-              }
-            } catch (error) {
-              console.error(
-                `[Aigen：动作(${action.methodName})]执行异常:`,
-                error,
-              );
-            }
-          };
-
-          // P3：延迟执行——仅该动作延迟，动作链其他动作不受影响（动作参数已在
-          // 调用前完成解析与表达式求值，延迟体内直接执行）
-          if (typeof action.delay === 'number' && action.delay > 0) {
-            const timerId = window.setTimeout(() => {
-              pendingTimers.delete(timerId);
-              executeAction();
-            }, action.delay);
-            pendingTimers.add(timerId);
-          } else {
-            executeAction();
-          }
-        });
-      } finally {
-        depth--;
-      }
-    }
-
-    executeActions(actions, scopeName, [...args]);
-  }
-
-  /**
-   * 执行公共方法
-   * @param action 操作
-   * @param args 参数
-   */
-  function executePublicMethod(action: ActionsModel, args: unknown[]): void {
-    try {
-      // 尝试调用公共方法处理程序
-      pluginManager.publicMethods.methodsMap[action.methodName]?.handler(
-        ...args,
-      );
-    } catch (error) {
-      // 如果调用失败，打印错误信息
-      console.error(`[Aigen：公共函数(${action.methodName})]执行异常:`, error);
-    }
-  }
-
-  /**
-   * 执行自定义方法
-   * @param action 操作
-   * @param args 参数
-   */
-  function executeCustomMethod(action: ActionsModel, args: unknown[]): void {
-    try {
-      // 尝试调用自定义方法
-      funcs.value[action.methodName]?.(...args);
-    } catch (error) {
-      // 如果调用失败，打印错误信息
-      console.error(
-        `[Aigen：自定义函数(${action.methodName})]执行异常:`,
-        error,
-      );
-    }
-  }
-
-  /**
-   * 执行组件方法
-   * @param action 操作
-   * @param scopeName 作用域名称，默认值为 DEFAULT_SCOPE
-   * @param args 参数
-   */
-  function executeComponentMethod(
-    action: ActionsModel,
-    scopeName = DEFAULT_SCOPE,
-    args: unknown[],
-  ): void {
-    // 获取组件实例
-    const component =
-      action.componentId && find(action.componentId, 'id', scopeName);
-
-    // 如果未找到组件实例，发出警告并返回
-    if (!component) {
-      console.warn(`[Aigen：组件${action.componentId}]未找到`);
-      return;
-    }
-
-    try {
-      // 调用组件的方法
-      component[action.methodName](...args);
-    } catch (error) {
-      // 如果调用失败，打印错误信息
-      console.error(
-        `[Aigen：组件${action.componentId}函数(${action.methodName})]执行异常:`,
-        error,
-      );
-    }
+  ): Promise<any> {
+    return actionExecutionEngine.executePipeline(
+      actions,
+      {},
+      scopeName,
+      ...args,
+    );
   }
 
   /**
@@ -498,6 +398,29 @@ export function createPageManager() {
     isDesignMode.value = isDesign;
   }
 
+  function setInteractiveMode(interactive: boolean = true): void {
+    isInteractiveMode.value = interactive;
+  }
+
+  function __DEBUG_PIPELINE__() {
+    return {
+      activeStack: (actionExecutionEngine as any).currentActiveStack,
+      chainDepth: (actionExecutionEngine as any).currentChainDepth,
+      pendingOperations: pendingOperations.value,
+      reactiveState: reactiveEngine.reactiveStateMap,
+    };
+  }
+
+  function __DUMP_DEPENDENCY_GRAPH__() {
+    const rules = pageSchema.reactiveRules || [];
+    return rules.map((r) => ({
+      condition: r.condition,
+      effects: Object.keys(r.effects),
+      id: r.id,
+      target: r.targetField,
+    }));
+  }
+
   function setDefaultComponentIds(schemas: ComponentSchema[]) {
     const componentSchemas = findSchemas(
       schemas,
@@ -505,6 +428,75 @@ export function createPageManager() {
     ) as ComponentSchema[];
     defaultComponentIds.value = componentSchemas.map(
       (item) => item.id as string,
+    );
+  }
+
+  /**
+   * 解析目标标识（组件 id 或 field）对应的表单字段名。
+   * 联动的目标通常是组件 id，而表单数据按 field 存储，需要显式转换。
+   * @param target 组件 id 或字段名
+   * @returns 字段名；无匹配时原样返回
+   */
+  function resolveFieldName(target: string): string {
+    if (!target) return target;
+    const matched = findSchemas(
+      pageSchema.schemas,
+      (schema) => schema.id === target || schema.field === target,
+      true,
+    ) as ComponentSchema | false;
+    if (matched && matched.field) return String(matched.field);
+    return target;
+  }
+
+  /**
+   * 获取指定作用域的表单数据对象（可写引用）。
+   * 优先使用具名 form 的数据；无 form 时使用页面级共享数据。
+   */
+  function getScopeFormData(
+    scopeName = DEFAULT_SCOPE,
+  ): Record<string, unknown> {
+    return (forms.value[scopeName] as Record<string, unknown>) ?? pageFormData;
+  }
+
+  /**
+   * 获取合并后的表单数据快照（页面级字段 + 所有表单字段）。
+   * 用于动作条件、公式 $formData 上下文与联动规则求值。
+   * 注意：返回新对象，避免引擎/表达式意外改写内部响应式容器。
+   */
+  function getFormData(): Record<string, unknown> {
+    const formNames = Object.keys(forms.value);
+    if (formNames.length === 0) return pageFormData as Record<string, unknown>;
+    if (formNames.length === 1) {
+      return {
+        ...pageFormData,
+        ...(forms.value[formNames[0]] as Record<string, unknown>),
+      };
+    }
+    return { ...pageFormData, ...forms.value };
+  }
+
+  /**
+   * 读取字段值（支持传组件 id，自动解析为 field）
+   */
+  function getFieldValue(target: string, scopeName = DEFAULT_SCOPE): unknown {
+    return getValueByPath(
+      getScopeFormData(scopeName),
+      resolveFieldName(target),
+    );
+  }
+
+  /**
+   * 写入字段值（支持传组件 id，自动解析为 field）
+   */
+  function setFieldValue(
+    target: string,
+    value: unknown,
+    scopeName = DEFAULT_SCOPE,
+  ): void {
+    setValueByPath(
+      getScopeFormData(scopeName),
+      resolveFieldName(target),
+      value,
     );
   }
 
@@ -619,36 +611,55 @@ export function createPageManager() {
     { immediate: true },
   );
 
-  return {
+  Object.assign(pageManagerApi, {
+    __DEBUG_PIPELINE__,
+    __DUMP_DEPENDENCY_GRAPH__,
+    actionExecutionEngine,
     addComponentInstance,
     componentInstances,
     defaultComponentIds,
     doActions,
     emitEvent,
+    enqueuePendingOperation,
+    eventBus: pageEventBus,
     find,
     findAll,
     findInstance,
     findInstanceAll,
     forms,
+    formulaEngine,
     funcs,
     // 兼容处理, 后续版本可能会移除
     getComponentInstance: find,
+    getFieldValue,
+    getFormData,
+    getScopeFormData,
     getVar,
     hook,
     isDesignMode,
+    isInteractiveMode,
     mountMonitor,
     onEvent,
+    pageFormData,
     pageSchema,
+    pendingOperations,
+    reactiveEngine,
+    reactiveStateMap: reactiveEngine.reactiveStateMap,
     removeComponentInstance,
+    resolveFieldName,
     scriptError,
     setDefaultComponentIds,
     setDesignMode,
+    setFieldValue,
     setFormData,
+    setInteractiveMode,
     setMethods,
     setPageSchema,
     setVar,
     vars,
-  };
+  });
+
+  return pageManagerApi;
 }
 
 export type PageManager = ReturnType<typeof createPageManager>;

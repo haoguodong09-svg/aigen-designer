@@ -69,7 +69,7 @@ export function usePageSchema() {
    * 收不到更新），标量字段直接替换；最后手动触发 shallowRef 更新。
    */
   function syncSchemaField(
-    key: 'canvas' | 'schemas' | 'script',
+    key: 'canvas' | 'reactiveRules' | 'schemas' | 'script' | 'vars',
     value: unknown,
   ) {
     const raw = schemaRef.value;
@@ -96,6 +96,12 @@ export function usePageSchema() {
     set canvas(value) {
       syncSchemaField('canvas', value);
     },
+    get reactiveRules() {
+      return schemaRef.value.reactiveRules;
+    },
+    set reactiveRules(value) {
+      syncSchemaField('reactiveRules', value);
+    },
     get schemas(): ComponentSchema[] {
       return schemaRef.value.schemas;
     },
@@ -107,6 +113,12 @@ export function usePageSchema() {
     },
     set script(value: string | undefined) {
       syncSchemaField('script', value);
+    },
+    get vars() {
+      return schemaRef.value.vars;
+    },
+    set vars(value) {
+      syncSchemaField('vars', value);
     },
   });
 

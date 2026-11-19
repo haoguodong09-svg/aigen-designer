@@ -91,7 +91,17 @@ interface ConditionItem {
   /** 取值字段（formData 中的字段路径） */
   field: string;
   /** 比较运算符 */
-  operator: '!=' | '<' | '<=' | '==' | '>' | '>=' | 'empty' | 'in';
+  operator:
+    | '!='
+    | '<'
+    | '<='
+    | '=='
+    | '>'
+    | '>='
+    | 'contains'
+    | 'empty'
+    | 'in'
+    | 'notEmpty';
   /** 比较值（'empty' 等一元运算符可缺省） */
   value?: unknown;
 }
@@ -130,9 +140,25 @@ function evaluateItem(item: ConditionItem, context: ConditionContext): boolean {
     case '>=': {
       return (actual as number) >= (value as number);
     }
+    case 'contains': {
+      // 包含：数组包含任一候选值，或字符串包含指定文本
+      if (Array.isArray(actual)) {
+        const candidates = Array.isArray(value) ? value : [value];
+        return candidates.some((candidate) => actual.includes(candidate));
+      }
+      if (typeof actual === 'string') {
+        return actual.includes(String(value ?? ''));
+      }
+      return false;
+    }
     case 'empty': {
-      // 空：undefined / null / 空字符串
-      return actual === undefined || actual === null || actual === '';
+      // 空：undefined / null / 空字符串 / 空数组
+      return (
+        actual === undefined ||
+        actual === null ||
+        actual === '' ||
+        (Array.isArray(actual) && actual.length === 0)
+      );
     }
     case 'in': {
       // value 为数组时直接查成员；为字符串时按逗号分隔（兼容面板简化输入）
@@ -146,6 +172,14 @@ function evaluateItem(item: ConditionItem, context: ConditionContext): boolean {
         return actual.some((item) => candidates.includes(item));
       }
       return candidates.includes(actual);
+    }
+    case 'notEmpty': {
+      return !(
+        actual === undefined ||
+        actual === null ||
+        actual === '' ||
+        (Array.isArray(actual) && actual.length === 0)
+      );
     }
     default: {
       console.warn('[Aigen：条件求值]未知运算符', { field, operator });
