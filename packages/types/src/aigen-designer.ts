@@ -176,6 +176,7 @@ export interface RenderCallbackParams {
   tableMeta?: TableMeta;
   // TODO: 第二期收敛为 Record<string, unknown>。
   // 当前 antd/elementPlus/naiveUi 的组件配置 show/onChange 回调仍依赖 any 索引访问 values.props。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   values: Record<string, any>;
 }
 
@@ -208,6 +209,7 @@ export interface ComponentSchema {
   };
   // 组件属性，可选（透传给 UI 库组件的属性集合）
   // TODO: 第二期改为泛型 ComponentSchema<TProps> 以彻底消除 any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   props?: any;
   // 表单验证规则，可选
   rules?: FormItemRule[];
@@ -236,6 +238,7 @@ export interface FormConfig {
 
 // TODO: 第二期将 FormDataModel 收敛为 Record<string, unknown>。
 // 当前 aigenActionModal 等调用方仍依赖 any 索引访问，待调用方收敛后再收紧。
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type FormDataModel = Record<string, any>;
 
 export interface DesignerState {
@@ -252,10 +255,10 @@ export interface ReactiveRule {
   description?: string;
   /** 派生效应集合（属性覆盖或派生值） */
   effects: {
-    computedValue?: any;
+    computedValue?: unknown;
     disabled?: boolean | { __isExpression__: boolean; content: string };
     hidden?: boolean | { __isExpression__: boolean; content: string };
-    options?: any[] | { __isExpression__: boolean; content: string };
+    options?: unknown[] | { __isExpression__: boolean; content: string };
     readonly?: boolean | { __isExpression__: boolean; content: string };
     required?: boolean | { __isExpression__: boolean; content: string };
   };
@@ -272,7 +275,7 @@ export interface ReactiveRule {
 export interface ComponentDerivedState {
   disabled?: boolean;
   hidden?: boolean;
-  options?: any[];
+  options?: unknown[];
   readonly?: boolean;
   required?: boolean;
 }
