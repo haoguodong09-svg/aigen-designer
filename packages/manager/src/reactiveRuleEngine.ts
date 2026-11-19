@@ -40,10 +40,20 @@ export function createReactiveEngine(
   const reactiveStateMap = reactive<Record<string, ComponentDerivedState>>({});
   const scope = effectScope();
 
-  // 记录每个规则上一次是否命中及其生效的属性集合，用于条件反转时准确复位
+  // 记录每个规则上一次是否命中及其生效的属性集合，用于条件反转时准确复位。
+  // assignedOriginal：常量 computedValue 首次写入前捕获的目标字段原值，
+  // 条件失效时用于「撤销赋值、物归原主」。
   const activeRuleEffectsMap = new Map<
     string,
-    { keys: (keyof ComponentDerivedState)[]; targetKeys: string[] }
+    {
+      assignedOriginal?: {
+        scopeName: string;
+        targetField: string;
+        value: unknown;
+      };
+      keys: (keyof ComponentDerivedState)[];
+      targetKeys: string[];
+    }
   >();
 
   let isEvaluating = false;
@@ -90,6 +100,80 @@ export function createReactiveEngine(
     ) as Record<string, unknown>;
   }
 
+  /** 统一解析字段读写器：优先使用注入选项，回退 pageManager，再回退表单快照 */
+  function resolveFieldAccessor() {
+    const getValue =
+      options.getFieldValue ??
+      (typeof pageManager.getFieldValue === 'function'
+        ? pageManager.getFieldValue.bind(pageManager)
+        : undefined);
+    const setValue =
+      options.setFieldValue ??
+      (typeof pageManager.setFieldValue === 'function'
+        ? pageManager.setFieldValue.bind(pageManager)
+        : undefined);
+    return { getValue, setValue };
+  }
+
+  /** 是否为表达式对象（与 resolveValue 的判定保持一致） */
+  function isExpressionValue(
+    value: unknown,
+  ): value is { __isExpression__: true; content: string } {
+    return Boolean(
+      value &&
+        typeof value === 'object' &&
+        (value as Record<string, unknown>).__isExpression__,
+    );
+  }
+
+  /**
+   * 写入 computedValue 派生值（带严格脏检查，只有值真正变化才写，杜绝 watch 递归更新）。
+   * 供「条件命中」与「条件由命中转失效」两条路径复用。
+   *
+   * @param activation 命中记录；常量赋值首次写入前在其中捕获目标字段原值，
+   * 条件失效时据此「撤销赋值」
+   */
+  function applyComputedValue(
+    rule: ReactiveRule,
+    context: Record<string, unknown>,
+    scopeName: string,
+    formData: Record<string, unknown>,
+    activation?: {
+      assignedOriginal?: {
+        scopeName: string;
+        targetField: string;
+        value: unknown;
+      };
+    },
+  ) {
+    if (rule.effects.computedValue === undefined) return;
+    const newVal = resolveValue(rule.effects.computedValue, context);
+    const { getValue, setValue } = resolveFieldAccessor();
+    const currentVal = getValue
+      ? getValue(rule.targetField, scopeName)
+      : formData?.[rule.targetField];
+
+    if (!deepEqual(currentVal, newVal)) {
+      // 常量赋值：首次写入前记录原值（表达式赋值走「失效重算」路径，无需记录）
+      if (
+        activation &&
+        !activation.assignedOriginal &&
+        !isExpressionValue(rule.effects.computedValue)
+      ) {
+        activation.assignedOriginal = {
+          scopeName,
+          targetField: rule.targetField,
+          value: currentVal,
+        };
+      }
+      if (setValue) {
+        setValue(rule.targetField, newVal, scopeName);
+      } else if (formData && rule.targetField in formData) {
+        formData[rule.targetField] = newVal;
+      }
+    }
+  }
+
   function evaluateAllRules() {
     isEvaluating = true;
     try {
@@ -132,6 +216,31 @@ export function createReactiveEngine(
                 }
               }
             }
+            // 条件赋值规则自愈：命中→失效的瞬间不能让目标值冻结在旧结果——
+            // 表达式赋值：以当前数据重算一次（公式的 else 分支生效，如 IF(开关,'123','456') 失效时算出 '456'）；
+            // 常量赋值：撤销赋值，恢复写入前的原值（与 hidden/disabled 的复位自愈对称）
+            if (rule.effects.computedValue !== undefined) {
+              const { getValue, setValue } = resolveFieldAccessor();
+              if (isExpressionValue(rule.effects.computedValue)) {
+                applyComputedValue(rule, context, scopeName, formData);
+              } else if (previousActivation.assignedOriginal) {
+                const original = previousActivation.assignedOriginal;
+                const currentVal = getValue
+                  ? getValue(original.targetField, original.scopeName)
+                  : formData?.[original.targetField];
+                if (!deepEqual(currentVal, original.value)) {
+                  if (setValue) {
+                    setValue(
+                      original.targetField,
+                      original.value,
+                      original.scopeName,
+                    );
+                  } else if (formData && original.targetField in formData) {
+                    formData[original.targetField] = original.value;
+                  }
+                }
+              }
+            }
             activeRuleEffectsMap.delete(rule.id);
           }
           continue;
@@ -165,35 +274,18 @@ export function createReactiveEngine(
           }
         }
 
-        // 记录本规则施加的派生属性，供后续条件失效时精准复位
-        activeRuleEffectsMap.set(rule.id, { keys: appliedKeys, targetKeys });
+        // 记录本规则施加的派生属性，供后续条件失效时精准复位。
+        // assignedOriginal 跨评估轮次保留：常量赋值只在首次写入时捕获一次原值
+        const previous = activeRuleEffectsMap.get(rule.id);
+        const activation = {
+          assignedOriginal: previous?.assignedOriginal,
+          keys: appliedKeys,
+          targetKeys,
+        };
+        activeRuleEffectsMap.set(rule.id, activation);
 
         // 3. 派生值计算 (computedValue) 并带严格脏检查
-        if (rule.effects.computedValue !== undefined) {
-          const newVal = resolveValue(rule.effects.computedValue, context);
-          const getValue =
-            options.getFieldValue ??
-            (typeof pageManager.getFieldValue === 'function'
-              ? pageManager.getFieldValue.bind(pageManager)
-              : undefined);
-          const setValue =
-            options.setFieldValue ??
-            (typeof pageManager.setFieldValue === 'function'
-              ? pageManager.setFieldValue.bind(pageManager)
-              : undefined);
-          const currentVal = getValue
-            ? getValue(rule.targetField, scopeName)
-            : formData?.[rule.targetField];
-
-          // 严格脏检查拦截：只有值真正发生改变时才写入表单，杜绝 watch 递归更新！
-          if (!deepEqual(currentVal, newVal)) {
-            if (setValue) {
-              setValue(rule.targetField, newVal, scopeName);
-            } else if (formData && rule.targetField in formData) {
-              formData[rule.targetField] = newVal;
-            }
-          }
-        }
+        applyComputedValue(rule, context, scopeName, formData, activation);
       }
     } finally {
       isEvaluating = false;

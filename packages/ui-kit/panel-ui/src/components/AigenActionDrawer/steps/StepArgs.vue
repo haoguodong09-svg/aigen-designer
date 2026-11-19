@@ -10,6 +10,7 @@ import {
   AigenCollapsePanel,
   AigenIcon,
   AigenNode,
+  AigenTooltip,
   useBindModel,
 } from '@aigen-designer/base-ui';
 import { useDesignerContext, usePageManager } from '@aigen-designer/hooks';
@@ -242,6 +243,14 @@ const jsonText = ref('');
 const jsonError = ref('');
 const jsonPlaceholder =
   'JSON 数组，例如 ["选项1", {"__isExpression__": true, "content": "$event[0]"}]';
+/** 「自由参数（JSON）」标题旁问号提示：说明 JSON 与「添加参数」的用法 */
+const jsonHelpTip =
+  '用法：以 JSON 数组整体编辑调用参数，数组每一项对应一个参数。' +
+  '支持常量（字符串 / 数字 / 布尔）与公式对象，' +
+  '公式写法如 {"__isExpression__": true, "content": "$event[0]"}，' +
+  '可用 $event[0]、$formData、$prev 等上下文。' +
+  '编辑后点击「应用 JSON」生效，并与上方参数表单双向同步；' +
+  '也可以先用「添加参数」逐个追加，再在此处整体微调。';
 
 watch(argsMode, (mode) => {
   if (mode === 'json') {
@@ -1162,7 +1171,26 @@ watch(
 
     <!-- 自由参数（JSON）模式：与高级设置共用折叠面板样式 -->
     <AigenCollapse v-model="jsonPanels">
-      <AigenCollapsePanel name="json" title="自由参数（JSON）">
+      <AigenCollapsePanel name="json">
+        <template #header>
+          <span class="aigen-step-args-json-head">
+            <span class="aigen-step-args-json-title">自由参数（JSON）</span>
+            <AigenTooltip
+              trigger="hover"
+              placement="top"
+              :mouse-enter-delay="200"
+              :content="jsonHelpTip"
+            >
+              <span
+                class="aigen-step-args-json-help"
+                aria-label="自由参数（JSON）使用说明"
+                @click.stop
+              >
+                <AigenIcon name="icon--aigen--help-outline-rounded" />
+              </span>
+            </AigenTooltip>
+          </span>
+        </template>
         <div class="aigen-step-args-json-body">
           <textarea
             v-model="jsonText"
@@ -1636,6 +1664,33 @@ watch(
 }
 
 /* 自由参数 JSON */
+.aigen-step-args-json-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 与折叠面板默认标题保持一致的字号字重 */
+.aigen-step-args-json-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--aigen-text-main);
+}
+
+.aigen-step-args-json-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--aigen-text-helper);
+  cursor: help;
+  transition: color 0.2s ease-out-quart;
+
+  &:hover {
+    color: var(--aigen-primary);
+  }
+}
+
 .aigen-step-args-json-body {
   display: flex;
   flex-direction: column;

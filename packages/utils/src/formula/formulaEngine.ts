@@ -6,6 +6,10 @@ import jsep from 'jsep';
 export interface FormulaContext {
   event?: Record<string, any>;
   formData?: Record<string, any>;
+  /** 上一步动作的返回值（动作管道） */
+  prev?: unknown;
+  /** 按动作 id 收集的各步返回值（动作管道） */
+  steps?: Record<string, unknown>;
   vars?: Record<string, any>;
 }
 
@@ -57,6 +61,8 @@ export class FormulaEngine {
     const mergedContext: FormulaContext = {
       event: { ...this.context.event, ...runtimeContext.event },
       formData: { ...this.context.formData, ...runtimeContext.formData },
+      prev: runtimeContext.prev ?? this.context.prev,
+      steps: { ...this.context.steps, ...runtimeContext.steps },
       vars: { ...this.context.vars, ...runtimeContext.vars },
     };
 
@@ -158,6 +164,15 @@ export class FormulaEngine {
         return 0;
       }
 
+      // 裸根变量: $event / $formData / $prev 等（直接引用上下文对象本身）
+      case 'Identifier': {
+        const name = (node as jsep.Identifier).name;
+        const root = this._resolveRoot(name, ctx);
+        if (root !== undefined) return root;
+        console.warn(`Unknown identifier: ${name}`);
+        return 0;
+      }
+
       // 常量: 123, "abc"
       case 'Literal': {
         return (node as jsep.Literal).value;
@@ -168,12 +183,6 @@ export class FormulaEngine {
         const memberNode = node as jsep.MemberExpression;
         const propertyNode = memberNode.property as jsep.Identifier;
         const propertyName = propertyNode.name || (propertyNode as any).value;
-
-        const sourceMap: Record<string, any> = {
-          $event: ctx.event || {},
-          $formData: ctx.formData || {},
-          $vars: ctx.vars || {},
-        };
 
         // 递归解析 object 部分，获取根对象名和属性路径
         let currentNode = memberNode.object;
@@ -196,16 +205,20 @@ export class FormulaEngine {
           }
         }
 
-        const source = sourceMap[rootObjectName] || {};
+        // 根值可能是任意类型（如 $prev 为原始值），按索引容器处理逐层取值
+        const source = (this._resolveRoot(rootObjectName, ctx) ?? {}) as Record<
+          string,
+          unknown
+        >;
 
         // 沿着属性路径逐层获取值
-        let value = source;
+        let value: unknown = source;
         for (const prop of propertyPath) {
           if (value === null) {
             value = 0;
             break;
           }
-          value = value[prop];
+          value = (value as Record<PropertyKey, unknown>)[prop];
         }
 
         return value;
@@ -227,6 +240,33 @@ export class FormulaEngine {
       default: {
         console.warn(`Unsupported node type: ${node.type}`);
         return 0;
+      }
+    }
+  }
+
+  /**
+   * 解析根变量名到上下文值：$event/$formData/$vars/$prev/$steps。
+   * 未知名返回 undefined（由调用方决定回退策略）。
+   */
+  private _resolveRoot(name: string, ctx: FormulaContext): unknown {
+    switch (name) {
+      case '$event': {
+        return ctx.event ?? {};
+      }
+      case '$formData': {
+        return ctx.formData ?? {};
+      }
+      case '$prev': {
+        return ctx.prev ?? null;
+      }
+      case '$steps': {
+        return ctx.steps ?? {};
+      }
+      case '$vars': {
+        return ctx.vars ?? {};
+      }
+      default: {
+        return undefined;
       }
     }
   }

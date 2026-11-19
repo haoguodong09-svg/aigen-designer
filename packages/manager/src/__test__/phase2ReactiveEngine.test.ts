@@ -152,6 +152,102 @@ describe('Phase 2: 响应式规则引擎与双轨兼容解析测试', () => {
       engine.destroy();
     });
 
+    it('条件赋值规则：条件由命中转失效时应重算公式，目标值不冻结', async () => {
+      const pageManager = createPageManager();
+      const testSchema = {
+        schemas: [],
+        reactiveRules: [
+          {
+            condition: {
+              items: [{ field: 'switch', operator: '==', value: true }],
+              logic: 'AND',
+            },
+            effects: {
+              computedValue: {
+                __isExpression__: true,
+                content: "IF($formData.switch, '123', '456')",
+              },
+            },
+            id: 'rule_cond_assign',
+            targetField: 'input',
+          },
+        ] as ReactiveRule[],
+      };
+
+      const formData = reactive({ input: '', switch: false });
+      pageManager.forms.value = { default: formData };
+
+      const engine = createReactiveEngine(testSchema, pageManager);
+
+      // 首屏：条件未命中（且从未命中过），不写值
+      await nextTick();
+      expect(formData.input).toBe('');
+
+      // 开关打开：条件命中 → 写入 '123'
+      formData.switch = true;
+      await nextTick();
+      expect(formData.input).toBe('123');
+
+      // 开关关闭：条件由命中转失效 → 重算公式写入 '456'（修复前会冻结在 '123'）
+      formData.switch = false;
+      await nextTick();
+      expect(formData.input).toBe('456');
+
+      // 再次打开 → 重新命中写回 '123'
+      formData.switch = true;
+      await nextTick();
+      expect(formData.input).toBe('123');
+
+      engine.destroy();
+    });
+
+    it('条件常量赋值：条件失效时应恢复写入前的原值（撤销赋值）', async () => {
+      const pageManager = createPageManager();
+      const testSchema = {
+        schemas: [],
+        reactiveRules: [
+          {
+            condition: {
+              items: [{ field: 'switch', operator: '==', value: true }],
+              logic: 'AND',
+            },
+            effects: {
+              // 常量赋值：不随数据变化，失效时应恢复原值而非重算（重算结果不变会冻结）
+              computedValue: 13,
+            },
+            id: 'rule_const_assign',
+            targetField: 'input',
+          },
+        ] as ReactiveRule[],
+      };
+
+      const formData = reactive({ input: '', switch: false });
+      pageManager.forms.value = { default: formData };
+
+      const engine = createReactiveEngine(testSchema, pageManager);
+
+      // 首屏：条件未命中且从未命中过，不写值
+      await nextTick();
+      expect(formData.input).toBe('');
+
+      // 开关打开：命中 → 写入常量 13（此时记录原值 ''）
+      formData.switch = true;
+      await nextTick();
+      expect(formData.input).toBe(13);
+
+      // 开关关闭：失效 → 撤销赋值，恢复原值 ''（修复前会冻结在 13）
+      formData.switch = false;
+      await nextTick();
+      expect(formData.input).toBe('');
+
+      // 再次打开 → 重新写入 13
+      formData.switch = true;
+      await nextTick();
+      expect(formData.input).toBe(13);
+
+      engine.destroy();
+    });
+
     it('pageManager 集成：页面级共享表单数据可驱动规则，并在条件反转时自愈', async () => {
       const pageManager = createPageManager();
       pageManager.setPageSchema({

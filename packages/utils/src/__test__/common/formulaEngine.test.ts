@@ -91,4 +91,40 @@ describe('FormulaEngine', () => {
     expect(engine.calculate('!$formData.b')).toBe(false);
     expect(engine.calculate('-$formData.b')).toBe(-2);
   });
+
+  it('管道上下文 $prev 应参与运算', () => {
+    const engine = new FormulaEngine();
+    expect(engine.calculate('$prev + 10', { prev: 10 })).toBe(20);
+    // 未提供 prev 时归 null，参与 + 运算归 0
+    expect(engine.calculate('$prev + 10')).toBe(10);
+    expect(engine.calculate('$prev.done', { prev: { done: true } })).toBe(true);
+  });
+
+  it('管道上下文 $steps 应按动作 id 取值', () => {
+    const engine = new FormulaEngine();
+    expect(engine.calculate('$steps.step1', { steps: { step1: 7 } })).toBe(7);
+    expect(engine.calculate('$steps.a.v', { steps: { a: { v: 'ok' } } })).toBe(
+      'ok',
+    );
+  });
+
+  it('裸 $formData 应返回上下文对象本身', () => {
+    const engine = new FormulaEngine();
+    const formData = { a: 1, b: 2 };
+    expect(engine.calculate('$formData', { formData })).toEqual(formData);
+  });
+
+  it('$formData 多级路径应正确取值', () => {
+    const engine = new FormulaEngine();
+    expect(
+      engine.calculate('$formData.user.address.city', {
+        formData: { user: { address: { city: '杭州' } } },
+      }),
+    ).toBe('杭州');
+  });
+
+  it('未知裸标识符应返回 0', () => {
+    const engine = new FormulaEngine();
+    expect(engine.calculate('unknownVar + 1')).toBe(1);
+  });
 });
