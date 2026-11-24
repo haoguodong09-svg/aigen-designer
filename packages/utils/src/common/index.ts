@@ -4,4 +4,6 @@ export * from './component';
 export * from './condition';
 export * from './data';
 export * from './diff';
+export * from './dragCollision';
+export * from './schemaOperations';
 export * from './string';

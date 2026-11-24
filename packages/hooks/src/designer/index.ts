@@ -15,6 +15,7 @@ export {
   injectBuilderReadonly,
   provideBuilderReadonly,
 } from './useBuilderReadonly';
+export * from './useCanvasDrag';
 export * from './useDesignerContext';
 export * from './useFieldPathPrefix';
 export * from './useLinkMode';

@@ -2,7 +2,6 @@
 import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, ref, watch } from 'vue';
-import { VueDraggable } from 'vue-draggable-plus';
 
 import {
   AigenCollapse,
@@ -10,7 +9,7 @@ import {
   AigenIcon,
   useBindModel,
 } from '@aigen-designer/base-ui';
-import { useDesignerContext } from '@aigen-designer/hooks';
+import { useCanvasDrag, useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import {
   debounce,
@@ -79,6 +78,27 @@ function handleClick(schema: ComponentSchema) {
   designer.setSelectedNode(newSchema);
   revoke.push('插入组件', true);
 }
+const canvasDrag = useCanvasDrag();
+
+/**
+ * 物料拖拽发起（完全解耦 DOM，直接向全局画布拖拽状态机分发）
+ */
+function handleDragStart(schema: ComponentSchema, event: DragEvent) {
+  if (event.dataTransfer) {
+    event.dataTransfer.setData('application/json', JSON.stringify(schema));
+    event.dataTransfer.effectAllowed = 'copy';
+  }
+  canvasDrag.startDrag(
+    schema,
+    'new',
+    event.currentTarget as HTMLElement,
+    event,
+  );
+}
+
+function handleDragEnd() {
+  canvasDrag.endDrag();
+}
 </script>
 <template>
   <div class="aigen-component-view flex flex-col">
@@ -113,20 +133,14 @@ function handleClick(schema: ComponentSchema) {
             :title="group.title"
             :key="group.title"
           >
-            <VueDraggable
-              v-model="group.list"
-              :group="{ name: 'edit-draggable', pull: 'clone', put: false }"
-              :sort="false"
-              :animation="180"
-              ghost-class="moving"
-              :clone="generateNewSchema"
-              item-key="id"
-              class="grid grid-cols-[auto_auto] gap-2 px-2 pb-2 pt-1"
-            >
+            <div class="grid grid-cols-[auto_auto] gap-2 px-2 pb-2 pt-1">
               <div
                 v-for="item in group.list"
                 :key="item.type"
-                class="aigen-component-item flex items-center truncate"
+                class="aigen-component-item flex cursor-grab items-center truncate"
+                draggable="true"
+                @dragstart="handleDragStart(item, $event)"
+                @dragend="handleDragEnd"
                 @click="handleClick(item)"
               >
                 <AigenIcon
@@ -139,7 +153,7 @@ function handleClick(schema: ComponentSchema) {
                   {{ item.label }}
                 </div>
               </div>
-            </VueDraggable>
+            </div>
           </AigenCollapsePanel>
         </AigenCollapse>
         <div

@@ -247,3 +247,149 @@
     }
   }
 }
+
+// 拖拽落点虚拟指示层（对标 TinyEngine .hover-line 五向与容器高亮）
+.aigen-drop-indicator {
+  box-sizing: border-box;
+  transition: all 0.08s ease-out;
+
+  &.is-top,
+  &.is-bottom {
+    background: #2563eb;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2563eb;
+      box-shadow: 0 0 6px rgba(37, 99, 235, 0.8);
+    }
+
+    &::before {
+      left: -4px;
+    }
+
+    &::after {
+      right: -4px;
+    }
+  }
+
+  &.is-left,
+  &.is-right {
+    background: #2563eb;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: -3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2563eb;
+      box-shadow: 0 0 6px rgba(37, 99, 235, 0.8);
+    }
+
+    &::before {
+      top: -4px;
+    }
+
+    &::after {
+      bottom: -4px;
+    }
+  }
+
+  &.is-in {
+    background: rgba(37, 99, 235, 0.08);
+    border: 2px dashed #2563eb;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+
+    .aigen-drop-in-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+      animation: aigen-badge-pulse 1.5s infinite;
+    }
+  }
+
+  // 严格防环/非法放置状态 (Forbidden)
+  &.is-forbidden {
+    &.is-top,
+    &.is-bottom,
+    &.is-left,
+    &.is-right {
+      background: #ef4444 !important;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
+
+      &::before,
+      &::after {
+        background: #ef4444 !important;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.8) !important;
+      }
+    }
+
+    &.is-in {
+      background: rgba(239, 68, 68, 0.08) !important;
+      border-color: #ef4444 !important;
+
+      .aigen-drop-in-badge {
+        background: #ef4444 !important;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35) !important;
+      }
+    }
+  }
+}
+
+// 拖拽中的源节点半透明样式
+.aigen-node-item.is-dragging-source {
+  opacity: 0.35;
+  filter: grayscale(0.5);
+  transition: opacity 0.15s ease;
+}
+
+// FLIP 重排平滑过渡动画
+.aigen-node-list-move,
+.aigen-node-list-enter-active,
+.aigen-node-list-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aigen-node-list-enter-from,
+.aigen-node-list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.aigen-node-list-leave-active {
+  position: absolute;
+}
+
+@keyframes aigen-badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.04);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

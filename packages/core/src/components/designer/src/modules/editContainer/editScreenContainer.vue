@@ -10,6 +10,7 @@ import {
 } from 'vue';
 
 import {
+  useCanvasDrag,
   useDesignerContext,
   useElementDrag,
   useElementZoom,
@@ -34,6 +35,29 @@ const { handleElementDrag, handleElementDragEnd, handleElementDragStart } =
 const { height, width } = useElementSize(editScreenContainerRef);
 const { canvasScale, handleZoom } = useElementZoom(draggableElRef);
 const AigenContextMenu = pluginManager.component.get('aigenContextMenu');
+const canvasDrag = useCanvasDrag();
+
+/**
+ * 拖拽边缘自适应平滑滚动（对标 TinyEngine smoothScroll）
+ */
+function handleContainerDragOver(event: DragEvent) {
+  if (!canvasDrag.isDragging.value || !editScreenContainerRef.value) return;
+  const rect = editScreenContainerRef.value.getBoundingClientRect();
+  const y = event.clientY - rect.top;
+  const threshold = 40;
+
+  if (y < threshold) {
+    canvasDrag.startSmoothScroll(editScreenContainerRef.value, 'up', 25);
+  } else if (rect.height - y < threshold) {
+    canvasDrag.startSmoothScroll(editScreenContainerRef.value, 'down', 25);
+  } else {
+    canvasDrag.stopSmoothScroll();
+  }
+}
+
+function handleContainerDragLeave() {
+  canvasDrag.stopSmoothScroll();
+}
 
 const draggableComputed = computed(() => {
   return pressSpace.value && props.draggable;
@@ -232,6 +256,8 @@ function computedScale() {
       @dragstart="handleElementDragStart($event, draggableComputed)"
       @drag="handleElementDrag($event, draggableComputed)"
       @dragend="handleElementDragEnd"
+      @dragover="handleContainerDragOver"
+      @dragleave="handleContainerDragLeave"
     >
       <div
         id="canvasContainer"

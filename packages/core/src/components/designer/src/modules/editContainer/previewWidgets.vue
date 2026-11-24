@@ -5,6 +5,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import {
+  useCanvasDrag,
   useDesignerContext,
   useLinkMode,
   usePageManager,
@@ -18,6 +19,7 @@ import { useResizeObserver } from '@vueuse/core';
 const pageManager = usePageManager();
 const designer = useDesignerContext();
 const linkMode = useLinkMode();
+const canvasDrag = useCanvasDrag();
 const designerProps = designer.props;
 const pageSchema = designer.pageSchema;
 const selectorRef = ref<HTMLDivElement | null>(null);
@@ -335,6 +337,76 @@ function setHoverStyle() {
 }
 
 /**
+ * 拖拽落点指示图层样式计算（对标 TinyEngine .hover-line 五向与容器高亮）
+ */
+const dropIndicatorStyle = computed(() => {
+  const lineState = canvasDrag.lineState;
+  if (!lineState.id || !lineState.position || !aigenEditRange) {
+    return { display: 'none' };
+  }
+
+  const { left: offsetX, top: offsetY } =
+    aigenEditRange.getBoundingClientRect();
+  const scale = disabledZoom.value ? 1 : canvasScale.value;
+  const rect = lineState.rect;
+
+  const baseTop =
+    (rect.top - offsetY + (aigenEditRange.scrollTop ?? 0) * scale) / scale;
+  const baseLeft =
+    (rect.left - offsetX + (aigenEditRange.scrollLeft ?? 0) * scale) / scale;
+  const width = rect.width / scale;
+  const height = rect.height / scale;
+
+  if (lineState.position === 'top') {
+    return {
+      display: 'block',
+      height: '4px',
+      left: `${baseLeft}px`,
+      top: `${baseTop - 2}px`,
+      width: `${width}px`,
+    };
+  }
+  if (lineState.position === 'bottom') {
+    return {
+      display: 'block',
+      height: '4px',
+      left: `${baseLeft}px`,
+      top: `${baseTop + height - 2}px`,
+      width: `${width}px`,
+    };
+  }
+  if (lineState.position === 'left') {
+    return {
+      display: 'block',
+      height: `${height}px`,
+      left: `${baseLeft - 2}px`,
+      top: `${baseTop}px`,
+      width: '4px',
+    };
+  }
+  if (lineState.position === 'right') {
+    return {
+      display: 'block',
+      height: `${height}px`,
+      left: `${baseLeft + width - 2}px`,
+      top: `${baseTop}px`,
+      width: '4px',
+    };
+  }
+  if (lineState.position === 'in') {
+    return {
+      display: 'flex',
+      height: `${height}px`,
+      left: `${baseLeft}px`,
+      top: `${baseTop}px`,
+      width: `${width}px`,
+    };
+  }
+
+  return { display: 'none' };
+});
+
+/**
  * 实例化观察者对象
  */
 function initObserve(func: () => void) {
@@ -489,4 +561,37 @@ defineExpose({
     class="aigen-hover-widget z-998 pointer-events-none absolute"
   ></div>
   <!-- 悬停效果 end  -->
+  <!-- 拖拽落点指示图层 (Drop Indicator Overlay) start -->
+  <div
+    v-show="canvasDrag.lineState.position && canvasDrag.lineState.id"
+    class="aigen-drop-indicator z-1000 pointer-events-none absolute"
+    :class="[
+      `is-${canvasDrag.lineState.position}`,
+      { 'is-forbidden': canvasDrag.lineState.forbidden },
+    ]"
+    :style="dropIndicatorStyle"
+  >
+    <!-- 容器穿透居中提示徽标 -->
+    <div
+      v-if="canvasDrag.lineState.position === 'in'"
+      class="aigen-drop-in-badge"
+    >
+      <AigenIcon
+        :name="
+          canvasDrag.lineState.forbidden
+            ? 'icon--aigen--close-circle'
+            : 'icon--aigen--plus-circle'
+        "
+        class="mr-1"
+      />
+      <span>
+        {{
+          canvasDrag.lineState.forbidden
+            ? '禁止放入自身或其后代中'
+            : `放入「${canvasDrag.lineState.componentName || '容器'}」内部末尾`
+        }}
+      </span>
+    </div>
+  </div>
+  <!-- 拖拽落点指示图层 end -->
 </template>

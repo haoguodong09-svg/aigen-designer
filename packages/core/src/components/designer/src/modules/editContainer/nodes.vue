@@ -1,17 +1,22 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
-import { VueDraggable } from 'vue-draggable-plus';
+import { computed, inject, onMounted, onUnmounted } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import {
+  useCanvasDrag,
   useDesignerContext,
   useLinkMode,
   usePageManager,
 } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import { findSchemaById } from '@aigen-designer/utils';
+import {
+  findSchemaById,
+  generateNewSchema,
+  insertSchema,
+  moveSchema,
+} from '@aigen-designer/utils';
 
 import EventBadge from './EventBadge.vue';
 import AigenNodeItem from './nodeItem.vue';
@@ -27,10 +32,12 @@ const designer = useDesignerContext();
 const revoke = designer.revoke;
 const pageManager = usePageManager();
 const linkMode = useLinkMode();
+const canvasDrag = useCanvasDrag();
 const contextMenu = inject('contextMenu', {
   close: () => {},
   open: (_event: Event, _schema: ComponentSchema) => {},
 });
+
 // 画布交互演练模式：禁用拖拽与节点级点击遮罩，让组件接收真实交互事件
 const interactiveMode = computed(
   () => pageManager.isInteractiveMode?.value === true,
@@ -40,9 +47,145 @@ const modelSchemas = computed({
   set: (val) => emit('update:schemas', val.filter(Boolean)),
 });
 
-const isDragChange = ref(false);
-// 标记本次拖拽是否为从其他列表（侧边栏）拖入，用于避免 end 事件重复记录
-let isDragAdd = false;
+/**
+ * 判断节点是否支持被抓取拖拽移动
+ */
+function isElementDraggable(element: ComponentSchema): boolean {
+  if (interactiveMode.value || linkMode.isActive.value) return false;
+  if (element.id === designer.pageSchema.schemas[0]?.id) return false;
+  const config = pluginManager.component.getConfigByType(element.type);
+  if (config?.editConstraints?.immovable) return false;
+  return true;
+}
+
+/**
+ * 原生拖拽发起（完全解耦 DOM，仅向全局状态机注册）
+ */
+function handleNodeDragStart(element: ComponentSchema, event: DragEvent) {
+  if (!isElementDraggable(element)) {
+    event.preventDefault();
+    return;
+  }
+  event.stopPropagation();
+  if (event.dataTransfer && element.id) {
+    event.dataTransfer.setData('text/plain', element.id);
+    event.dataTransfer.effectAllowed = 'move';
+  }
+  canvasDrag.startDrag(
+    element,
+    'move',
+    event.currentTarget as HTMLElement,
+    event,
+  );
+}
+
+function handleNodeDragEnd() {
+  canvasDrag.endDrag();
+}
+
+/**
+ * 拖拽移动经过监听：几何碰撞判定与虚拟指示线更新
+ */
+function handleDragOver(event: DragEvent) {
+  if (interactiveMode.value || linkMode.isActive.value) return;
+  if (!canvasDrag.dragState.isDragging) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect =
+      canvasDrag.dragState.dragType === 'new' ? 'copy' : 'move';
+  }
+
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+
+  // 寻找目标节点或父容器节点
+  const nodeEl =
+    (target.closest('[data-aigen-id]') as HTMLElement | null) ||
+    (target
+      .closest('.aigen-draggable-range')
+      ?.parentElement?.closest('[data-aigen-id]') as HTMLElement | null);
+
+  if (nodeEl && nodeEl.dataset.aigenId) {
+    const targetId = nodeEl.dataset.aigenId;
+    const targetSchema = findSchemaById(designer.pageSchema.schemas, targetId);
+    const config = targetSchema
+      ? pluginManager.component.getConfigByType(targetSchema.type)
+      : null;
+    const isContainer = Boolean(
+      targetSchema?.children !== undefined ||
+        config?.defaultSchema?.children !== undefined,
+    );
+    const isInlineNode = targetSchema ? isInline(targetSchema) : false;
+    const rect = nodeEl.getBoundingClientRect();
+
+    canvasDrag.updateDragOver(
+      targetId,
+      {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      },
+      { x: event.clientX, y: event.clientY },
+      {
+        componentName:
+          config?.defaultSchema?.label ||
+          targetSchema?.label ||
+          targetSchema?.type,
+        isContainer,
+        isInline: isInlineNode,
+        schemas: designer.pageSchema.schemas,
+      },
+    );
+  }
+}
+
+/**
+ * 放置落点处理（原子化更新 JSON Schema 树，触发撤销历史记录）
+ */
+function handleDrop(event: DragEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const { dragData, dragType, lineState } = canvasDrag.endDrag();
+  if (
+    !dragData ||
+    !lineState.id ||
+    !lineState.position ||
+    lineState.forbidden
+  ) {
+    return;
+  }
+
+  if (dragType === 'new') {
+    const newSchema = generateNewSchema(dragData);
+    const success = insertSchema(
+      designer.pageSchema.schemas,
+      lineState.id,
+      newSchema,
+      lineState.position,
+    );
+    if (success) {
+      designer.setSelectedNode(newSchema);
+      revoke.push('插入组件', true);
+    }
+  } else if (dragType === 'move' && dragData.id) {
+    const success = moveSchema(
+      designer.pageSchema.schemas,
+      dragData.id,
+      lineState.id,
+      lineState.position,
+    );
+    if (success) {
+      designer.setSelectedNode(dragData);
+      revoke.push('移动组件', true);
+    }
+  }
+}
 
 /**
  * 获取节点的schema
@@ -77,16 +220,14 @@ function getNodeSchema(target: HTMLElement | null) {
 }
 
 /**
- * 根据aigenId获取schema的辅助函数（悬停走组件实例 exposed；
- * 关联模式点选需写回页面 schema，因此直接按 id 查 pageSchema）
- * @param {string} aigenId
+ * 根据aigenId获取schema的辅助函数
  */
 function getSchemaByAigenId(aigenId: string) {
   const instance = pageManager.findInstance(aigenId);
   return instance?.exposed?.schema || null;
 }
 
-/** 关联模式点选：按 id 解析页面 schema（可写回的实时引用） */
+/** 关联模式点选：按 id 解析页面 schema */
 function getSchemaForLinkPick(aigenId: string) {
   return findSchemaById(designer.pageSchema.schemas, aigenId);
 }
@@ -98,38 +239,6 @@ function setHoverNode(event: Event) {
   designer.setHoverNode(schema);
 }
 
-/**
- * 从侧边栏拖入编辑区域，直接记录插入操作
- * 拖入也会导致 change 被触发，Add 应重置 isDragChange 标识，避免 end 重复记录
- */
-function handleDragAdd(event: any) {
-  designer.setSelectedNode(event.clonedData);
-  isDragChange.value = false;
-  // 记录插入组件操作，支持撤销
-  revoke.push('插入组件', true);
-  // 标记本次拖拽为跨列表新增，end 事件不再重复记录
-  isDragAdd = true;
-}
-
-/**
- * 编辑区域内的拖拽change事件，记录顺序发生变化
- */
-function handleDragChange() {
-  isDragChange.value = true;
-}
-
-/**
- * 编辑区域内的拖拽结束事件，需判断是否 change，有可能拖拽并未修改顺序
- * 拖入新增（handleDragAdd）已单独记录，此处仅记录编辑区域内的顺序变化
- */
-function handleDragEnd() {
-  if (isDragChange.value && !isDragAdd) {
-    revoke.push('拖拽组件', true);
-  }
-  isDragChange.value = false;
-  isDragAdd = false;
-}
-
 function isInline(schema: ComponentSchema) {
   const config = pluginManager.component.getComponentConfigByType(schema.type);
   return config?.editConstraints?.inline || false;
@@ -138,19 +247,11 @@ function isInline(schema: ComponentSchema) {
 // 关联模式画布点选：nodes.vue 为递归组件，模块级计数保证 document 委托监听只注册一次
 let linkPickerCount = 0;
 
-/**
- * document 委托监听（捕获阶段，先于画布选中/拖拽逻辑）：
- * - 命中 [data-aigen-id] 元素 → 按阶段选择源/目标（源=蓝、目标=绿 outline）；
- * - 点击画布空白 → 取消当前选择（不退出模式），再点一次空白退出；
- * - 角标/选中操作条等控件点击保持正常交互（不拦截）。
- */
 function handleLinkModeClick(event: MouseEvent) {
   if (!linkMode.isActive.value) return;
   const target = event.target as HTMLElement | null;
   if (!target) return;
-  // 仅处理画布编辑区内的点击（工具栏/侧边栏/气泡等均不参与点选）
   if (!target.closest('.aigen-edit-range')) return;
-  // 角标与选中操作条等控件保持正常交互
   if (target.closest('.aigen-event-badge, .aigen-selected-widget')) return;
   const nodeElement = target.closest('[data-aigen-id]') as HTMLElement | null;
   const aigenId = nodeElement?.dataset.aigenId;
@@ -162,7 +263,6 @@ function handleLinkModeClick(event: MouseEvent) {
       return;
     }
   }
-  // 点击画布空白：取消当前选择（不退出模式），再点一次空白退出
   event.stopPropagation();
   linkMode.handleBlankClick();
 }
@@ -183,62 +283,67 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <VueDraggable
-    v-model="modelSchemas"
+  <div
     class="aigen-draggable-range"
     :class="{ 'aigen-interactive-mode': interactiveMode }"
-    :animation="200"
-    :disabled="linkMode.isActive.value || interactiveMode"
-    group="edit-draggable"
-    ghost-class="aigen-moveing"
     @mouseover.stop="setHoverNode"
-    @change="handleDragChange"
-    @add="handleDragAdd"
-    @end="handleDragEnd"
+    @dragover="handleDragOver"
+    @drop="handleDrop"
   >
-    <div
-      class="aigen-node-item"
-      :class="{
-        'aigen-inline': isInline(element),
-        'aigen-node--link-source': linkMode.source.value?.id === element.id,
-        'aigen-node--link-target': linkMode.target.value?.id === element.id,
-        'aigen-node--link-active': linkMode.isActive.value,
-        'aigen-node--link-phase-target':
-          linkMode.state.value === 'select-target',
-      }"
-      v-for="element in modelSchemas"
-      :key="element.id"
-      @contextmenu.stop="contextMenu.open($event, element)"
-      :data-aigen-id="element.id"
+    <TransitionGroup
+      name="aigen-node-list"
+      tag="div"
+      class="aigen-node-list-wrap"
     >
-      <div class="aigen-node-badge-wrap">
-        <!-- 关联模式：源与目标语义标签 -->
-        <div
-          v-if="linkMode.source.value?.id === element.id"
-          class="aigen-link-role-badge aigen-link-role-badge--source"
-        >
-          <AigenIcon
-            name="icon--behavior--thunderbolt"
-            class="mr-1 text-[11px]"
-          />
-          <span>触发源</span>
-        </div>
-        <div
-          v-if="linkMode.target.value?.id === element.id"
-          class="aigen-link-role-badge aigen-link-role-badge--target"
-        >
-          <AigenIcon
-            name="icon--behavior--experiment"
-            class="mr-1 text-[11px]"
-          />
-          <span>关联目标</span>
-        </div>
+      <div
+        v-for="element in modelSchemas"
+        :key="element.id"
+        class="aigen-node-item"
+        :class="{
+          'aigen-inline': isInline(element),
+          'is-dragging-source':
+            canvasDrag.dragState.dragData?.id === element.id,
+          'aigen-node--link-source': linkMode.source.value?.id === element.id,
+          'aigen-node--link-target': linkMode.target.value?.id === element.id,
+          'aigen-node--link-active': linkMode.isActive.value,
+          'aigen-node--link-phase-target':
+            linkMode.state.value === 'select-target',
+        }"
+        :data-aigen-id="element.id"
+        :draggable="isElementDraggable(element)"
+        @dragstart="handleNodeDragStart(element, $event)"
+        @dragend="handleNodeDragEnd"
+        @contextmenu.stop="contextMenu.open($event, element)"
+      >
+        <div class="aigen-node-badge-wrap">
+          <!-- 关联模式：源与目标语义标签 -->
+          <div
+            v-if="linkMode.source.value?.id === element.id"
+            class="aigen-link-role-badge aigen-link-role-badge--source"
+          >
+            <AigenIcon
+              name="icon--behavior--thunderbolt"
+              class="mr-1 text-[11px]"
+            />
+            <span>触发源</span>
+          </div>
+          <div
+            v-if="linkMode.target.value?.id === element.id"
+            class="aigen-link-role-badge aigen-link-role-badge--target"
+          >
+            <AigenIcon
+              name="icon--behavior--experiment"
+              class="mr-1 text-[11px]"
+            />
+            <span>关联目标</span>
+          </div>
 
-        <AigenNodeItem :schema="element" />
-        <EventBadge :schema="element" />
+          <AigenNodeItem :schema="element" />
+          <EventBadge :schema="element" />
+        </div>
       </div>
-    </div>
-  </VueDraggable>
+    </TransitionGroup>
+  </div>
 </template>
 
 <style scoped>
@@ -247,12 +352,19 @@ onUnmounted(() => {
   position: relative;
 }
 
+/* 节点列表包裹容器 */
+.aigen-node-list-wrap {
+  min-height: inherit;
+  width: 100%;
+  height: 100%;
+}
+
 /* 内联组件（如按钮）保持行内布局 */
 .aigen-node-item.aigen-inline > .aigen-node-badge-wrap {
   display: inline-block;
 }
 
-/* 关联模式：源组件高亮样式（品牌蓝高亮与柔和内发光，完全内缩不溢出） */
+/* 关联模式：源组件高亮样式 */
 .aigen-node-item.aigen-node--link-source {
   position: relative;
   border-radius: 6px;
@@ -265,7 +377,7 @@ onUnmounted(() => {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 关联模式：目标组件高亮样式（清新绿高亮与柔和内发光，完全内缩不溢出） */
+/* 关联模式：目标组件高亮样式 */
 .aigen-node-item.aigen-node--link-target {
   position: relative;
   border-radius: 6px;
@@ -278,13 +390,13 @@ onUnmounted(() => {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 关联模式：候选节点基础状态（预设透明虚线轮廓，彻底杜绝悬停时 outline 颜色插值闪黑） */
+/* 关联模式：候选节点基础状态 */
 .aigen-node-item.aigen-node--link-active {
   outline: 1px dashed transparent;
   outline-offset: -1px;
 }
 
-/* 关联模式：候选节点悬停交互预览（直接生效品牌色细虚线，绝不闪现黑线） */
+/* 关联模式：候选节点悬停交互预览 */
 .aigen-node-item.aigen-node--link-active:not(.aigen-node--link-source):not(
     .aigen-node--link-target
   ):hover {
@@ -303,7 +415,7 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* 浮动语义徽标：源 / 目标（严格内嵌于组件自身右上角内部，相邻组件绝对零重叠） */
+/* 浮动语义徽标：源 / 目标 */
 .aigen-link-role-badge {
   position: absolute;
   top: 4px;

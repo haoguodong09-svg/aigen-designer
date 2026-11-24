@@ -1,5 +1,17 @@
 ## 1.1.14（2026-11-24）
 
+### ✨ Feat（全盘自研几何碰撞拖拽与排版引擎重构，全面对标 TinyEngine）
+
+- **全盘推翻 `VueDraggable` / SortableJS，实现自研几何碰撞拖拽排版引擎**：
+  - **DOM 零重排设计**：拖拽全过程绝不物理移位真实 DOM，彻底告别 SortableJS 的深层嵌套 DOM 疯狂抖动与子实例重新挂载问题；
+  - **五向落点判定算法（`calculatePosLine`）**：对标 TinyEngine `getPosLine`，根据目标边界与鼠标坐标自适应计算 `TOP` / `BOTTOM` / `LEFT` / `RIGHT` / `IN`，动态阈值 `Math.min(20, height / 3)`；
+  - **容器中心穿透机制（`POSITION.IN`）**：鼠标落在容器内部中心区域时直接高亮整个容器并提示「放入容器内部末尾」，完美攻克卡片、栅格等容器被占满时无法拖入新组件的难题；
+  - **严格防环死锁检测（`isAncestor`）**：递归遍历 Schema 树，严禁祖先容器拖入自身子孙分支，命中时立即呈现红色禁止落点（forbidden）与禁用光标，从源头杜绝破坏 JSON Tree；
+  - **独立虚拟落点指示层（`aigen-drop-indicator`）**：在 `previewWidgets.vue` 浮层中实时渲染高颜值五向蓝色高亮线与容器半透明蒙层徽章；
+  - **视口边缘自适应平滑滚动（`smoothScroll`）**：拖拽至画布上下边缘 40px 区域时自动平滑滚动画布容器，页面超长时顺畅放置；
+  - **FLIP 平滑过渡动画**：重排后基于 Vue 原生 `<TransitionGroup name="aigen-node-list">` 触发硬件加速平滑位移动画；
+  - **物料栏解耦重构**：左侧组件库物料项采用统一拖拽调度器，与画布拖拽状态机无缝协同，支持撤销/重做（Revoke）。
+
 ### ✨ Feat（画布层级选择体验对标 TinyEngine 深度重构）
 
 - **新增画布底部常驻全路径面包屑导航栏**：
