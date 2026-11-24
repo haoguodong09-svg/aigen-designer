@@ -203,3 +203,47 @@
     display: inline;
   }
 }
+
+// 关联/事件徽标提示气泡弹层优化：提供舒适的内边距与阴影效果
+.aigen-tooltip-inner.aigen-event-badge-tooltip {
+  padding: 10px 14px;
+  border-radius: 6px;
+  box-shadow:
+    0 6px 16px 0 rgba(0, 0, 0, 0.32),
+    0 3px 6px -4px rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+// 画布底部常驻全路径面包屑（对标 TinyEngine 底部面板）
+.aigen-canvas-bottom-breadcrumb {
+  height: 32px;
+  min-height: 32px;
+  background: var(--aigen-designer-background);
+  border-top: 1px solid var(--aigen-border);
+  z-index: 90;
+  box-sizing: border-box;
+
+  &::-webkit-scrollbar {
+    height: 0px;
+    display: none;
+  }
+
+  .aigen-breadcrumb-item {
+    .aigen-breadcrumb-text {
+      color: var(--aigen-text-secondary, #64748b);
+      font-weight: 400;
+
+      &:hover {
+        color: var(--aigen-primary);
+        background-color: var(--aigen-muted, rgba(0, 0, 0, 0.04));
+      }
+    }
+
+    &.is-active .aigen-breadcrumb-text {
+      color: var(--aigen-primary);
+      font-weight: 600;
+      background-color: var(--aigen-primary-faded, rgba(22, 119, 255, 0.08));
+    }
+  }
+}

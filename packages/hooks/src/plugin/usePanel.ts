@@ -21,6 +21,11 @@ export function usePanel() {
 
   const hiddenActivityBars = ref<string[]>([]); // 隐藏的活动栏配置列表
   const hiddenRightSidebars = ref<string[]>([]); // 隐藏的右侧边栏配置列表
+  const activeRightSidebarId = ref<string>('attribute_view'); // 当前激活的右侧边栏 ID
+
+  function setActiveRightSidebar(id: string): void {
+    activeRightSidebarId.value = id;
+  }
 
   // 获取未隐藏的活动栏
   const activityBars = computed(() => {
@@ -163,12 +168,14 @@ export function usePanel() {
     }
   }
   return {
+    activeRightSidebarId,
     activityBars,
     hideActivitybar,
     hideRightSidebar,
     registerActivitybar,
     registerRightSidebar,
     rightSidebars,
+    setActiveRightSidebar,
     showActivitybar,
     showRightSidebar,
     viewsContainers,

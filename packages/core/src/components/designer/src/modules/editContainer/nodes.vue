@@ -4,6 +4,7 @@ import type { ComponentSchema } from '@aigen-designer/types';
 import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
+import { AigenIcon } from '@aigen-designer/base-ui';
 import {
   useDesignerContext,
   useLinkMode,
@@ -91,6 +92,7 @@ function getSchemaForLinkPick(aigenId: string) {
 }
 
 function setHoverNode(event: Event) {
+  if (linkMode.isActive.value) return;
   const schema = getNodeSchema(event.target as HTMLElement | null);
   event.stopPropagation();
   designer.setHoverNode(schema);
@@ -196,13 +198,42 @@ onUnmounted(() => {
   >
     <div
       class="aigen-node-item"
-      :class="{ 'aigen-inline': isInline(element) }"
+      :class="{
+        'aigen-inline': isInline(element),
+        'aigen-node--link-source': linkMode.source.value?.id === element.id,
+        'aigen-node--link-target': linkMode.target.value?.id === element.id,
+        'aigen-node--link-active': linkMode.isActive.value,
+        'aigen-node--link-phase-target':
+          linkMode.state.value === 'select-target',
+      }"
       v-for="element in modelSchemas"
       :key="element.id"
       @contextmenu.stop="contextMenu.open($event, element)"
       :data-aigen-id="element.id"
     >
       <div class="aigen-node-badge-wrap">
+        <!-- 关联模式：源与目标语义标签 -->
+        <div
+          v-if="linkMode.source.value?.id === element.id"
+          class="aigen-link-role-badge aigen-link-role-badge--source"
+        >
+          <AigenIcon
+            name="icon--behavior--thunderbolt"
+            class="mr-1 text-[11px]"
+          />
+          <span>触发源</span>
+        </div>
+        <div
+          v-if="linkMode.target.value?.id === element.id"
+          class="aigen-link-role-badge aigen-link-role-badge--target"
+        >
+          <AigenIcon
+            name="icon--behavior--experiment"
+            class="mr-1 text-[11px]"
+          />
+          <span>关联目标</span>
+        </div>
+
         <AigenNodeItem :schema="element" />
         <EventBadge :schema="element" />
       </div>
@@ -219,5 +250,100 @@ onUnmounted(() => {
 /* 内联组件（如按钮）保持行内布局 */
 .aigen-node-item.aigen-inline > .aigen-node-badge-wrap {
   display: inline-block;
+}
+
+/* 关联模式：源组件高亮样式（品牌蓝高亮与柔和内发光，完全内缩不溢出） */
+.aigen-node-item.aigen-node--link-source {
+  position: relative;
+  border-radius: 6px;
+  outline: 2px solid #1677ff;
+  outline-offset: -1px;
+  box-shadow:
+    inset 0 0 0 1px rgba(22, 119, 255, 0.2),
+    0 2px 8px rgba(22, 119, 255, 0.12);
+  background-color: rgba(22, 119, 255, 0.035);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 关联模式：目标组件高亮样式（清新绿高亮与柔和内发光，完全内缩不溢出） */
+.aigen-node-item.aigen-node--link-target {
+  position: relative;
+  border-radius: 6px;
+  outline: 2px solid #52c41a;
+  outline-offset: -1px;
+  box-shadow:
+    inset 0 0 0 1px rgba(82, 196, 26, 0.2),
+    0 2px 8px rgba(82, 196, 26, 0.12);
+  background-color: rgba(82, 196, 26, 0.035);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 关联模式：候选节点基础状态（预设透明虚线轮廓，彻底杜绝悬停时 outline 颜色插值闪黑） */
+.aigen-node-item.aigen-node--link-active {
+  outline: 1px dashed transparent;
+  outline-offset: -1px;
+}
+
+/* 关联模式：候选节点悬停交互预览（直接生效品牌色细虚线，绝不闪现黑线） */
+.aigen-node-item.aigen-node--link-active:not(.aigen-node--link-source):not(
+    .aigen-node--link-target
+  ):hover {
+  border-radius: 6px;
+  outline-color: rgba(22, 119, 255, 0.75);
+  background-color: rgba(22, 119, 255, 0.02);
+  cursor: pointer;
+}
+
+.aigen-node-item.aigen-node--link-active.aigen-node--link-phase-target:not(
+    .aigen-node--link-source
+  ):not(.aigen-node--link-target):hover {
+  border-radius: 6px;
+  outline-color: rgba(82, 196, 26, 0.85);
+  background-color: rgba(82, 196, 26, 0.02);
+  cursor: pointer;
+}
+
+/* 浮动语义徽标：源 / 目标（严格内嵌于组件自身右上角内部，相邻组件绝对零重叠） */
+.aigen-link-role-badge {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: aigen-badge-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.aigen-link-role-badge--source {
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  color: #0958d9;
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.12);
+}
+
+.aigen-link-role-badge--target {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #389e0d;
+  box-shadow: 0 1px 3px rgba(82, 196, 26, 0.12);
+}
+
+@keyframes aigen-badge-pop {
+  0% {
+    transform: scale(0.7) translateY(4px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 </style>

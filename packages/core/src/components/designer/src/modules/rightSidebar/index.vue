@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { RightSidebarModel } from '@aigen-designer/types';
 
-import { computed, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
@@ -22,6 +22,21 @@ const activityBarCheckedIndex = ref<null | number>(0);
 const sidebarComponent = shallowRef<any>(null);
 sidebarComponent.value = rightSidebars.value[0]?.component;
 
+// 同步外部激活的右侧边栏 ID（如从画布气泡或角标跳转）
+watch(
+  () => pluginManager.panel.activeRightSidebarId?.value,
+  (id) => {
+    if (!id) return;
+    const index = rightSidebars.value.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      activityBarCheckedIndex.value = index;
+      sidebarComponent.value = rightSidebars.value[index].component;
+      hideRightMain.value = false;
+    }
+  },
+  { immediate: true },
+);
+
 function handleHideRight() {
   hideRightMain.value = !hideRightMain.value;
 }
@@ -32,6 +47,9 @@ function handleClick(item: RightSidebarModel, index: number) {
   }
   sidebarComponent.value = item.component;
   activityBarCheckedIndex.value = index;
+  if (item.id && pluginManager.panel.setActiveRightSidebar) {
+    pluginManager.panel.setActiveRightSidebar(item.id);
+  }
 }
 </script>
 <template>

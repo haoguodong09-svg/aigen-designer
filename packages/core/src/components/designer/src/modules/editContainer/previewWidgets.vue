@@ -6,6 +6,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import { AigenIcon } from '@aigen-designer/base-ui';
 import {
   useDesignerContext,
+  useLinkMode,
   usePageManager,
   useStore,
   useTimedQuery,
@@ -16,6 +17,7 @@ import { useResizeObserver } from '@vueuse/core';
 
 const pageManager = usePageManager();
 const designer = useDesignerContext();
+const linkMode = useLinkMode();
 const designerProps = designer.props;
 const pageSchema = designer.pageSchema;
 const selectorRef = ref<HTMLDivElement | null>(null);
@@ -354,18 +356,35 @@ function initObserve(func: () => void) {
 }
 
 /**
- * 选择父节点
+ * 判断是否存在可向上选择的父级节点
+ */
+const hasParentNode = computed(() => {
+  const matched = designer.state.matched;
+  return matched.length > 1;
+});
+
+/**
+ * 选择父节点（对标 TinyEngine selectParent）
  */
 function handleSelectParentNode() {
-  const data = findSchemaInfoById(
-    pageSchema.schemas,
-    designer.state.selectedNode?.id ?? 'root',
-  );
+  const currentId = designer.state.selectedNode?.id ?? 'root';
+  const matched = designer.state.matched;
+  const currentIndex = matched.findIndex((item: any) => item.id === currentId);
+  if (currentIndex > 0) {
+    const parentNode = matched[currentIndex - 1];
+    if (parentNode && parentNode.id !== 'root') {
+      designer.setSelectedNode(parentNode);
+      return true;
+    }
+  }
+
+  const data = findSchemaInfoById(pageSchema.schemas, currentId);
   if (!data) {
     return false;
   }
   const { parentSchema } = data;
   designer.setSelectedNode(parentSchema);
+  return true;
 }
 
 // 初始化函数，传入一个指向 Aigen 编辑范围的引用
@@ -412,7 +431,11 @@ defineExpose({
 <template>
   <!-- 选中高亮 start  -->
   <div
-    v-show="showSelector && designer.state.selectedNode?.id !== 'root'"
+    v-show="
+      showSelector &&
+      designer.state.selectedNode?.id !== 'root' &&
+      !linkMode.isActive.value
+    "
     ref="selectorRef"
     class="aigen-selected-widget z-999 pointer-events-none absolute"
     :class="`${selectorPosition} ${selectorTransition ? 'transition-all' : ''}`"
@@ -429,7 +452,8 @@ defineExpose({
       <!-- 操作按钮 start  -->
       <div v-if="isRemovableAndDraggable" class="flex items-center">
         <div
-          title="选择父节点"
+          v-if="hasParentNode"
+          title="选择父节点 (Esc / Alt+↑)"
           class="aigen-widget-action-item pointer-events-auto"
           @click="handleSelectParentNode"
         >
@@ -458,7 +482,8 @@ defineExpose({
   <div
     v-show="
       designer.state.hoverNode &&
-      designer.state.selectedNode?.id !== designer.state.hoverNode?.id
+      designer.state.selectedNode?.id !== designer.state.hoverNode?.id &&
+      !linkMode.isActive.value
     "
     ref="hoverWidgetRef"
     class="aigen-hover-widget z-998 pointer-events-none absolute"

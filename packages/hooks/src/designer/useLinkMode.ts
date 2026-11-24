@@ -94,9 +94,12 @@ export function createLinkMode(): LinkMode {
     ) as HTMLElement | null;
     if (!element) return;
     if (color) {
-      element.style.outline = `2px solid ${color}`;
-      element.style.outlineOffset = '2px';
+      element.dataset.linkRole =
+        color === LINK_SOURCE_COLOR ? 'source' : 'target';
+      element.style.outline = '';
+      element.style.outlineOffset = '';
     } else {
+      delete element.dataset.linkRole;
       element.style.outline = '';
       element.style.outlineOffset = '';
     }

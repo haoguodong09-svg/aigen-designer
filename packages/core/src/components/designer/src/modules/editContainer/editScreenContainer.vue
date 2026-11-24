@@ -19,6 +19,7 @@ import { pluginManager } from '@aigen-designer/manager';
 import { debounce } from '@aigen-designer/utils';
 import { useElementSize, useResizeObserver, watchOnce } from '@vueuse/core';
 
+import CanvasBreadcrumb from './CanvasBreadcrumb.vue';
 import Toolbar from './toolbar.vue';
 
 const { pageSchema, props } = useDesignerContext();
@@ -250,6 +251,9 @@ function computedScale() {
         </div>
       </div>
     </div>
+
+    <!-- 画布底部常驻全路径面包屑（对标 TinyEngine） -->
+    <CanvasBreadcrumb />
 
     <!-- 画布宽高计算盒子 start -->
     <div
