@@ -1,5 +1,19 @@
 ## 1.1.14（2026-11-24）
 
+### 🐛 Bug Fixes（多层级嵌套容器拖拽与画布交互修复）
+
+- **修复物料库点击添加卡顿与动画延迟（问题 1）**：
+  - 移除 `nodes.vue` 中产生 250ms 渲染延迟及强制额外包裹 div 的 `<TransitionGroup>`，点击左侧物料 < 15ms 瞬时渲染上画布并自动选中属性面板，消除卡顿。
+- **修复多层级嵌套容器（栅格 Row/Col、标签页 Tabs/TabPane）拖拽落点逃逸（问题 3、问题 4）**：
+  - 修复 `handleDragOver` 容器边界判定：严格限制 `closest('.aigen-node-item')` 仅在当前容器 DOM 树内生效（`currentContainerEl.contains(candidate)`），杜绝子容器内部拖拽逃逸至外层祖先容器；
+  - 针对带有 `childImmovable` 的固定结构容器（Row、Tabs），禁止作为通用穿透放置目标，严禁输入框/按钮等普通组件被错误追加至 `row.children` 或 `tabs.children`；
+  - 确保空 Col 与空 TabPane 在拖拽时稳定触发 `POSITION.IN` 并原子化追加至对应 `col.children` 或 `tab-pane.children`；
+  - 重构 AntD / Element Plus / Naive UI `tabs.ts` 设计区插槽解析：引入 `findSchemaNodes` 递归解构 VNode，彻底修复设计区 TabPane 及其子项渲染。
+- **修复多层级嵌套组件画布点击穿透与选中跟随（问题 2）**：
+  - 在 `dynamicFormItem.vue`（`.aigen-form-item-wrap`）以及 `Col`、`Row`、`TabPane` 等组件根节点显式透传绑定 `data-aigen-id`；
+  - 在 `handleEditRangeClick` 中引入 `document.elementsFromPoint(x, y)` 深度优先命中策略，当父级容器已被选中时，直接点击内部嵌套输入框即可瞬时穿透选中；
+  - 移除 `useResizeObserver` 中的 150ms 硬编码防抖，结合拖拽结束与节点切换立即刷新选框矩形，保证操作栏与蓝色高亮框精准跟随。
+
 ### ✨ Feat（全盘自研几何碰撞拖拽与排版引擎重构，全面对标 TinyEngine）
 
 - **全盘推翻 `VueDraggable` / SortableJS，实现自研几何碰撞拖拽排版引擎**：

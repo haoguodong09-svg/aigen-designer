@@ -20,14 +20,30 @@
         flex: 1;
         height: auto;
         border: 0;
+        background: transparent;
+
+        &.is-empty {
+          border: 0;
+          background: transparent;
+        }
       }
     }
 
     .aigen-draggable-range {
-      min-height: 60px;
-      height: 100%;
-      border: 1px var(--aigen-border) dashed;
       width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+
+      &.is-empty {
+        min-height: 54px;
+        border: 1px dashed var(--aigen-border);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.015);
+      }
     }
 
     .aigen-hidden {
@@ -361,23 +377,6 @@
   opacity: 0.35;
   filter: grayscale(0.5);
   transition: opacity 0.15s ease;
-}
-
-// FLIP 重排平滑过渡动画
-.aigen-node-list-move,
-.aigen-node-list-enter-active,
-.aigen-node-list-leave-active {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.aigen-node-list-enter-from,
-.aigen-node-list-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.aigen-node-list-leave-active {
-  position: absolute;
 }
 
 @keyframes aigen-badge-pulse {

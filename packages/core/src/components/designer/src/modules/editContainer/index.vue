@@ -66,16 +66,38 @@ function handleEditRangeClick(event: MouseEvent) {
   }
 
   event.stopPropagation();
-  let aigenId = target.dataset?.aigenId;
-  if (!aigenId) {
-    // 查询最近的拥有 aigenId 的祖先元素
-    const parent = target.closest('[data-aigen-id]') as HTMLElement | null;
-    if (parent?.dataset?.aigenId) {
-      aigenId = parent.dataset.aigenId;
+
+  // 1. 优先从物理点击位置下的所有元素中，查找最深层具体的 data-aigen-id（对标 TinyEngine 深度优先命中）
+  let aigenId: null | string = null;
+  if (event.clientX && event.clientY) {
+    const elements = document.elementsFromPoint(event.clientX, event.clientY);
+    for (const elem of elements) {
+      if (elem instanceof HTMLElement) {
+        // 排除操作栏本身
+        if (elem.closest('.aigen-selected-widget')) continue;
+        const candidateId =
+          elem.dataset?.aigenId ||
+          elem.closest('[data-aigen-id]')?.getAttribute('data-aigen-id');
+        if (candidateId && candidateId !== 'root') {
+          aigenId = candidateId;
+          break;
+        }
+      }
     }
   }
 
+  // 2. 回退机制：若 elementsFromPoint 未命中，通过 target 向上查询最近的祖先 aigenId
   if (!aigenId) {
+    aigenId = target.dataset?.aigenId || null;
+    if (!aigenId) {
+      const parent = target.closest('[data-aigen-id]') as HTMLElement | null;
+      if (parent?.dataset?.aigenId) {
+        aigenId = parent.dataset.aigenId;
+      }
+    }
+  }
+
+  if (!aigenId || aigenId === 'root') {
     setSelectedNode(rootSchema.value);
     contextMenu.close();
     return;

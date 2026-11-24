@@ -636,6 +636,7 @@ onBeforeUnmount(handleVnodeUnmounted);
   >
     <component
       :is="componentRef"
+      :data-aigen-id="props.componentSchema?.id"
       v-bind="getProps"
       v-model:[getProps.bindModel]="innerValue"
       :model="formData"

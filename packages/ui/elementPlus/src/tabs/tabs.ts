@@ -43,20 +43,34 @@ export default defineComponent({
     });
 
     const children = props.componentSchema?.children ?? [];
+
+    function findSchemaNodes(nodes: any[]): any[] {
+      const result: any[] = [];
+      for (const node of nodes) {
+        if (!node) continue;
+        if (node.props?.schema) {
+          result.push(node);
+        } else if (Array.isArray(node.children)) {
+          result.push(...findSchemaNodes(node.children));
+        }
+      }
+      return result;
+    }
+
     return () =>
       h(ElTabs, componentSchema.value, {
         default: () => {
-          const defaultSlotList = slots['edit-node']?.()[0].children;
+          const rawNodes = slots['edit-node']?.() ?? [];
+          const schemaNodes = findSchemaNodes(rawNodes);
           // 设计区渲染
-          if (defaultSlotList?.length) {
-            const list = (defaultSlotList as any[])[0].children?.map(
-              (item: any) => {
-                item.props.name = item.props.schema.label;
-                return item;
-              },
-            );
-
-            return list;
+          if (schemaNodes.length) {
+            return schemaNodes.map((item: any) => {
+              item.props = item.props || {};
+              item.props.name = item.props.schema.label ?? item.props.schema.id;
+              item.props.label =
+                item.props.schema.label ?? item.props.schema.id;
+              return item;
+            });
           }
           return children.map((componentSchema: any) =>
             renderSlot(slots, 'node', {

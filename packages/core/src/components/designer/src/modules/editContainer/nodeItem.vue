@@ -50,6 +50,7 @@ function isDraggable() {
     class="edit-draggable-widget"
     :show-hidden-items="designerProps?.showHiddenItems"
     :class="[isDraggable(), isLeafNode ? 'aigen-node-leaf' : '']"
+    :data-aigen-id="props.schema.id"
   >
     <!-- childImmovable不可拖拽设计 start -->
     <template
@@ -71,6 +72,7 @@ function isDraggable() {
       <AigenNodes
         v-if="props.schema.children"
         v-model:schemas="props.schema.children"
+        :container-schema="props.schema"
       />
     </template>
   </AigenNode>

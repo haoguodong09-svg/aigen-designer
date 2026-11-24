@@ -46,10 +46,12 @@ const addFormItemInstance = (vNode: VNode) => {
   <div
     v-if="props.hasFormItem"
     class="aigen-form-item-wrap"
+    :data-aigen-id="props.formItemProps?.id"
     style="display: contents"
   >
     <FormItem
       :check-payload="props.checkPayload"
+      :data-aigen-id="props.formItemProps?.id"
       v-bind="props.formItemProps"
       :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
       @vue:mounted="addFormItemInstance"
@@ -58,7 +60,12 @@ const addFormItemInstance = (vNode: VNode) => {
     </FormItem>
   </div>
   <!-- 无FormItem start -->
-  <div v-else class="aigen-form-item-wrap" style="display: contents">
+  <div
+    v-else
+    class="aigen-form-item-wrap"
+    :data-aigen-id="props.formItemProps?.id"
+    style="display: contents"
+  >
     <slot></slot>
   </div>
   <!-- 无FormItem end -->

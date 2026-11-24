@@ -63,9 +63,14 @@ export function calculatePosLine(
   // 3. 中心区域判定容器穿透（直接拖入容器内部）
   else if (options.isContainer) {
     type = POSITION.IN;
+  } else if (options.isInline) {
+    // 内联非容器组件：中线左右平分
+    type =
+      mousePos.x < rect.left + rect.width / 2 ? POSITION.LEFT : POSITION.RIGHT;
   } else {
-    // 默认回退为底部放置
-    type = POSITION.BOTTOM;
+    // 块级非容器组件：中线上平分
+    type =
+      mousePos.y < rect.top + rect.height / 2 ? POSITION.TOP : POSITION.BOTTOM;
   }
 
   return {

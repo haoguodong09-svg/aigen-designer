@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import {
@@ -467,17 +467,19 @@ function handleInit(aigenEditRangeRef: HTMLDivElement | null) {
   };
   aigenEditRange?.addEventListener('scroll', scrollHandler);
 
-  // 监听选中元素视窗变化
-  useResizeObserver(getSelectComponentElement, () => {
-    // 延迟执行，确保在动画帧后更新样式
-    if (resizeStyleTimer !== null) {
-      window.clearTimeout(resizeStyleTimer);
-    }
-    resizeStyleTimer = window.setTimeout(setSeletorStyle, 150);
-  });
+  // 监听选中元素视窗变化，立即更新高亮选框
+  useResizeObserver(getSelectComponentElement, setSeletorStyle);
   // 监听悬停元素视窗变化
   useResizeObserver(getHoverComponentElement, setHoverStyle);
 }
+
+// 选中节点变化或拖拽释放时，立即精准重算选框位置
+watch(
+  () => [designer.state.selectedNode?.id, canvasDrag.dragState.isDragging],
+  () => {
+    nextTick(setSeletorStyle);
+  },
+);
 
 onUnmounted(() => {
   // 统一清理观察者与事件监听，避免监听器泄漏

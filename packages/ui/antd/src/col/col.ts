@@ -23,16 +23,23 @@ export default defineComponent({
       const children = componentSchema.children;
       delete componentSchema.children;
 
-      return h(Col, componentSchema, {
-        default: () =>
-          renderSlot(slots, 'edit-node', {}, () =>
-            children.map((subcomponentSchema: ComponentSchema) =>
-              renderSlot(slots, 'node', {
-                componentSchema: subcomponentSchema,
-              }),
+      return h(
+        Col,
+        {
+          ...componentSchema,
+          'data-aigen-id': props.componentSchema?.id,
+        },
+        {
+          default: () =>
+            renderSlot(slots, 'edit-node', {}, () =>
+              children.map((subcomponentSchema: ComponentSchema) =>
+                renderSlot(slots, 'node', {
+                  componentSchema: subcomponentSchema,
+                }),
+              ),
             ),
-          ),
-      });
+        },
+      );
     };
   },
 });

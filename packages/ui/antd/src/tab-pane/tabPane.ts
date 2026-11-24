@@ -29,7 +29,11 @@ export default defineComponent({
       // return h("div", "sdfsd");
       return h(
         TabPane,
-        { componentSchema, ...nodeAttrs },
+        {
+          componentSchema,
+          ...nodeAttrs,
+          'data-aigen-id': props.componentSchema?.id,
+        },
         {
           default: () =>
             renderSlot(slots, 'edit-node', {}, () =>

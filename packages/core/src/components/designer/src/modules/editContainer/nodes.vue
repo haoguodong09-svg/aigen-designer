@@ -24,9 +24,15 @@ import AigenNodeItem from './nodeItem.vue';
 defineOptions({
   name: 'EditNodeItem',
 });
-const props = defineProps<{
-  schemas: ComponentSchema[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    containerSchema?: ComponentSchema;
+    schemas: ComponentSchema[];
+  }>(),
+  {
+    containerSchema: undefined,
+  },
+);
 const emit = defineEmits(['update:schemas']);
 const designer = useDesignerContext();
 const revoke = designer.revoke;
@@ -54,7 +60,9 @@ function isElementDraggable(element: ComponentSchema): boolean {
   if (interactiveMode.value || linkMode.isActive.value) return false;
   if (element.id === designer.pageSchema.schemas[0]?.id) return false;
   const config = pluginManager.component.getConfigByType(element.type);
-  if (config?.editConstraints?.immovable) return false;
+  if (config?.editConstraints?.immovable || config?.editConstraints?.locked) {
+    return false;
+  }
   return true;
 }
 
@@ -84,7 +92,7 @@ function handleNodeDragEnd() {
 }
 
 /**
- * 拖拽移动经过监听：几何碰撞判定与虚拟指示线更新
+ * 拖拽移动经过监听：几何碰撞判定与虚拟指示线更新（全盘对标 TinyEngine 容器判定与参照物定位）
  */
 function handleDragOver(event: DragEvent) {
   if (interactiveMode.value || linkMode.isActive.value) return;
@@ -100,25 +108,36 @@ function handleDragOver(event: DragEvent) {
   const target = event.target as HTMLElement | null;
   if (!target) return;
 
-  // 寻找目标节点或父容器节点
-  const nodeEl =
-    (target.closest('[data-aigen-id]') as HTMLElement | null) ||
-    (target
-      .closest('.aigen-draggable-range')
-      ?.parentElement?.closest('[data-aigen-id]') as HTMLElement | null);
+  // 当前监听此事件的容器元素 (.aigen-draggable-range)
+  const currentContainerEl = event.currentTarget as HTMLElement | null;
 
-  if (nodeEl && nodeEl.dataset.aigenId) {
-    const targetId = nodeEl.dataset.aigenId;
+  // 1. 优先命中当前容器内部的直接子节点元素 (.aigen-node-item)
+  // 注意：必须严格确保命中的子节点是当前容器 currentContainerEl 的后代元素！
+  // 绝对不能跨出当前容器，向上查找到外部祖先节点的 .aigen-node-item（否则会导致子容器落点被提升到父容器）
+  let childItemEl: HTMLElement | null = null;
+  if (currentContainerEl && target !== currentContainerEl) {
+    const candidate = target.closest('.aigen-node-item') as HTMLElement | null;
+    if (candidate && currentContainerEl.contains(candidate)) {
+      childItemEl = candidate;
+    }
+  }
+
+  if (childItemEl && childItemEl.dataset.aigenId) {
+    const targetId = childItemEl.dataset.aigenId;
     const targetSchema = findSchemaById(designer.pageSchema.schemas, targetId);
-    const config = targetSchema
-      ? pluginManager.component.getConfigByType(targetSchema.type)
-      : null;
-    const isContainer = Boolean(
-      targetSchema?.children !== undefined ||
-        config?.defaultSchema?.children !== undefined,
+    if (!targetSchema) return;
+
+    const config = pluginManager.component.getConfigByType(targetSchema.type);
+    const isInlineNode = isInline(targetSchema);
+    const rect = childItemEl.getBoundingClientRect();
+
+    // 检查此子节点是否本身是一个可放置容器（例如卡片、栅格列等，但排除 childImmovable 的 row/tabs）
+    const isTargetAContainer = Boolean(
+      (targetSchema.children !== undefined ||
+        config?.defaultSchema?.children !== undefined ||
+        (config as any)?.isContainer) &&
+        !config?.editConstraints?.childImmovable,
     );
-    const isInlineNode = targetSchema ? isInline(targetSchema) : false;
-    const rect = nodeEl.getBoundingClientRect();
 
     canvasDrag.updateDragOver(
       targetId,
@@ -134,10 +153,99 @@ function handleDragOver(event: DragEvent) {
       {
         componentName:
           config?.defaultSchema?.label ||
-          targetSchema?.label ||
-          targetSchema?.type,
-        isContainer,
+          targetSchema.label ||
+          targetSchema.type,
+        isContainer: isTargetAContainer,
         isInline: isInlineNode,
+        schemas: designer.pageSchema.schemas,
+      },
+    );
+    return;
+  }
+
+  // 2. 如果未命中当前容器内的任何子节点（例如空容器 Col、空 TabPane，或鼠标处于容器内子节点下方的空白区域）：
+  // 此时命中当前容器本身 (aigen-draggable-range)
+  const containerEl =
+    currentContainerEl ||
+    (target.closest('.aigen-draggable-range') as HTMLElement | null);
+  const containerId =
+    props.containerSchema?.id ||
+    containerEl?.dataset.containerId ||
+    containerEl?.dataset.aigenId;
+
+  if (containerId) {
+    const containerSchema = findSchemaById(
+      designer.pageSchema.schemas,
+      containerId,
+    );
+    if (!containerSchema) return;
+
+    const config = pluginManager.component.getConfigByType(
+      containerSchema.type,
+    );
+    const rect = (
+      containerEl || (event.currentTarget as HTMLElement)
+    ).getBoundingClientRect();
+
+    // 对标 TinyEngine：若当前容器已有子节点，以最后一个子节点为参照物进行底部放置
+    const children = containerSchema.children || [];
+    if (children.length > 0) {
+      const lastChild = children[children.length - 1];
+      if (lastChild?.id) {
+        const lastChildEl = containerEl?.querySelector(
+          `[data-aigen-id="${lastChild.id}"]`,
+        ) as HTMLElement | null;
+        if (lastChildEl) {
+          const lastRect = lastChildEl.getBoundingClientRect();
+          const lastConfig = pluginManager.component.getConfigByType(
+            lastChild.type,
+          );
+          canvasDrag.updateDragOver(
+            lastChild.id,
+            {
+              bottom: lastRect.bottom,
+              height: lastRect.height,
+              left: lastRect.left,
+              right: lastRect.right,
+              top: lastRect.top,
+              width: lastRect.width,
+            },
+            { x: event.clientX, y: event.clientY },
+            {
+              componentName:
+                lastConfig?.defaultSchema?.label ||
+                lastChild.label ||
+                lastChild.type,
+              isContainer: false,
+              isInline: isInline(lastChild),
+              schemas: designer.pageSchema.schemas,
+            },
+          );
+          return;
+        }
+      }
+    }
+
+    // 若当前容器为空（例如空的 Col、空的 TabPane、空的 Card、空的 Form）：
+    // 直接进入容器穿透放置 (POSITION.IN)
+    canvasDrag.updateDragOver(
+      containerId,
+      {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      },
+      { x: event.clientX, y: event.clientY },
+      {
+        componentName:
+          config?.defaultSchema?.label ||
+          containerSchema.label ||
+          containerSchema.type,
+        isContainer: true,
+        isInline: false,
         schemas: designer.pageSchema.schemas,
       },
     );
@@ -285,64 +393,62 @@ onUnmounted(() => {
 <template>
   <div
     class="aigen-draggable-range"
-    :class="{ 'aigen-interactive-mode': interactiveMode }"
+    :class="{
+      'aigen-interactive-mode': interactiveMode,
+      'is-empty': modelSchemas.length === 0,
+    }"
+    :data-container-id="props.containerSchema?.id"
+    :data-aigen-id="props.containerSchema?.id"
     @mouseover.stop="setHoverNode"
     @dragover="handleDragOver"
     @drop="handleDrop"
   >
-    <TransitionGroup
-      name="aigen-node-list"
-      tag="div"
-      class="aigen-node-list-wrap"
+    <div
+      v-for="element in modelSchemas"
+      :key="element.id"
+      class="aigen-node-item"
+      :class="{
+        'aigen-inline': isInline(element),
+        'is-dragging-source': canvasDrag.dragState.dragData?.id === element.id,
+        'aigen-node--link-source': linkMode.source.value?.id === element.id,
+        'aigen-node--link-target': linkMode.target.value?.id === element.id,
+        'aigen-node--link-active': linkMode.isActive.value,
+        'aigen-node--link-phase-target':
+          linkMode.state.value === 'select-target',
+      }"
+      :data-aigen-id="element.id"
+      :draggable="isElementDraggable(element)"
+      @dragstart="handleNodeDragStart(element, $event)"
+      @dragend="handleNodeDragEnd"
+      @contextmenu.stop="contextMenu.open($event, element)"
     >
-      <div
-        v-for="element in modelSchemas"
-        :key="element.id"
-        class="aigen-node-item"
-        :class="{
-          'aigen-inline': isInline(element),
-          'is-dragging-source':
-            canvasDrag.dragState.dragData?.id === element.id,
-          'aigen-node--link-source': linkMode.source.value?.id === element.id,
-          'aigen-node--link-target': linkMode.target.value?.id === element.id,
-          'aigen-node--link-active': linkMode.isActive.value,
-          'aigen-node--link-phase-target':
-            linkMode.state.value === 'select-target',
-        }"
-        :data-aigen-id="element.id"
-        :draggable="isElementDraggable(element)"
-        @dragstart="handleNodeDragStart(element, $event)"
-        @dragend="handleNodeDragEnd"
-        @contextmenu.stop="contextMenu.open($event, element)"
-      >
-        <div class="aigen-node-badge-wrap">
-          <!-- 关联模式：源与目标语义标签 -->
-          <div
-            v-if="linkMode.source.value?.id === element.id"
-            class="aigen-link-role-badge aigen-link-role-badge--source"
-          >
-            <AigenIcon
-              name="icon--behavior--thunderbolt"
-              class="mr-1 text-[11px]"
-            />
-            <span>触发源</span>
-          </div>
-          <div
-            v-if="linkMode.target.value?.id === element.id"
-            class="aigen-link-role-badge aigen-link-role-badge--target"
-          >
-            <AigenIcon
-              name="icon--behavior--experiment"
-              class="mr-1 text-[11px]"
-            />
-            <span>关联目标</span>
-          </div>
-
-          <AigenNodeItem :schema="element" />
-          <EventBadge :schema="element" />
+      <div class="aigen-node-badge-wrap">
+        <!-- 关联模式：源与目标语义标签 -->
+        <div
+          v-if="linkMode.source.value?.id === element.id"
+          class="aigen-link-role-badge aigen-link-role-badge--source"
+        >
+          <AigenIcon
+            name="icon--behavior--thunderbolt"
+            class="mr-1 text-[11px]"
+          />
+          <span>触发源</span>
         </div>
+        <div
+          v-if="linkMode.target.value?.id === element.id"
+          class="aigen-link-role-badge aigen-link-role-badge--target"
+        >
+          <AigenIcon
+            name="icon--behavior--experiment"
+            class="mr-1 text-[11px]"
+          />
+          <span>关联目标</span>
+        </div>
+
+        <AigenNodeItem :schema="element" />
+        <EventBadge :schema="element" />
       </div>
-    </TransitionGroup>
+    </div>
   </div>
 </template>
 
@@ -350,13 +456,6 @@ onUnmounted(() => {
 /* 角标叠加层定位容器：仅提供相对定位，不影响节点自身布局 */
 .aigen-node-badge-wrap {
   position: relative;
-}
-
-/* 节点列表包裹容器 */
-.aigen-node-list-wrap {
-  min-height: inherit;
-  width: 100%;
-  height: 100%;
 }
 
 /* 内联组件（如按钮）保持行内布局 */
