@@ -22,6 +22,7 @@ export interface LineState {
   id: string;
   position: '' | PositionType;
   rect: { height: number; left: number; top: number; width: number };
+  slotName: string;
 }
 
 export interface CanvasDrag {
@@ -63,6 +64,7 @@ export interface CanvasDrag {
       isInline?: boolean;
       onlyIn?: boolean;
       schemas: ComponentSchema[];
+      slotName?: string;
     },
   ) => void;
 }
@@ -88,6 +90,7 @@ export function createCanvasDrag(): CanvasDrag {
     id: '',
     position: '',
     rect: { height: 0, left: 0, top: 0, width: 0 },
+    slotName: '',
   });
 
   let smoothScrollTimer: null | number = null;
@@ -131,6 +134,7 @@ export function createCanvasDrag(): CanvasDrag {
       isInline?: boolean;
       onlyIn?: boolean;
       schemas: ComponentSchema[];
+      slotName?: string;
     },
   ) {
     if (!dragState.isDragging) return;
@@ -165,6 +169,7 @@ export function createCanvasDrag(): CanvasDrag {
     };
     lineState.forbidden = forbidden;
     lineState.componentName = options.componentName ?? '';
+    lineState.slotName = options.slotName ?? '';
   }
 
   function clearDragOver() {
@@ -173,6 +178,7 @@ export function createCanvasDrag(): CanvasDrag {
     lineState.rect = { height: 0, left: 0, top: 0, width: 0 };
     lineState.forbidden = false;
     lineState.componentName = '';
+    lineState.slotName = '';
   }
 
   function startSmoothScroll(

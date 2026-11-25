@@ -28,9 +28,11 @@ const props = withDefaults(
   defineProps<{
     containerSchema?: ComponentSchema;
     schemas: ComponentSchema[];
+    slotName?: string;
   }>(),
   {
     containerSchema: undefined,
+    slotName: undefined,
   },
 );
 const emit = defineEmits(['update:schemas']);
@@ -157,6 +159,7 @@ function handleDragOver(event: DragEvent) {
         isContainer: isTargetAContainer,
         isInline: isInlineNode,
         schemas: designer.pageSchema.schemas,
+        slotName: props.slotName,
       },
     );
     return;
@@ -186,6 +189,7 @@ function handleDragOver(event: DragEvent) {
       containerEl: containerEl || (event.currentTarget as HTMLElement),
       containerSchema,
       pageSchemas: designer.pageSchema.schemas,
+      slotName: props.slotName,
     });
   }
 }
@@ -298,6 +302,7 @@ onUnmounted(() => {
     }"
     :data-container-id="props.containerSchema?.id"
     :data-aigen-id="props.containerSchema?.id"
+    :data-slot-name="props.slotName || undefined"
     @mouseover.stop="setHoverNode"
     @dragover="handleDragOver"
     @drop="handleDrop"

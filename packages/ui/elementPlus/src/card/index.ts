@@ -37,6 +37,16 @@ export default {
         type: 'switch',
       },
     ],
+    slots: {
+      footer: {
+        description: '自定义卡片底部内容',
+        label: '底部插槽',
+      },
+      header: {
+        description: '自定义卡片头部内容',
+        label: '标题插槽',
+      },
+    },
   },
   defaultSchema: {
     label: '卡片布局',

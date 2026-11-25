@@ -61,6 +61,12 @@ export interface EditConstraintsModel {
   locked?: boolean;
 }
 
+export interface SlotConfigModel {
+  description?: string;
+  label: string;
+  params?: string[];
+}
+
 export interface ComponentConfigModel {
   // 输入表单组件v-model绑定变量名称 默认 modelValue
   bindModel?: string;
@@ -74,6 +80,8 @@ export interface ComponentConfigModel {
     attribute?: ComponentSchema[];
     // 可触发事件
     event?: EventModel[];
+    // 组件开放的具名插槽元数据
+    slots?: Record<string, SlotConfigModel>;
     // 样式编辑组件列表
     style?: ComponentSchema[];
   };

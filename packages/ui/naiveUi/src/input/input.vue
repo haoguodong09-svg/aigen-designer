@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import type { ComponentSchema } from '@aigen-designer/types';
+
+import { computed, ref, useSlots } from 'vue';
 
 import { NInput } from 'naive-ui';
 
 const props = withDefaults(
   defineProps<{
-    componentSchema?: any;
+    componentSchema?: ComponentSchema;
     placeholder?: string;
   }>(),
   {
@@ -15,6 +17,19 @@ const props = withDefaults(
 );
 
 const inputRef = ref();
+const slots = useSlots();
+const hasPrefixSlot = computed(() =>
+  Boolean(slots.prefix || props.componentSchema?.slots?.prefix),
+);
+const hasSuffixSlot = computed(() =>
+  Boolean(slots.suffix || props.componentSchema?.slots?.suffix),
+);
+const prefixSlotNodes = computed(
+  () => props.componentSchema?.slots?.prefix ?? [],
+);
+const suffixSlotNodes = computed(
+  () => props.componentSchema?.slots?.suffix ?? [],
+);
 
 defineExpose({
   blur: () => inputRef.value?.blur?.(),
@@ -26,5 +41,24 @@ defineExpose({
 </script>
 
 <template>
-  <NInput ref="inputRef" :placeholder="props.placeholder" />
+  <NInput ref="inputRef" :placeholder="props.placeholder">
+    <template v-if="hasPrefixSlot" #prefix>
+      <slot name="prefix">
+        <slot
+          v-for="node in prefixSlotNodes"
+          name="node"
+          :component-schema="node"
+        ></slot>
+      </slot>
+    </template>
+    <template v-if="hasSuffixSlot" #suffix>
+      <slot name="suffix">
+        <slot
+          v-for="node in suffixSlotNodes"
+          name="node"
+          :component-schema="node"
+        ></slot>
+      </slot>
+    </template>
+  </NInput>
 </template>

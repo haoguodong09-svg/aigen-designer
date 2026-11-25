@@ -11,6 +11,7 @@ import {
   computed,
   defineComponent,
   getCurrentInstance,
+  h,
   markRaw,
   onBeforeUnmount,
   provide,
@@ -145,6 +146,9 @@ watch(
     props.componentSchema?.noFormItem,
     props.componentSchema?.slotName,
     props.componentSchema?.input,
+    props.componentSchema?.slots
+      ? Object.keys(props.componentSchema.slots).join(',')
+      : '',
   ],
   () => {
     const componentSchema = props.componentSchema;
@@ -553,16 +557,23 @@ async function initComponent() {
 
   // 组件为slot类型时
   if (innerSchema.type === 'slot') {
-    const slotName = innerSchema.slotName;
-    if (!slotName) return;
+    const slotName = innerSchema.slotName || 'default';
 
     componentRef.value = defineComponent({
       setup() {
-        return () =>
-          renderSlot(slots, slotName, {
-            componentSchema: innerSchema,
-            model: formData,
-          });
+        return () => {
+          if (slots[slotName]) {
+            return renderSlot(slots, slotName, {
+              componentSchema: innerSchema,
+              model: formData,
+            });
+          }
+          return h(
+            'div',
+            { class: 'aigen-slot-placeholder' },
+            `插槽：${slotName}`,
+          );
+        };
       },
     });
 
@@ -624,6 +635,19 @@ maybeReinitComponent();
 // 添加组件实例
 handleAddComponentInstance();
 
+// 过滤保留插槽名（避免与 node / edit-node 冲突），用于动态转发具名插槽
+const namedSlots = computed(() => {
+  const rawSlots = innerSchema.slots;
+  if (!rawSlots) return undefined;
+  const result: Record<string, ComponentSchema[]> = {};
+  for (const [key, val] of Object.entries(rawSlots)) {
+    if (key !== 'node' && key !== 'edit-node' && Array.isArray(val)) {
+      result[key] = val;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+});
+
 // 组件卸载时移除组件实例
 onBeforeUnmount(handleVnodeUnmounted);
 </script>
@@ -658,6 +682,21 @@ onBeforeUnmount(handleVnodeUnmounted);
         <slot name="edit-node"></slot>
       </template>
       <!-- 渲染布局设计子组件列表 end -->
+      <!-- 动态转发具名插槽 start -->
+      <template
+        v-for="(slotSchemas, sName) in namedSlots"
+        :key="sName"
+        #[sName]="slotScope"
+      >
+        <slot :name="String(sName)" v-bind="slotScope ?? {}">
+          <AigenNode
+            v-for="subSchema in slotSchemas"
+            :key="subSchema.id"
+            :component-schema="subSchema"
+          />
+        </slot>
+      </template>
+      <!-- 动态转发具名插槽 end -->
     </component>
   </dynamicFormItem>
 </template>

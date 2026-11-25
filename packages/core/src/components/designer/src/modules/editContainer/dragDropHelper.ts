@@ -25,6 +25,7 @@ export function updateContainerFallbackDragOver(options: {
   containerEl: HTMLElement | null;
   containerSchema: ComponentSchema;
   pageSchemas: ComponentSchema[];
+  slotName?: string;
 }) {
   const {
     canvasDrag,
@@ -33,12 +34,15 @@ export function updateContainerFallbackDragOver(options: {
     containerEl,
     containerSchema,
     pageSchemas,
+    slotName,
   } = options;
   const containerId = containerSchema.id;
   if (!containerId) return;
 
   const config = pluginManager.component.getConfigByType(containerSchema.type);
-  const children = containerSchema.children || [];
+  const children = slotName
+    ? containerSchema.slots?.[slotName] || []
+    : containerSchema.children || [];
 
   if (children.length > 0) {
     const lastChild = children[children.length - 1];
@@ -73,6 +77,7 @@ export function updateContainerFallbackDragOver(options: {
             isContainer: false,
             isInline: isSchemaInline(lastChild),
             schemas: pageSchemas,
+            slotName,
           },
         );
         return;
@@ -102,6 +107,7 @@ export function updateContainerFallbackDragOver(options: {
       isInline: false,
       onlyIn: true,
       schemas: pageSchemas,
+      slotName,
     },
   );
 }
@@ -134,6 +140,7 @@ export function commitCanvasDrop(
       lineState.id,
       newSchema,
       lineState.position,
+      lineState.slotName || undefined,
     );
     if (success) {
       designer.setSelectedNode(newSchema);
@@ -145,6 +152,7 @@ export function commitCanvasDrop(
       dragData.id,
       lineState.id,
       lineState.position,
+      lineState.slotName || undefined,
     );
     if (success) {
       designer.setSelectedNode(dragData);

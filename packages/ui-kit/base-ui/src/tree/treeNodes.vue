@@ -28,7 +28,7 @@ const treeProps = treeContext!.treeProps;
 const modelSchemas = computed({
   get() {
     // 判断props.schemas是否存在值
-    return props.schemas;
+    return props.schemas ?? [];
   },
   set(e) {
     emit('update:schemas', e);
@@ -44,7 +44,7 @@ function handleSelect(index: number | undefined) {
     return;
   }
   designer.setDisabledHover(true);
-  designer.setSelectedNode(modelSchemas.value![index]);
+  designer.setSelectedNode(modelSchemas.value[index]);
 }
 
 function isDraggable(schema: ComponentSchema) {
@@ -62,9 +62,10 @@ function isDraggable(schema: ComponentSchema) {
 }
 
 const getDisabled = computed(() => {
+  const rootId = pageSchema.schemas[0]?.id;
   return (
     !treeProps.draggable ||
-    modelSchemas.value![0]?.id === pageSchema.schemas[0]?.id
+    Boolean(rootId && modelSchemas.value[0]?.id === rootId)
   );
 });
 </script>

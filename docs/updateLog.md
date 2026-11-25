@@ -1,5 +1,16 @@
 ## 1.1.14（2026-11-25）
 
+### ✨ Feat（画布基础 DOM/HTML 原语与双向插槽机制，对标 TinyEngine）
+
+- **新增跨 UI 库内置基础 DOM / HTML 原语（`@aigen-designer/panel-ui` `Builtin`）**：
+  - 统一注册 `盒子容器 (div)`（支持 `div` / `section` / `header` / `footer` / `main` / `article` 动态语义标签）、`弹性容器 (flex-box)`、`段落 (p)`、`行内标签 (span)`、`文本 (text)`、`图片 (img)`、`图标 (icon)`、`插槽 (slot)` 共 8 个跨框架原语；
+  - 为非根节点的空容器（`.aigen-draggable-range.is-empty`）与具名插槽空区补充居中提示文案（`"请将元素拖放到这里"` / `"拖放到 [slotName] 插槽"`）。
+- **打通双向插槽（Slot）渲染、配置与拖放全链路**：
+  - **类型与原子操作**：[pluginManager.ts](file:///d:/workspace/Github/aigen-designer/packages/types/src/pluginManager.ts) 新增 `SlotConfigModel` 元数据协议，[schemaOperations.ts](file:///d:/workspace/Github/aigen-designer/packages/utils/src/common/schemaOperations.ts) 与 `useCanvasDrag` 支持 `slotName` 具名插槽插入及 `children ↔ slots` 跨区移动；
+  - **设计态与运行态双态渲染**：[node.vue](file:///d:/workspace/Github/aigen-designer/packages/ui-kit/base-ui/src/node/node.vue) 与 [nodeItem.vue](file:///d:/workspace/Github/aigen-designer/packages/core/src/components/designer/src/modules/editContainer/nodeItem.vue) 支持具名插槽动态透传与独立 `slot` 节点可视化占位；
+  - **右侧「插槽信息」开关与大纲树展示**：[attribute.vue](file:///d:/workspace/Github/aigen-designer/packages/ui-kit/panel-ui/src/rightSidebars/attribute/attribute.vue) 支持一键启停宿主组件开放的具名插槽，[treeNodeItem.vue](file:///d:/workspace/Github/aigen-designer/packages/ui-kit/base-ui/src/tree/treeNodeItem.vue) 在大纲树展示 `#slotName` 子节点分支；
+  - **三端 UI 库宿主适配**：为 AntD / ElementPlus / NaiveUI 的 `Card`、`Modal`、`Input`、`Button` 补齐 `config.slots` 元数据与具名 `<slot>` 透传。
+
 ### 🐛 Bug Fixes（五向落点、几何碰撞引擎深度完善与画布底部拖放修复）
 
 - **修复画布已有元素时向底部区域拖拽渲染不上的问题**：

@@ -30,6 +30,10 @@
         &.is-empty {
           border: 0;
           background: transparent;
+
+          &::after {
+            content: none;
+          }
         }
       }
     }
@@ -40,6 +44,7 @@
       box-sizing: border-box;
 
       &.is-empty {
+        position: relative;
         min-height: 54px;
         border: 1px dashed var(--aigen-border);
         border-radius: 4px;
@@ -48,7 +53,33 @@
         justify-content: center;
         padding: 8px;
         background-color: rgba(0, 0, 0, 0.015);
+
+        &::after {
+          content: '请将元素拖放到这里';
+          font-size: 12px;
+          color: var(--aigen-muted-foreground, #94a3b8);
+          pointer-events: none;
+        }
       }
+
+      &[data-slot-name].is-empty::after {
+        content: '拖放到 [' attr(data-slot-name) '] 插槽';
+      }
+    }
+
+    .aigen-slot-placeholder {
+      min-height: 40px;
+      border: 1px dashed var(--aigen-border, #cbd5e1);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--aigen-muted-foreground, #94a3b8);
+      background-color: rgba(0, 0, 0, 0.015);
+      box-sizing: border-box;
+      width: 100%;
     }
 
     .aigen-hidden {

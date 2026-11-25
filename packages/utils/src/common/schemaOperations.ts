@@ -53,6 +53,7 @@ export function insertSchema(
   targetId: string,
   nodeToInsert: ComponentSchema,
   position: PositionType,
+  slotName?: string,
 ): boolean {
   if (!targetId || !nodeToInsert) return false;
 
@@ -60,6 +61,17 @@ export function insertSchema(
   if (position === POSITION.IN) {
     const targetNode = findSchemaById(schemas, targetId);
     if (!targetNode) return false;
+
+    if (slotName) {
+      if (!targetNode.slots) {
+        targetNode.slots = {};
+      }
+      if (!targetNode.slots[slotName]) {
+        targetNode.slots[slotName] = [];
+      }
+      targetNode.slots[slotName].push(nodeToInsert);
+      return true;
+    }
 
     if (!targetNode.children) {
       targetNode.children = [];
@@ -105,6 +117,7 @@ export function moveSchema(
   sourceId: string,
   targetId: string,
   position: PositionType,
+  slotName?: string,
 ): boolean {
   if (!sourceId || !targetId || sourceId === targetId) return false;
   if (sourceId === 'root') return false;
@@ -123,7 +136,13 @@ export function moveSchema(
   if (!removedNode) return false;
 
   // 3. 插入到新位置
-  const success = insertSchema(schemas, targetId, removedNode, position);
+  const success = insertSchema(
+    schemas,
+    targetId,
+    removedNode,
+    position,
+    slotName,
+  );
   if (!success) {
     // 插入失败时精准还原回原父容器的原索引位置，避免污染根数组
     originList.splice(originIndex, 0, removedNode);

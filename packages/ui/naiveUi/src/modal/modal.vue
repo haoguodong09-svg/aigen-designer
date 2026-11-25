@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, ref, useAttrs } from 'vue';
+import { computed, ref, useAttrs, useSlots } from 'vue';
 
 import { NButton, NModal, NSpace } from 'naive-ui';
 
@@ -25,6 +25,7 @@ const props = withDefaults(
 
 const emit = defineEmits(['ok', 'close', 'update:modelValue']);
 const attrs = useAttrs();
+const slots = useSlots();
 const confirmLoading = ref(false);
 const customTitle = ref<null | string>(null);
 
@@ -37,6 +38,18 @@ const getProps = computed<Record<string, any>>(() => ({
 }));
 
 const children = computed(() => props.componentSchema?.children ?? []);
+const headerSlotNodes = computed(
+  () => props.componentSchema?.slots?.header ?? [],
+);
+const footerSlotNodes = computed(
+  () => props.componentSchema?.slots?.footer ?? [],
+);
+const hasHeaderSlot = computed(() =>
+  Boolean(slots.header || props.componentSchema?.slots?.header),
+);
+const hasFooterSlot = computed(() =>
+  Boolean(slots.footer || props.componentSchema?.slots?.footer),
+);
 
 const handleOk = () => {
   emit('ok');
@@ -88,6 +101,15 @@ defineExpose({
     :style="{ width }"
     @update:show="updateModelValue"
   >
+    <template v-if="hasHeaderSlot" #header>
+      <slot name="header">
+        <slot
+          v-for="node in headerSlotNodes"
+          name="node"
+          :component-schema="node"
+        ></slot>
+      </slot>
+    </template>
     <div class="aigen-modal-main">
       <slot>
         <slot name="edit-node">
@@ -102,7 +124,16 @@ defineExpose({
       </slot>
     </div>
 
-    <div class="aigen-modal-footer">
+    <div v-if="hasFooterSlot" class="aigen-modal-footer">
+      <slot name="footer">
+        <slot
+          v-for="node in footerSlotNodes"
+          name="node"
+          :component-schema="node"
+        ></slot>
+      </slot>
+    </div>
+    <div v-else class="aigen-modal-footer">
       <NSpace justify="end">
         <NButton @click="handleClose"> {{ props.cancelText }} </NButton>
         <NButton

@@ -115,6 +115,11 @@ export default {
         type: 'dblclick',
       },
     ],
+    slots: {
+      icon: {
+        label: '图标插槽',
+      },
+    },
   },
   defaultSchema: {
     field: 'input',

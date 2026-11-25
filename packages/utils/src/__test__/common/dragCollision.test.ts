@@ -384,4 +384,50 @@ describe('schemaOperations 原子化 Schema 操作', () => {
       'a',
     ]);
   });
+
+  it('insertSchema 与 moveSchema 支持具名插槽 (slotName) 插入与跨区移动', () => {
+    const tree: ComponentSchema[] = [
+      {
+        id: 'root',
+        type: 'page',
+        children: [
+          {
+            id: 'card-1',
+            type: 'card',
+            children: [{ id: 'input-1', type: 'input' }],
+            slots: { extra: [] },
+          },
+        ],
+      },
+    ];
+
+    // 插入新按钮到 card-1 的具名插槽 extra
+    expect(
+      insertSchema(
+        tree,
+        'card-1',
+        { id: 'btn-extra', type: 'button' },
+        POSITION.IN,
+        'extra',
+      ),
+    ).toBe(true);
+    expect(tree[0].children?.[0].slots?.extra?.map((n) => n.id)).toEqual([
+      'btn-extra',
+    ]);
+
+    // 将默认 children 中的 input-1 跨区移动到 extra 插槽中
+    expect(moveSchema(tree, 'input-1', 'card-1', POSITION.IN, 'extra')).toBe(
+      true,
+    );
+    expect(tree[0].children?.[0].children).toEqual([]);
+    expect(tree[0].children?.[0].slots?.extra?.map((n) => n.id)).toEqual([
+      'btn-extra',
+      'input-1',
+    ]);
+
+    // 反向防环：禁止把 card-1 移入自身 extra 插槽
+    expect(moveSchema(tree, 'card-1', 'card-1', POSITION.IN, 'extra')).toBe(
+      false,
+    );
+  });
 });

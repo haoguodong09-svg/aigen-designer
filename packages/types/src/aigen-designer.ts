@@ -217,6 +217,8 @@ export interface ComponentSchema {
   show?: ((renderCallbackParams: RenderCallbackParams) => boolean) | boolean;
   // 插槽名称（组件为插槽类型时，需要设置插槽name），可选
   slotName?: string;
+  // 作用域插槽参数名列表（组件为插槽类型时可选）
+  slotParams?: string[];
   // 插槽列表，可选
   slots?: { [slotName: string]: ComponentSchema[] };
   // 设计态辅助状态（如锁定、隐藏等），可选

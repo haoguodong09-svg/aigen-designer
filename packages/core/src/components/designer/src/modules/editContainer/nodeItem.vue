@@ -25,8 +25,24 @@ const attrs = useAttrs();
 const { pageSchema, props: designerProps } = useDesignerContext();
 
 provide(NODE_ATTRS_KEY, attrs);
-// 判断是否为叶子节点
-const isLeafNode = computed(() => !props.schema.children);
+// 判断是否为叶子节点（包含具名插槽的节点也非叶子节点，避免遮罩阻塞插槽交互）
+const isLeafNode = computed(
+  () =>
+    !props.schema.children &&
+    (!props.schema.slots || Object.keys(props.schema.slots).length === 0),
+);
+
+const namedSlots = computed(() => {
+  const rawSlots = props.schema.slots;
+  if (!rawSlots) return undefined;
+  const result: Record<string, ComponentSchema[]> = {};
+  for (const [key, val] of Object.entries(rawSlots)) {
+    if (key !== 'node' && key !== 'edit-node' && Array.isArray(val)) {
+      result[key] = val;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+});
 
 function isDraggable() {
   const schema = props.schema;
@@ -73,6 +89,18 @@ function isDraggable() {
         v-if="props.schema.children"
         v-model:schemas="props.schema.children"
         :container-schema="props.schema"
+      />
+    </template>
+    <template
+      v-for="(slotSchemas, slotName) in namedSlots"
+      :key="slotName"
+      #[slotName]
+    >
+      <AigenNodes
+        v-if="slotSchemas && props.schema.slots"
+        v-model:schemas="props.schema.slots[slotName]"
+        :container-schema="props.schema"
+        :slot-name="String(slotName)"
       />
     </template>
   </AigenNode>

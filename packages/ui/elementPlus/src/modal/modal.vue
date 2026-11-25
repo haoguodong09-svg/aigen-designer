@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, ref, useAttrs } from 'vue';
+import { computed, ref, useAttrs, useSlots } from 'vue';
 
 import { ElButton, ElDialog } from 'element-plus';
 
@@ -23,6 +23,7 @@ const props = withDefaults(
 
 const emits = defineEmits(['ok', 'close', 'update:modelValue']);
 const attrs = useAttrs();
+const slots = useSlots();
 const confirmLoading = ref(false);
 const customTitle = ref<null | string>(null);
 
@@ -35,6 +36,18 @@ const getProps = computed<Record<string, any>>(() => ({
 }));
 
 const children = computed(() => props.componentSchema?.children ?? []);
+const headerSlotNodes = computed(
+  () => props.componentSchema?.slots?.header ?? [],
+);
+const footerSlotNodes = computed(
+  () => props.componentSchema?.slots?.footer ?? [],
+);
+const hasHeaderSlot = computed(() =>
+  Boolean(slots.header || props.componentSchema?.slots?.header),
+);
+const hasFooterSlot = computed(() =>
+  Boolean(slots.footer || props.componentSchema?.slots?.footer),
+);
 
 function handleOk() {
   emits('ok');
@@ -85,6 +98,15 @@ defineExpose({
     append-to-body
     @update:model-value="updateModelValue"
   >
+    <template v-if="hasHeaderSlot" #header>
+      <slot name="header">
+        <slot
+          v-for="node in headerSlotNodes"
+          name="node"
+          :component-schema="node"
+        ></slot>
+      </slot>
+    </template>
     <slot>
       <slot name="edit-node">
         <template v-if="children.length > 0">
@@ -98,15 +120,24 @@ defineExpose({
     </slot>
     <template #footer>
       <div class="aigen-el-modal-footer">
-        <ElButton @click="handleClose"> {{ props.cancelText }} </ElButton>
-        <ElButton
-          v-if="!props.hideConfirm"
-          :loading="confirmLoading"
-          type="primary"
-          @click="handleOk"
-        >
-          {{ props.okText }}
-        </ElButton>
+        <slot v-if="hasFooterSlot" name="footer">
+          <slot
+            v-for="node in footerSlotNodes"
+            name="node"
+            :component-schema="node"
+          ></slot>
+        </slot>
+        <template v-else>
+          <ElButton @click="handleClose"> {{ props.cancelText }} </ElButton>
+          <ElButton
+            v-if="!props.hideConfirm"
+            :loading="confirmLoading"
+            type="primary"
+            @click="handleOk"
+          >
+            {{ props.okText }}
+          </ElButton>
+        </template>
       </div>
     </template>
   </ElDialog>

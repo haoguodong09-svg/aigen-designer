@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, ref, useAttrs } from 'vue';
+import { computed, ref, useAttrs, useSlots } from 'vue';
 
 import { Button, Modal, Space, version } from 'ant-design-vue';
 
@@ -29,6 +29,7 @@ const versionArray = version.split('.');
 const firstNumber = Number.parseInt(versionArray[0]);
 
 const attrs = useAttrs();
+const slots = useSlots();
 const confirmLoading = ref(false);
 const customTitle = ref<null | string>(null);
 
@@ -64,6 +65,18 @@ const getProps = computed<Record<string, any>>(() => ({
 }));
 
 const children = computed(() => props.componentSchema?.children ?? []);
+const titleSlotNodes = computed(
+  () => props.componentSchema?.slots?.title ?? [],
+);
+const footerSlotNodes = computed(
+  () => props.componentSchema?.slots?.footer ?? [],
+);
+const hasTitleSlot = computed(() =>
+  Boolean(slots.title || props.componentSchema?.slots?.title),
+);
+const hasFooterSlot = computed(() =>
+  Boolean(slots.footer || props.componentSchema?.slots?.footer),
+);
 
 function handleOk() {
   emits('ok');
@@ -108,6 +121,15 @@ defineExpose({
 
 <template>
   <Modal v-bind="getProps">
+    <template v-if="hasTitleSlot" #title>
+      <slot name="title">
+        <slot
+          v-for="item in titleSlotNodes"
+          name="node"
+          :component-schema="item"
+        ></slot>
+      </slot>
+    </template>
     <div class="aigen-modal-main aigen-scoped">
       <slot>
         <slot name="edit-node">
@@ -119,7 +141,16 @@ defineExpose({
         </slot>
       </slot>
     </div>
-    <div v-if="props.footer" class="aigen-modal-footer">
+    <div v-if="hasFooterSlot" class="aigen-modal-footer">
+      <slot name="footer">
+        <slot
+          v-for="item in footerSlotNodes"
+          name="node"
+          :component-schema="item"
+        ></slot>
+      </slot>
+    </div>
+    <div v-else-if="props.footer" class="aigen-modal-footer">
       <Space align="end">
         <Button @click="handleClose"> {{ props.cancelText }} </Button>
         <Button

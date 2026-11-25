@@ -590,7 +590,9 @@ defineExpose({
         {{
           canvasDrag.lineState.forbidden
             ? '不可放入自身或子节点内'
-            : `放入「${canvasDrag.lineState.componentName || '容器'}」内`
+            : canvasDrag.lineState.slotName
+              ? `放入「${canvasDrag.lineState.componentName || '容器'} · ${canvasDrag.lineState.slotName}」内`
+              : `放入「${canvasDrag.lineState.componentName || '容器'}」内`
         }}
       </span>
     </div>

@@ -10,6 +10,14 @@ export default {
         type: 'input',
       },
     ],
+    slots: {
+      footer: {
+        label: '底部操作区',
+      },
+      header: {
+        label: '标题插槽',
+      },
+    },
   },
   defaultSchema: {
     label: '模态框',

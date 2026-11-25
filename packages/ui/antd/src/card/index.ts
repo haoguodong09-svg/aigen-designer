@@ -52,6 +52,16 @@ export default {
         type: 'switch',
       },
     ],
+    slots: {
+      extra: {
+        description: '卡片右上角操作区域',
+        label: '右上角操作区',
+      },
+      title: {
+        description: '自定义卡片标题区',
+        label: '标题插槽',
+      },
+    },
   },
   defaultSchema: {
     label: '卡片布局',

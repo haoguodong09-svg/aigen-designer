@@ -19,12 +19,24 @@ export default defineComponent({
       const componentProps: Record<string, any> = {
         ...props.componentSchema?.props,
       };
+      const iconSlotNodes = props.componentSchema?.slots?.icon;
+      const hasIconSlot = Boolean(slots.icon || iconSlotNodes);
 
       return h(NButton, componentProps, {
         default: () =>
           renderSlot(slots, 'default', {}, () => [
             props.componentSchema?.label,
           ]),
+        ...(hasIconSlot
+          ? {
+              icon: () =>
+                renderSlot(slots, 'icon', {}, () =>
+                  (iconSlotNodes ?? []).map((node) =>
+                    renderSlot(slots, 'node', { componentSchema: node }),
+                  ),
+                ),
+            }
+          : {}),
       });
     };
   },

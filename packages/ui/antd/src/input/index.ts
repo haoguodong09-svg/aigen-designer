@@ -147,6 +147,14 @@ export default {
         type: 'blur',
       },
     ],
+    slots: {
+      prefix: {
+        label: '前缀插槽',
+      },
+      suffix: {
+        label: '后缀插槽',
+      },
+    },
   },
   defaultSchema: {
     field: 'input',

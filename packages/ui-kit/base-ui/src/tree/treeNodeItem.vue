@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema } from '@aigen-designer/types';
 
-import { computed, defineComponent, h } from 'vue';
+import { computed, defineComponent, h, watch } from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import { useDesignerContext } from '@aigen-designer/hooks';
@@ -23,6 +23,14 @@ const { pageSchema } = useDesignerContext();
 
 const expanded = computed(() => {
   return treeContext!.expandedKeys.value.includes(props.schema.id ?? '');
+});
+
+const slotNames = computed(() => {
+  return props.schema.slots ? Object.keys(props.schema.slots) : [];
+});
+
+const hasSubNodes = computed(() => {
+  return Boolean(props.schema.children?.length || slotNames.value.length > 0);
 });
 
 const TreeNodeText = defineComponent({
@@ -79,30 +87,29 @@ function handleExpanded() {
   }
 }
 
-function init() {
-  const id = props.schema.id;
-  if (!id || !props.schema.children?.length) {
-    return false;
-  }
-  treeContext!.expandedKeys.value.push(id);
-}
-init();
+watch(
+  hasSubNodes,
+  (val) => {
+    const id = props.schema.id;
+    if (val && id && !treeContext!.expandedKeys.value.includes(id)) {
+      treeContext!.expandedKeys.value.push(id);
+    }
+  },
+  { immediate: true },
+);
 </script>
 <template>
   <li
     class="aigen-tree-node"
     :class="{
-      expanded: props.schema.children?.length,
+      expanded: hasSubNodes,
       'is-locked': pluginManager.component.getLocked(props.schema.type),
       'level-1': props.schema.id === pageSchema.schemas[0]?.id,
     }"
   >
     <a>
       <span
-        v-if="
-          props.schema.children?.length &&
-          props.schema.id !== pageSchema.schemas[0]?.id
-        "
+        v-if="hasSubNodes && props.schema.id !== pageSchema.schemas[0]?.id"
         class="icon-expanded"
         :class="{ expanded }"
         @click="handleExpanded"
@@ -118,5 +125,34 @@ init();
       :class="{ expanded }"
       :parent-schema="props.schema"
     />
+    <div
+      v-if="props.schema.slots && slotNames.length > 0"
+      class="aigen-tree-sublist aigen-tree-slots"
+      :class="{ expanded }"
+    >
+      <div
+        v-for="slotName in slotNames"
+        :key="slotName"
+        class="aigen-tree-slot-group"
+      >
+        <div class="aigen-tree-slot-header node-drag-disabled">
+          #{{ slotName }}
+        </div>
+        <AigenTreeNodes
+          v-model:schemas="props.schema.slots[slotName]"
+          :parent-schema="props.schema"
+        />
+      </div>
+    </div>
   </li>
 </template>
+<style scoped lang="less">
+.aigen-tree-slot-header {
+  padding-left: 16px;
+  font-size: var(--aigen-text-sm);
+  line-height: 22px;
+  color: var(--aigen-text-helper);
+  cursor: default;
+  user-select: none;
+}
+</style>
