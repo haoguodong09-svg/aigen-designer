@@ -401,6 +401,33 @@ const hasFormItem = computed(() => {
   );
 });
 
+function isJSExpressionBinding(
+  val: unknown,
+): val is { type: 'JSExpression'; value: string } {
+  return (
+    Boolean(val) &&
+    typeof val === 'object' &&
+    (val as Record<string, unknown>).type === 'JSExpression' &&
+    typeof (val as Record<string, unknown>).value === 'string'
+  );
+}
+
+function evaluatePropExpression(expr: string): unknown {
+  if (!expr.trim()) return undefined;
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function(
+      'formData',
+      'state',
+      'funcs',
+      `"use strict"; return (${expr});`,
+    );
+    return fn(formData, pageManager, pageManager.funcs.value);
+  } catch {
+    return undefined;
+  }
+}
+
 // 获取组件props数据
 const getProps = computed(() => {
   const bindModel = getComponentConfig.value?.bindModel ?? 'modelValue';
@@ -418,7 +445,25 @@ const getProps = computed(() => {
       });
   }
 
-  const style = innerSchema.props?.style ?? {};
+  // 解析属性中的 JSExpression 变量/表达式绑定（className 合并到 class，避免作为 DOM 属性覆盖 el.className）
+  const rawProps = innerSchema.props ?? {};
+  const resolvedProps: Record<string, any> = {};
+  let customClassName: string | undefined;
+  for (const key of Object.keys(rawProps)) {
+    const val = rawProps[key];
+    const resolved = isJSExpressionBinding(val)
+      ? evaluatePropExpression(val.value)
+      : val;
+    if (key === 'className') {
+      if (typeof resolved === 'string' && resolved.trim()) {
+        customClassName = resolved.trim();
+      }
+    } else {
+      resolvedProps[key] = resolved;
+    }
+  }
+
+  const style = resolvedProps.style ?? {};
   const finalStyle = hasFormItem.value
     ? Object.fromEntries(
         (['height', 'width'] as const)
@@ -426,26 +471,35 @@ const getProps = computed(() => {
           .map((k) => [k, style[k]]),
       )
     : style;
+  const resolvedReadonly =
+    fieldStateType.value !== 'WRITE' &&
+    (derivedState.value?.readonly === undefined
+      ? fieldStateType.value === 'READ' ||
+        readonly.value ||
+        resolvedProps.readonly
+      : derivedState.value.readonly);
+
+  const extraClasses: unknown[] = [];
+  if (attrs.class) extraClasses.push(attrs.class);
+  if (customClassName) extraClasses.push(customClassName);
+  if (innerSchema.props?.hidden) extraClasses.push('aigen-hidden');
+  if (resolvedReadonly) extraClasses.push('aigen-readonly');
+
   return {
     ...props,
     ...attrs,
-    ...innerSchema.props,
+    ...resolvedProps,
+    ...(extraClasses.length > 0 ? { class: extraClasses } : {}),
     bindModel,
     disabled:
       fieldStateType.value !== 'WRITE' &&
       (derivedState.value?.disabled === undefined
         ? fieldStateType.value === 'DISABLED' ||
           disabled.value ||
-          innerSchema.props?.disabled
+          resolvedProps.disabled
         : derivedState.value.disabled),
     hidden: !show.value,
-    readonly:
-      fieldStateType.value !== 'WRITE' &&
-      (derivedState.value?.readonly === undefined
-        ? fieldStateType.value === 'READ' ||
-          readonly.value ||
-          innerSchema.props?.readonly
-        : derivedState.value.readonly),
+    readonly: resolvedReadonly,
     ...(derivedState.value?.options === undefined
       ? {}
       : { options: derivedState.value.options }),
@@ -665,10 +719,6 @@ onBeforeUnmount(handleVnodeUnmounted);
       v-model:[getProps.bindModel]="innerValue"
       :model="formData"
       @check="handleCheck"
-      :class="{
-        'aigen-hidden': innerSchema.props?.hidden,
-        'aigen-readonly': getProps.readonly,
-      }"
       @vue:mounted="handleAddComponentInstance"
     >
       <!-- 嵌套组件递归 start -->

@@ -1,5 +1,12 @@
 ## 1.1.14（2026-11-25）
 
+### ✨ Feat（属性面板深度重构，对标 TinyEngine）
+
+- **手风琴分组与顶部快捷筛选**：新增 `AttributeGroup` 可折叠分组容器；`attribute.vue` 顶部新增紧凑关键词筛选框（支持按属性名/字段路径过滤并实时统计命中数）及「基础信息 / 外观与布局 / 校验与限制 / 插槽信息 / 其他」结构化分组。
+- **变量 / 表达式绑定（`JSExpression`）**：新增 `JSExpressionBinding` 类型与 `VariableBindModal` 绑定弹窗（支持 `formData`、`funcs`、常用表达式片段与 Monaco 代码编辑）；属性项新增 `>_` 绑定按钮、绑定态蓝色胶囊与字段说明气泡；`node.vue` 运行时安全求值 `JSExpression` 绑定属性。
+- **通用「其他」节点元信息与代码弹窗**：新增 `OtherAttrSection`（支持编辑 `元素 ID`、`样式类 className`、`ref 引用`）与 `AigenCodeModal`；`node.vue` 将 `className` 安全合并至渲染根节点 `class`，避免覆盖组件库原生类名。
+- **专用可视化配置器与高频组件元数据完善**：新增 `AigenIconPicker`（44 个内置图标检索选择）与 `AigenRowPresetEditor`（3×3 栅格分栏预设并保留已有列子组件），并为 26 个高频组件及基础 DOM 原语补全 `group`、`description` 与 `bindable` 元数据。
+
 ### ✨ Feat（画布基础 DOM/HTML 原语与双向插槽机制，对标 TinyEngine）
 
 - **新增跨 UI 库内置基础 DOM / HTML 原语（`@aigen-designer/panel-ui` `Builtin`）**：

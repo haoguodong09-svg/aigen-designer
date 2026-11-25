@@ -62,7 +62,17 @@ export default {
         type: 'number',
       },
       {
+        bindable: false,
+        description: '快速切换常用栅格分栏比例预设',
         field: 'children',
+        group: '基础信息',
+        label: '分栏预设',
+        type: 'AigenRowPresetEditor',
+      },
+      {
+        bindable: false,
+        field: 'children',
+        group: '基础信息',
         label: '列编辑',
         layout: 'vertical',
         type: 'AigenColEditor',

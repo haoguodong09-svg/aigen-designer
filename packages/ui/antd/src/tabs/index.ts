@@ -5,7 +5,9 @@ export default {
   config: {
     attribute: [
       {
+        description: '设置页签导航栏在容器中的停靠方位',
         field: 'props.tabPosition',
+        group: '外观与布局',
         label: '页签位置',
         props: {
           allowClear: true,
@@ -31,23 +33,31 @@ export default {
         type: 'select',
       },
       {
+        description: '切换页签时是否启用滑动过渡动画',
         field: 'props.animated',
+        group: '外观与布局',
         label: '切换动画',
         type: 'switch',
       },
       {
+        description: '相邻页签头部之间的间距大小（px）',
         field: 'props.tabBarGutter',
+        group: '外观与布局',
         label: '标签间隙',
         type: 'number',
       },
       {
+        description: '新增、删除、排序或编辑标签页的页签项',
         field: 'children',
+        group: '基础信息',
         label: '页签管理',
         layout: 'vertical',
         type: 'AigenTabPaneEditor',
       },
       {
+        description: '设置页签导航栏的尺寸大小',
         field: 'props.size',
+        group: '外观与布局',
         label: '尺寸',
         props: {
           allowClear: true,
@@ -69,7 +79,9 @@ export default {
         type: 'select',
       },
       {
+        description: '是否在页面渲染时隐藏整个标签页容器',
         field: 'props.hidden',
+        group: '校验与限制',
         label: '隐藏',
         type: 'switch',
       },

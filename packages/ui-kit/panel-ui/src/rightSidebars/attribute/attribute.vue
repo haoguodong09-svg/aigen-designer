@@ -1,17 +1,20 @@
 <script lang="ts" setup>
-import type { SlotConfigModel } from '@aigen-designer/types';
+import type { ComponentSchema, SlotConfigModel } from '@aigen-designer/types';
 
-import { computed, watchEffect } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 
 import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
 import { useDesignerContext, useTableMeta } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { useClipboard } from '@vueuse/core';
 
+import AttributeGroup from './modules/AttributeGroup.vue';
 import AigenAttributeItem from './modules/attributeItem.vue';
+import OtherAttrSection from './modules/OtherAttrSection.vue';
 
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
+const searchKeyword = ref('');
 
 const { copied, copy } = useClipboard();
 watchEffect(() => {
@@ -59,6 +62,36 @@ const componentAttributes = computed(() => {
   }
 
   return allAttributes;
+});
+
+/**
+ * 按关键字过滤并按 group 分组归类（默认归入 '基础信息'）
+ */
+const groupedAttributes = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase();
+  const filtered = kw
+    ? componentAttributes.value.filter((item) => {
+        const label = (item.label ?? '').toLowerCase();
+        const field = (item.field ?? '').toLowerCase();
+        return label.includes(kw) || field.includes(kw);
+      })
+    : componentAttributes.value;
+
+  const groupMap = new Map<string, ComponentSchema[]>();
+  for (const item of filtered) {
+    const groupTitle = item.group || '基础信息';
+    const list = groupMap.get(groupTitle);
+    if (list) {
+      list.push(item);
+    } else {
+      groupMap.set(groupTitle, [item]);
+    }
+  }
+
+  return Array.from(groupMap.entries()).map(([title, items]) => ({
+    title,
+    items,
+  }));
 });
 
 // 获取组件声明的具名插槽配置
@@ -112,12 +145,13 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
 </script>
 <template>
   <div :key="selectedNode?.id" class="aigen-attribute-view">
-    <!-- 组件id展示 start -->
+    <!-- 顶部节点ID复制 + 快捷属性筛选 start -->
     <div
-      class="aigen-attr-item mb-2 mt-2 flex h-8 cursor-pointer items-center px-4"
+      class="aigen-attr-item mb-1 mt-2 flex h-8 cursor-pointer items-center px-3"
     >
       <div
         class="bg-$aigen-secondary rounded-1 h-full flex-1 px-2 leading-8"
+        title="点击复制节点 ID"
         @click="copy(designer.state.selectedNode?.id ?? '')"
       >
         <AigenIcon
@@ -129,11 +163,30 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
         {{ designer.state.selectedNode?.id }}
       </div>
     </div>
-    <!-- 组件id展示 end -->
+    <div class="aigen-attr-search-bar">
+      <AigenIcon
+        name="icon--aigen--search-rounded"
+        class="text-13px shrink-0 opacity-60"
+      />
+      <input
+        v-model="searchKeyword"
+        type="text"
+        class="aigen-attr-search-input"
+        placeholder="筛选属性名称或字段..."
+      />
+      <AigenIcon
+        v-if="searchKeyword"
+        name="icon--aigen--minus-rounded"
+        class="aigen-attr-search-clear"
+        title="清空筛选"
+        @click="searchKeyword = ''"
+      />
+    </div>
+    <!-- 顶部节点ID复制 + 快捷属性筛选 end -->
     <!-- 数据表 start -->
     <div
       v-if="tableMeta?.tableRemark && designer.state.selectedNode?.input"
-      class="aigen-attr-item mb-2 flex h-8 cursor-pointer items-center px-4"
+      class="aigen-attr-item mb-2 flex h-8 cursor-pointer items-center px-3"
     >
       <div class="aigen-attr-label">数据表</div>
       <div class="bg-$aigen-secondary rounded-1 h-full flex-1 px-2 leading-8">
@@ -141,12 +194,24 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
       </div>
     </div>
     <!-- 数据表 end -->
-    <div v-for="item in componentAttributes" :key="item.field">
-      <AigenAttributeItem :schema="item" />
-    </div>
+    <AttributeGroup
+      v-for="grp in groupedAttributes"
+      :key="grp.title"
+      :title="grp.title"
+      :count="grp.items.length"
+    >
+      <AigenAttributeItem
+        v-for="item in grp.items"
+        :key="item.field || item.label"
+        :schema="item"
+      />
+    </AttributeGroup>
     <!-- 插槽信息 start -->
-    <div v-if="hasSlotConfigs" class="aigen-attr-slots">
-      <div class="aigen-attr-slots-title">插槽信息</div>
+    <AttributeGroup
+      v-if="hasSlotConfigs && !searchKeyword.trim()"
+      title="插槽信息"
+      :count="Object.keys(slotConfigs).length"
+    >
       <div
         v-for="(slotConfig, slotKey) in slotConfigs"
         :key="slotKey"
@@ -171,23 +236,8 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
           />
         </div>
       </div>
-    </div>
+    </AttributeGroup>
     <!-- 插槽信息 end -->
+    <OtherAttrSection v-if="!searchKeyword.trim()" />
   </div>
 </template>
-<style scoped lang="less">
-.aigen-attr-slots {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--aigen-border);
-}
-
-.aigen-attr-slots-title {
-  padding: 0 16px;
-  margin-bottom: 8px;
-  font-size: var(--aigen-text-sm);
-  font-weight: 500;
-  line-height: 24px;
-  color: var(--aigen-text-secondary);
-}
-</style>

@@ -5,12 +5,16 @@ export default {
   config: {
     attribute: [
       {
+        description: '卡片顶部展示的标题文本',
         field: 'label',
+        group: '基础信息',
         label: '标题',
         type: 'input',
       },
       {
+        description: '是否在页面渲染时隐藏该卡片',
         field: 'props.hidden',
+        group: '校验与限制',
         label: '隐藏',
         type: 'switch',
       },

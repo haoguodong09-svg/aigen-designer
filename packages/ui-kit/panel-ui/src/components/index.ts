@@ -62,6 +62,18 @@ export function setupComponent(pluginManager: PluginManager): void {
     'AigenOptionsEditor',
     async () => await import('./AigenOptionsEditor/index.vue'),
   );
+  pluginManager.component.add(
+    'AigenCodeModal',
+    async () => await import('./AigenCodeModal/index.vue'),
+  );
+  pluginManager.component.add(
+    'AigenIconPicker',
+    async () => await import('./AigenIconPicker/index.vue'),
+  );
+  pluginManager.component.add(
+    'AigenRowPresetEditor',
+    async () => await import('./AigenRowPresetEditor/index.vue'),
+  );
 
   pluginManager.component.add('AigenNode', AigenNode);
 

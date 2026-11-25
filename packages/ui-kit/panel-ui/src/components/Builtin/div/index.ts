@@ -7,7 +7,9 @@ export default {
   config: {
     attribute: [
       {
+        description: '指定容器渲染使用的语义化 HTML 块级标签',
         field: 'props.tag',
+        group: '基础信息',
         label: 'HTML标签',
         props: {
           options: createSelectOptions([

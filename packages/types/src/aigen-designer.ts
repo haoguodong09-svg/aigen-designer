@@ -180,9 +180,16 @@ export interface RenderCallbackParams {
   values: Record<string, any>;
 }
 
+export interface JSExpressionBinding {
+  type: 'JSExpression';
+  value: string;
+}
+
 export interface ComponentSchema {
   // 其他未明确指定的属性（第一期由 any 收紧为 unknown，第二期计划改为泛型 ComponentSchema<TProps>）
   [fieldName: string]: unknown;
+  // 是否允许属性面板右侧进行变量/表达式绑定（属性配置项用），默认 true
+  bindable?: boolean;
   // 子节点列表，可选
   children?: ComponentSchema[];
   // 兼容旧版的组件属性别名，已弃用，请使用 props 代替
@@ -193,6 +200,8 @@ export interface ComponentSchema {
   editData?: object;
   // 节点字段，可选
   field?: string;
+  // 属性配置项所属分组名（属性面板用，默认 '基础信息'）
+  group?: string;
   // 节点ID，可选
   id?: string;
   // 是否为表单输入组件，可选

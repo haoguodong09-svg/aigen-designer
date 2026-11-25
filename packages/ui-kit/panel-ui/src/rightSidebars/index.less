@@ -1,26 +1,127 @@
 // 属性编辑
 .aigen-attribute-view,
 .aigen-style-view {
-  padding: 4px 0;
+  padding: 4px 0 16px;
+
+  .aigen-attr-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 12px 8px;
+    padding: 0 8px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--aigen-border);
+    background: var(--aigen-secondary, rgba(0, 0, 0, 0.03));
+    transition: border-color 0.15s ease;
+
+    &:focus-within {
+      border-color: var(--aigen-primary);
+    }
+
+    .aigen-attr-search-input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 12px;
+      color: var(--aigen-text-main);
+    }
+
+    .aigen-attr-search-clear {
+      cursor: pointer;
+      color: var(--aigen-muted-foreground, #94a3b8);
+      font-size: 13px;
+      &:hover {
+        color: var(--aigen-text-main);
+      }
+    }
+  }
+
+  .aigen-attr-group {
+    border-top: 1px solid var(--aigen-border);
+
+    &:first-of-type {
+      border-top: 0;
+    }
+
+    .aigen-attr-group__header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      color: var(--aigen-text-main);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+
+      &:hover {
+        background: var(--aigen-secondary, rgba(0, 0, 0, 0.03));
+      }
+    }
+
+    .aigen-attr-group__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .aigen-attr-group__arrow {
+      font-size: 11px;
+      color: var(--aigen-muted-foreground, #64748b);
+      transition: transform 0.15s ease;
+
+      &.is-expanded {
+        transform: rotate(90deg);
+      }
+    }
+
+    .aigen-attr-group__count {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--aigen-muted-foreground, #94a3b8);
+    }
+
+    .aigen-attr-group__body {
+      padding: 4px 0 8px;
+    }
+  }
 
   .aigen-attr-item {
     display: flex;
-    margin-bottom: 12px;
-    padding: 0 16px;
+    margin-bottom: 10px;
+    padding: 0 12px;
+    gap: 6px;
 
     &.vertical {
       display: block;
+
+      .aigen-attr-label {
+        width: 100%;
+        margin-bottom: 4px;
+      }
     }
 
     .aigen-attr-label {
-      width: 80px;
-      min-width: 80px;
+      width: 78px;
+      min-width: 78px;
       flex-shrink: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       font-size: var(--aigen-text-md);
       line-height: 32px;
+
+      .aigen-attr-label-trigger {
+        cursor: help;
+        border-bottom: 1px dashed var(--aigen-border);
+        padding-bottom: 1px;
+      }
     }
 
     .aigen-attr-input {
@@ -28,6 +129,69 @@
       min-width: 0;
       display: flex;
       align-items: center;
+      gap: 4px;
+
+      .aigen-attr-control {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    .aigen-attr-bind-btn {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--aigen-muted-foreground, #94a3b8);
+      font-size: 12px;
+
+      &:hover {
+        color: var(--aigen-primary);
+        background: var(--aigen-secondary, rgba(0, 0, 0, 0.04));
+      }
+
+      &.is-bound {
+        color: var(--aigen-primary);
+        background: rgba(22, 119, 255, 0.1);
+        border-color: rgba(22, 119, 255, 0.25);
+      }
+    }
+
+    .aigen-attr-bound-pill {
+      flex: 1;
+      min-width: 0;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 0 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(22, 119, 255, 0.35);
+      background: rgba(22, 119, 255, 0.08);
+      color: var(--aigen-primary, #1677ff);
+      font-size: 12px;
+      cursor: pointer;
+
+      .aigen-attr-bound-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .aigen-attr-bound-clear {
+        flex-shrink: 0;
+        opacity: 0.7;
+        &:hover {
+          opacity: 1;
+        }
+      }
     }
   }
 }

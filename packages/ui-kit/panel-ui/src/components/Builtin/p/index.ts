@@ -5,7 +5,9 @@ export default {
   config: {
     attribute: [
       {
+        description: '段落中渲染展示的纯文本内容',
         field: 'props.text',
+        group: '基础信息',
         label: '文本内容',
         type: 'textarea',
       },

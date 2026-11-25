@@ -5,7 +5,9 @@ export default {
   config: {
     attribute: [
       {
+        description: '行内标签中展示的文本内容',
         field: 'props.text',
+        group: '基础信息',
         label: '文本内容',
         type: 'input',
       },
