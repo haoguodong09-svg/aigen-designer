@@ -16,26 +16,31 @@ const selectedNode = computed(() => {
 
 const defaultStyle = [
   {
+    bindable: false,
     field: 'props.style.width',
     label: '宽度',
     type: 'AigenInputSize',
   },
   {
+    bindable: false,
     field: 'props.style.height',
     label: '高度',
     type: 'AigenInputSize',
   },
   {
+    bindable: false,
     field: 'props.style.padding',
     label: '内边距',
     type: 'AigenInputSize',
   },
   {
+    bindable: false,
     field: 'props.style.margin',
     label: '外边距',
     type: 'AigenInputSize',
   },
   {
+    bindable: false,
     field: 'props.style.backgroundColor',
     label: '背景色',
     props: {

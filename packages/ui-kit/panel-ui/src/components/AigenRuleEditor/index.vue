@@ -148,12 +148,12 @@ function handleDelete(index: number) {
       >
         <div
           v-if="componentSchema.show ? componentSchema.show() : true"
-          class="m-t-2 flex first:m-0"
+          class="m-t-2 flex items-center gap-2 first:m-0"
         >
           <div class="aigen-attr-label">
             {{ componentSchema.label }}
           </div>
-          <div class="flex-1">
+          <div class="min-w-0 flex-1">
             <AigenNode
               is-property
               v-model="requiredRule[componentSchema.model]"
