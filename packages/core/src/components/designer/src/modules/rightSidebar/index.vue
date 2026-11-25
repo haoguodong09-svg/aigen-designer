@@ -6,8 +6,6 @@ import { computed, ref, shallowRef, watch } from 'vue';
 import { AigenIcon } from '@aigen-designer/base-ui';
 import { pluginManager } from '@aigen-designer/manager';
 
-import AigenBreadcrumb from './breadcrumb.vue';
-
 const hideRightMain = ref(false);
 
 const rightSidebars = computed(() => {
@@ -68,7 +66,6 @@ function handleClick(item: RightSidebarModel, index: number) {
     <!-- 折叠按钮 end -->
 
     <div class="aigen-right-sidebar w-308px" :class="{ hide: hideRightMain }">
-      <AigenBreadcrumb />
       <ul class="aigen-actions-container">
         <li
           v-for="(item, index) in rightSidebars"
