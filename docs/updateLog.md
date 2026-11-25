@@ -51,6 +51,9 @@
 
 ### ✨ Refactor
 
+- **释放示例站点左侧导航侧边栏，迁移至顶部栏分组下拉选择**：
+  - 移除 `examples/src/layout/index.vue` 中的 `LayoutSider` 侧边菜单栏及废弃菜单组件，释放内容区域宽度全屏展示设计器与生成器；
+  - 在 `examples/src/layout/components/Header/index.vue` 顶部栏新增分组下拉选择器（`SelectOptGroup`），支持按「设计器 / 生成器」分组一键切换全部功能示例页面。
 - **优化选中浮动操作栏（Action Box）与防遮挡**：
   - 操作栏首位常驻轻量化「选择父节点」图标按钮，带悬停提示 `title="选择父节点 (Esc / Alt+↑)"`；
   - 优化边界碰撞检测与自适应上下翻转机制，防止覆盖紧邻的兄弟表单项或父级边框。

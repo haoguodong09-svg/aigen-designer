@@ -2,13 +2,20 @@
 import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+import { frameworkRoutes } from '@/router';
 import { setupAntd } from '@aigen-designer/antd';
 import { setupElementPlus } from '@aigen-designer/element-plus';
 import { useTheme } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
 import { setupNaiveUi } from '@aigen-designer/naive-ui';
 import { useStorage } from '@vueuse/core';
-import { Divider, Select, Switch } from 'ant-design-vue';
+import {
+  Divider,
+  Select,
+  SelectOptGroup,
+  SelectOption,
+  Switch,
+} from 'ant-design-vue';
 
 import 'element-plus/dist/index.css';
 import 'element-plus/theme-chalk/dark/css-vars.css';
@@ -51,6 +58,17 @@ const selectOptions = [
 ];
 const router = useRouter();
 const route = useRoute();
+
+const currentDemoName = computed({
+  get() {
+    return route.name as string;
+  },
+  set(name: string) {
+    if (name && name !== route.name) {
+      router.push({ name });
+    }
+  },
+});
 
 const selectValue = computed({
   get() {
@@ -95,14 +113,39 @@ switchUI(selectValue.value);
 </script>
 <template>
   <div class="aigen-demo-header h-64px flex items-center justify-between px-6">
-    <a
-      class="decoration-none flex items-center"
-      href="https://github.com/haoguodong09-svg/aigen-designer"
-      target="_blank"
-    >
-      <img src="@/assets/logo.png" class="w-22px h-22px" alt="" srcset="" />
-      <span class="text-16px ml-4 font-bold">AigenDesigner低代码设计器</span>
-    </a>
+    <div class="aigen-demo-header-left flex items-center">
+      <a
+        class="decoration-none flex items-center"
+        href="https://github.com/haoguodong09-svg/aigen-designer"
+        target="_blank"
+      >
+        <img src="@/assets/logo.png" class="w-22px h-22px" alt="" srcset="" />
+        <span class="text-16px ml-4 font-bold">AigenDesigner低代码设计器</span>
+      </a>
+      <Divider type="vertical" class="mx-4" />
+      <Select
+        v-model:value="currentDemoName"
+        class="w-190px"
+        size="small"
+        option-label-prop="label"
+        placeholder="选择功能示例"
+      >
+        <SelectOptGroup
+          v-for="group in frameworkRoutes"
+          :key="group.name"
+          :label="group.meta?.title"
+        >
+          <SelectOption
+            v-for="item in group.children"
+            :key="item.name"
+            :value="item.name"
+            :label="`${group.meta?.title} / ${item.meta?.title}`"
+          >
+            {{ item.meta?.title }}
+          </SelectOption>
+        </SelectOptGroup>
+      </Select>
+    </div>
 
     <div class="aigen-demo-header-right flex items-center">
       <a

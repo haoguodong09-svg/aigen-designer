@@ -15,13 +15,14 @@ body {
 
 .aigen-demo-header {
   --aigen-demo-header-bg: #fff;
-  --aigen-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03),
-    0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  --aigen-demo-header-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02),
+    0 2px 4px 0 rgba(0, 0, 0, 0.02);
   background: var(--aigen-demo-header-bg);
   box-shadow: var(--aigen-demo-header-shadow);
   z-index: 6;
 
-  > a,
+  .aigen-demo-header-left > a,
   .aigen-demo-header-right > a {
     color: var(--aigen-text-main);
   }
@@ -29,13 +30,13 @@ body {
 
 .dark .aigen-demo-header {
   --aigen-demo-header-bg: #141414;
-  --aigen-demo-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.8),
-    0 1px 6px -1px rgba(0, 0, 0, 0.7), 0 2px 4px 0 rgba(0, 0, 0, 0.7);
+  --aigen-demo-header-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.8), 0 1px 6px -1px rgba(0, 0, 0, 0.7),
+    0 2px 4px 0 rgba(0, 0, 0, 0.7);
 }
 
 /* 当前页面最大化 css */
-.main-maximize .aigen-demo-header,
-.main-maximize .ant-layout-sider {
+.main-maximize .aigen-demo-header {
   display: none !important;
 }
 
