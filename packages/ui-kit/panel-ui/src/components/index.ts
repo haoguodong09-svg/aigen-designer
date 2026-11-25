@@ -3,14 +3,18 @@ import type { PluginManager } from '@aigen-designer/manager';
 import { AigenNode } from '@aigen-designer/base-ui';
 
 import AigenField from './AigenField';
+import BuiltinA from './Builtin/a';
 import BuiltinDiv from './Builtin/div';
 import BuiltinFlexBox from './Builtin/flex-box';
+import BuiltinHeading from './Builtin/heading';
+import BuiltinHr from './Builtin/hr';
 import BuiltinIcon from './Builtin/icon';
 import BuiltinImg from './Builtin/img';
 import BuiltinP from './Builtin/p';
 import BuiltinSlot from './Builtin/slot';
 import BuiltinSpan from './Builtin/span';
 import BuiltinText from './Builtin/text';
+import BuiltinVideo from './Builtin/video';
 import MonacoEditor from './MonacoEditor';
 import Page from './Page';
 
@@ -85,8 +89,12 @@ export function setupComponent(pluginManager: PluginManager): void {
     BuiltinP,
     BuiltinSpan,
     BuiltinText,
+    BuiltinHeading,
+    BuiltinA,
+    BuiltinHr,
     BuiltinImg,
     BuiltinIcon,
+    BuiltinVideo,
     BuiltinSlot,
   ];
 
