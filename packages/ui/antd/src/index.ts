@@ -132,11 +132,13 @@ export function setupAntd(
 
   // Phase 1：扩展组件分组
   pluginManager.component.setSortedGroups([
+    '基础元素',
     '表单',
     '布局',
     '数据展示',
     '反馈',
     '导航',
+    '高级',
     '其他',
   ]);
 

@@ -33,7 +33,16 @@ export function useComponentManager() {
   // 隐藏的组件列表，存储需要隐藏的组件名称
   let hiddenComponents: string[] = [];
   // 组件分组排序列表(设置之后，按该数组下标排序)
-  let sortedGroups: string[] = ['表单', '布局'];
+  let sortedGroups: string[] = [
+    '基础元素',
+    '表单',
+    '布局',
+    '数据展示',
+    '反馈',
+    '导航',
+    '高级',
+    '其他',
+  ];
 
   // 分组重算脏标记与微任务刷新（注册批量化，性能文档 P-W4）：
   // 连续多次 registerComponent / hideComponent / showComponent / setHideComponents /
