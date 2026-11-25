@@ -581,16 +581,16 @@ defineExpose({
       <AigenIcon
         :name="
           canvasDrag.lineState.forbidden
-            ? 'icon--aigen--close-circle'
-            : 'icon--aigen--plus-circle'
+            ? 'icon--aigen--error-outline-rounded'
+            : 'icon--aigen--add-rounded'
         "
-        class="mr-1"
+        class="shrink-0 text-[15px]"
       />
       <span>
         {{
           canvasDrag.lineState.forbidden
-            ? '禁止放入自身或其后代中'
-            : `放入「${canvasDrag.lineState.componentName || '容器'}」内部末尾`
+            ? '不可放入自身或子节点内'
+            : `放入「${canvasDrag.lineState.componentName || '容器'}」内`
         }}
       </span>
     </div>
