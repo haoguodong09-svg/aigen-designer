@@ -61,6 +61,7 @@ export interface CanvasDrag {
       componentName?: string;
       isContainer: boolean;
       isInline?: boolean;
+      onlyIn?: boolean;
       schemas: ComponentSchema[];
     },
   ) => void;
@@ -90,6 +91,9 @@ export function createCanvasDrag(): CanvasDrag {
   });
 
   let smoothScrollTimer: null | number = null;
+  let smoothScrollDirection: 'down' | 'up' | null = null;
+  let smoothScrollTarget: HTMLElement | null = null;
+  let smoothScrollStep = 25;
 
   const isDragging = computed(() => dragState.isDragging);
 
@@ -125,6 +129,7 @@ export function createCanvasDrag(): CanvasDrag {
       componentName?: string;
       isContainer: boolean;
       isInline?: boolean;
+      onlyIn?: boolean;
       schemas: ComponentSchema[];
     },
   ) {
@@ -136,6 +141,7 @@ export function createCanvasDrag(): CanvasDrag {
     const result = calculatePosLine(targetRect, mousePos, {
       isContainer: options.isContainer,
       isInline: options.isInline,
+      onlyIn: options.onlyIn,
     });
 
     let forbidden = false;
@@ -174,12 +180,16 @@ export function createCanvasDrag(): CanvasDrag {
     direction: 'down' | 'up',
     step = 25,
   ) {
+    smoothScrollDirection = direction;
+    smoothScrollTarget = container;
+    smoothScrollStep = step;
     if (smoothScrollTimer !== null) return;
     smoothScrollTimer = window.setInterval(() => {
-      if (direction === 'up') {
-        container.scrollTop -= step;
+      if (!smoothScrollTarget || !smoothScrollDirection) return;
+      if (smoothScrollDirection === 'up') {
+        smoothScrollTarget.scrollTop -= smoothScrollStep;
       } else {
-        container.scrollTop += step;
+        smoothScrollTarget.scrollTop += smoothScrollStep;
       }
     }, 40);
   }
@@ -189,6 +199,8 @@ export function createCanvasDrag(): CanvasDrag {
       window.clearInterval(smoothScrollTimer);
       smoothScrollTimer = null;
     }
+    smoothScrollDirection = null;
+    smoothScrollTarget = null;
   }
 
   function endDrag() {

@@ -17,7 +17,7 @@ import {
   useStore,
 } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import { debounce } from '@aigen-designer/utils';
+import { debounce, isPointerOutsideElement } from '@aigen-designer/utils';
 import { useElementSize, useResizeObserver, watchOnce } from '@vueuse/core';
 
 import CanvasBreadcrumb from './CanvasBreadcrumb.vue';
@@ -38,25 +38,52 @@ const AigenContextMenu = pluginManager.component.get('aigenContextMenu');
 const canvasDrag = useCanvasDrag();
 
 /**
+ * 获取画布实际承担纵向滚动的容器（优先取可滚动的 .aigen-edit-range）
+ */
+function getVerticalScrollTarget(): HTMLElement | null {
+  if (!editScreenContainerRef.value) return null;
+  const editRange = editScreenContainerRef.value.querySelector(
+    '.aigen-edit-range',
+  ) as HTMLElement | null;
+  if (editRange && editRange.scrollHeight > editRange.clientHeight) {
+    return editRange;
+  }
+  if (
+    editScreenContainerRef.value.scrollHeight >
+    editScreenContainerRef.value.clientHeight
+  ) {
+    return editScreenContainerRef.value;
+  }
+  return editRange || editScreenContainerRef.value;
+}
+
+/**
  * 拖拽边缘自适应平滑滚动（对标 TinyEngine smoothScroll）
  */
 function handleContainerDragOver(event: DragEvent) {
-  if (!canvasDrag.isDragging.value || !editScreenContainerRef.value) return;
-  const rect = editScreenContainerRef.value.getBoundingClientRect();
+  if (!canvasDrag.isDragging.value) return;
+  const scrollTarget = getVerticalScrollTarget();
+  if (!scrollTarget) return;
+
+  const rect = scrollTarget.getBoundingClientRect();
   const y = event.clientY - rect.top;
   const threshold = 40;
 
-  if (y < threshold) {
-    canvasDrag.startSmoothScroll(editScreenContainerRef.value, 'up', 25);
-  } else if (rect.height - y < threshold) {
-    canvasDrag.startSmoothScroll(editScreenContainerRef.value, 'down', 25);
+  if (y >= 0 && y < threshold) {
+    canvasDrag.startSmoothScroll(scrollTarget, 'up', 25);
+  } else if (y <= rect.height && rect.height - y < threshold) {
+    canvasDrag.startSmoothScroll(scrollTarget, 'down', 25);
   } else {
     canvasDrag.stopSmoothScroll();
   }
 }
 
-function handleContainerDragLeave() {
-  canvasDrag.stopSmoothScroll();
+function handleContainerDragLeave(event: DragEvent) {
+  if (!editScreenContainerRef.value) return;
+  if (isPointerOutsideElement(editScreenContainerRef.value, event)) {
+    canvasDrag.stopSmoothScroll();
+    canvasDrag.clearDragOver();
+  }
 }
 
 const draggableComputed = computed(() => {

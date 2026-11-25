@@ -9,6 +9,20 @@ import { findSchemaById, findSchemaInfoById } from './data';
 import { isAncestor, POSITION } from './dragCollision';
 
 /**
+ * 安全查找节点信息（将 findSchemaInfoById 未找到抛错转为返回 null）
+ */
+function safeFindSchemaInfoById(
+  schemas: ComponentSchema[],
+  id: string,
+): null | ReturnType<typeof findSchemaInfoById> {
+  try {
+    return findSchemaInfoById(schemas, id);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 根据 ID 查找并从 Schema 树中移除指定节点
  * @param schemas 根 Schema 列表
  * @param id 要移除的节点 ID
@@ -19,7 +33,7 @@ export function removeSchemaById(
   id: string,
 ): ComponentSchema | null {
   if (!id) return null;
-  const info = findSchemaInfoById(schemas, id);
+  const info = safeFindSchemaInfoById(schemas, id);
   if (!info || info.index === -1) return null;
 
   const [removed] = info.list.splice(info.index, 1);
@@ -55,10 +69,18 @@ export function insertSchema(
   }
 
   // 2. 插入到目标节点同级的前后位置
-  const targetInfo = findSchemaInfoById(schemas, targetId);
+  const targetInfo = safeFindSchemaInfoById(schemas, targetId);
   if (!targetInfo || targetInfo.index === -1) return false;
 
-  const { index, list } = targetInfo;
+  const { index, schema: targetSchema, list } = targetInfo;
+
+  // 禁止在根页面节点 ('root' / 'page') 同级插入兄弟节点，保证单根页面结构不被破坏
+  if (
+    list === schemas &&
+    (targetId === 'root' || targetSchema?.type === 'page')
+  ) {
+    return false;
+  }
 
   if (position === POSITION.TOP || position === POSITION.LEFT) {
     list.splice(index, 0, nodeToInsert);
@@ -85,21 +107,26 @@ export function moveSchema(
   position: PositionType,
 ): boolean {
   if (!sourceId || !targetId || sourceId === targetId) return false;
+  if (sourceId === 'root') return false;
 
   // 1. 严格防环死锁拦截：祖先节点不可移入自身后代
   if (isAncestor(schemas, sourceId, targetId)) {
     return false;
   }
 
-  // 2. 从原位置移除
-  const removedNode = removeSchemaById(schemas, sourceId);
+  // 2. 先定位原父容器与索引，便于插入失败时精准原地回滚
+  const sourceInfo = safeFindSchemaInfoById(schemas, sourceId);
+  if (!sourceInfo || sourceInfo.index === -1) return false;
+
+  const { index: originIndex, list: originList } = sourceInfo;
+  const [removedNode] = originList.splice(originIndex, 1);
   if (!removedNode) return false;
 
   // 3. 插入到新位置
   const success = insertSchema(schemas, targetId, removedNode, position);
   if (!success) {
-    // 插入失败时回滚（安全回退，避免丢失数据）
-    schemas.push(removedNode);
+    // 插入失败时精准还原回原父容器的原索引位置，避免污染根数组
+    originList.splice(originIndex, 0, removedNode);
     return false;
   }
 

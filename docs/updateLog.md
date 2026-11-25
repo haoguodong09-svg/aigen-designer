@@ -1,7 +1,15 @@
-## 1.1.14（2026-11-24）
+## 1.1.14（2026-11-25）
 
-### 🐛 Bug Fixes（多层级嵌套容器拖拽与画布交互修复）
+### 🐛 Bug Fixes（五向落点、几何碰撞引擎深度完善与画布底部拖放修复）
 
+- **修复画布已有元素时向底部区域拖拽渲染不上的问题**：
+  - 修复 `index.less` 中 `.aigen-edit-range > :first-child` 被 `dynamicFormItem.vue` 根节点 `.aigen-form-item-wrap` (`display: contents`) 阻断导致根 `.aigen-draggable-range` 无法铺满画布高度的问题，确保空白下半区与溢出滚动后底部区域始终可命中放置；
+  - 新增 `dragDropHelper.ts`，为 `.aigen-edit-range` 外框内边距及底部外沿补充 `dragover` / `drop` 兜底接管，指针处于画布底部边缘依然精准追加至画布末尾。
+- **修复空容器边缘逃逸、边缘平滑滚动与异常回滚隐患**：
+  - `calculatePosLine` 与 `useCanvasDrag` 新增 `onlyIn` 模式，空 `Col` / `TabPane` / `Card` / `root` 边缘不再因 1/3 阈值触发 `TOP`/`BOTTOM` 而逃逸至父级容器；
+  - `schemaOperations.ts` 补齐缺失节点安全兜底（`safeFindSchemaInfoById`）、禁止 `root` 根节点同级插入兄弟节点，并修复 `moveSchema` 失败时精确回滚回原父容器原索引；
+  - `editScreenContainer.vue` 修复 `smoothScroll` 滚动目标切换至实际承担纵向滚动的 `.aigen-edit-range`，支持运行中动态切换上下滚动方向；
+  - 通过共享 `isPointerOutsideElement` 精确处理 `dragleave`，鼠标移出画布即刻清理落点指示线，同时将 `.aigen-node-item.aigen-inline` 改为 `display: inline-block` 对齐行内左右竖向指示线高度。
 - **修复物料库点击添加卡顿与动画延迟（问题 1）**：
   - 移除 `nodes.vue` 中产生 250ms 渲染延迟及强制额外包裹 div 的 `<TransitionGroup>`，点击左侧物料 < 15ms 瞬时渲染上画布并自动选中属性面板，消除卡顿。
 - **修复多层级嵌套容器（栅格 Row/Col、标签页 Tabs/TabPane）拖拽落点逃逸（问题 3、问题 4）**：
@@ -23,7 +31,6 @@
   - **严格防环死锁检测（`isAncestor`）**：递归遍历 Schema 树，严禁祖先容器拖入自身子孙分支，命中时立即呈现红色禁止落点（forbidden）与禁用光标，从源头杜绝破坏 JSON Tree；
   - **独立虚拟落点指示层（`aigen-drop-indicator`）**：在 `previewWidgets.vue` 浮层中实时渲染高颜值五向蓝色高亮线与容器半透明蒙层徽章；
   - **视口边缘自适应平滑滚动（`smoothScroll`）**：拖拽至画布上下边缘 40px 区域时自动平滑滚动画布容器，页面超长时顺畅放置；
-  - **FLIP 平滑过渡动画**：重排后基于 Vue 原生 `<TransitionGroup name="aigen-node-list">` 触发硬件加速平滑位移动画；
   - **物料栏解耦重构**：左侧组件库物料项采用统一拖拽调度器，与画布拖拽状态机无缝协同，支持撤销/重做（Revoke）。
 
 ### ✨ Feat（画布层级选择体验对标 TinyEngine 深度重构）

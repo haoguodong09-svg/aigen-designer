@@ -12,9 +12,14 @@
     cursor: pointer;
     background-color: var(--aigen-designer-background);
 
-    & > :first-child {
+    // 兼容 dynamicFormItem.vue 根节点的 .aigen-form-item-wrap (display: contents)，
+    // 确保根页面容器及根 .aigen-draggable-range 铺满画布并随内容自适应撑高
+    & > .aigen-form-item-wrap > :first-child,
+    & > :first-child:not(.aigen-form-item-wrap) {
       min-height: 100%;
       display: flex;
+      flex-direction: column;
+      width: 100%;
 
       > .aigen-draggable-range {
         flex: 1;
@@ -200,7 +205,7 @@
 }
 
 // 画布交互演练模式：移除节点级透明点击遮罩，让组件接收真实点击/输入事件；
-// 拖拽同时由 VueDraggable 的 disabled 关闭，避免与组件交互冲突。
+// 拖拽同时由 nodes.vue 的 interactiveMode 关闭，避免与组件交互冲突。
 .aigen-draggable-range.aigen-interactive-mode {
   .aigen-node-leaf::before {
     content: none;
@@ -216,7 +221,8 @@
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
   &.aigen-inline {
-    display: inline;
+    display: inline-block;
+    vertical-align: top;
   }
 }
 

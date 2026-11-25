@@ -72,7 +72,7 @@ function handleClick(schema: ComponentSchema) {
     index = checkedSchema.children.length - 1;
   }
 
-  const newSchema = generateNewSchema(schema);
+  const newSchema = generateNewSchema(schema, pageSchema.schemas);
 
   list.splice(index + 1, 0, newSchema);
   designer.setSelectedNode(newSchema);

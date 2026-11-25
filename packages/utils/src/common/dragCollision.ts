@@ -39,8 +39,16 @@ export function calculatePosLine(
   options: {
     isContainer: boolean;
     isInline?: boolean;
+    onlyIn?: boolean;
   },
 ): PosLineResult {
+  if (options.onlyIn) {
+    return {
+      forbidden: false,
+      type: POSITION.IN,
+    };
+  }
+
   const lineAbs = 20;
   // 阈值自适应收敛：高度或宽度的三分之一，最高不超过 20px
   const yAbs = Math.min(lineAbs, rect.height / 3);
@@ -137,4 +145,28 @@ export function isAncestor(
   }
 
   return false;
+}
+
+/**
+ * 判断拖拽指针是否真正离开目标元素（排除内部子元素间切换导致的 dragleave 冒泡）
+ */
+export function isPointerOutsideElement(
+  el: HTMLElement,
+  event: {
+    clientX: number;
+    clientY: number;
+    relatedTarget: EventTarget | null;
+  },
+): boolean {
+  const related = event.relatedTarget as Node | null;
+  if (related) {
+    return !el.contains(related);
+  }
+  const rect = el.getBoundingClientRect();
+  return (
+    event.clientX <= rect.left ||
+    event.clientX >= rect.right ||
+    event.clientY <= rect.top ||
+    event.clientY >= rect.bottom
+  );
 }

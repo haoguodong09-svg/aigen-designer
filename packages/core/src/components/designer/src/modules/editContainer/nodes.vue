@@ -11,13 +11,13 @@ import {
   usePageManager,
 } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
-import {
-  findSchemaById,
-  generateNewSchema,
-  insertSchema,
-  moveSchema,
-} from '@aigen-designer/utils';
+import { findSchemaById } from '@aigen-designer/utils';
 
+import {
+  commitCanvasDrop,
+  isSchemaInline,
+  updateContainerFallbackDragOver,
+} from './dragDropHelper';
 import EventBadge from './EventBadge.vue';
 import AigenNodeItem from './nodeItem.vue';
 
@@ -35,7 +35,6 @@ const props = withDefaults(
 );
 const emit = defineEmits(['update:schemas']);
 const designer = useDesignerContext();
-const revoke = designer.revoke;
 const pageManager = usePageManager();
 const linkMode = useLinkMode();
 const canvasDrag = useCanvasDrag();
@@ -128,7 +127,7 @@ function handleDragOver(event: DragEvent) {
     if (!targetSchema) return;
 
     const config = pluginManager.component.getConfigByType(targetSchema.type);
-    const isInlineNode = isInline(targetSchema);
+    const isInlineNode = isSchemaInline(targetSchema);
     const rect = childItemEl.getBoundingClientRect();
 
     // 检查此子节点是否本身是一个可放置容器（例如卡片、栅格列等，但排除 childImmovable 的 row/tabs）
@@ -180,75 +179,14 @@ function handleDragOver(event: DragEvent) {
     );
     if (!containerSchema) return;
 
-    const config = pluginManager.component.getConfigByType(
-      containerSchema.type,
-    );
-    const rect = (
-      containerEl || (event.currentTarget as HTMLElement)
-    ).getBoundingClientRect();
-
-    // 对标 TinyEngine：若当前容器已有子节点，以最后一个子节点为参照物进行底部放置
-    const children = containerSchema.children || [];
-    if (children.length > 0) {
-      const lastChild = children[children.length - 1];
-      if (lastChild?.id) {
-        const lastChildEl = containerEl?.querySelector(
-          `[data-aigen-id="${lastChild.id}"]`,
-        ) as HTMLElement | null;
-        if (lastChildEl) {
-          const lastRect = lastChildEl.getBoundingClientRect();
-          const lastConfig = pluginManager.component.getConfigByType(
-            lastChild.type,
-          );
-          canvasDrag.updateDragOver(
-            lastChild.id,
-            {
-              bottom: lastRect.bottom,
-              height: lastRect.height,
-              left: lastRect.left,
-              right: lastRect.right,
-              top: lastRect.top,
-              width: lastRect.width,
-            },
-            { x: event.clientX, y: event.clientY },
-            {
-              componentName:
-                lastConfig?.defaultSchema?.label ||
-                lastChild.label ||
-                lastChild.type,
-              isContainer: false,
-              isInline: isInline(lastChild),
-              schemas: designer.pageSchema.schemas,
-            },
-          );
-          return;
-        }
-      }
-    }
-
-    // 若当前容器为空（例如空的 Col、空的 TabPane、空的 Card、空的 Form）：
-    // 直接进入容器穿透放置 (POSITION.IN)
-    canvasDrag.updateDragOver(
-      containerId,
-      {
-        bottom: rect.bottom,
-        height: rect.height,
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        width: rect.width,
-      },
-      { x: event.clientX, y: event.clientY },
-      {
-        componentName:
-          config?.defaultSchema?.label ||
-          containerSchema.label ||
-          containerSchema.type,
-        isContainer: true,
-        isInline: false,
-        schemas: designer.pageSchema.schemas,
-      },
-    );
+    updateContainerFallbackDragOver({
+      canvasDrag,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      containerEl: containerEl || (event.currentTarget as HTMLElement),
+      containerSchema,
+      pageSchemas: designer.pageSchema.schemas,
+    });
   }
 }
 
@@ -258,41 +196,7 @@ function handleDragOver(event: DragEvent) {
 function handleDrop(event: DragEvent) {
   event.preventDefault();
   event.stopPropagation();
-
-  const { dragData, dragType, lineState } = canvasDrag.endDrag();
-  if (
-    !dragData ||
-    !lineState.id ||
-    !lineState.position ||
-    lineState.forbidden
-  ) {
-    return;
-  }
-
-  if (dragType === 'new') {
-    const newSchema = generateNewSchema(dragData);
-    const success = insertSchema(
-      designer.pageSchema.schemas,
-      lineState.id,
-      newSchema,
-      lineState.position,
-    );
-    if (success) {
-      designer.setSelectedNode(newSchema);
-      revoke.push('插入组件', true);
-    }
-  } else if (dragType === 'move' && dragData.id) {
-    const success = moveSchema(
-      designer.pageSchema.schemas,
-      dragData.id,
-      lineState.id,
-      lineState.position,
-    );
-    if (success) {
-      designer.setSelectedNode(dragData);
-      revoke.push('移动组件', true);
-    }
-  }
+  commitCanvasDrop(canvasDrag, designer);
 }
 
 /**
@@ -345,11 +249,6 @@ function setHoverNode(event: Event) {
   const schema = getNodeSchema(event.target as HTMLElement | null);
   event.stopPropagation();
   designer.setHoverNode(schema);
-}
-
-function isInline(schema: ComponentSchema) {
-  const config = pluginManager.component.getComponentConfigByType(schema.type);
-  return config?.editConstraints?.inline || false;
 }
 
 // 关联模式画布点选：nodes.vue 为递归组件，模块级计数保证 document 委托监听只注册一次
@@ -408,7 +307,7 @@ onUnmounted(() => {
       :key="element.id"
       class="aigen-node-item"
       :class="{
-        'aigen-inline': isInline(element),
+        'aigen-inline': isSchemaInline(element),
         'is-dragging-source': canvasDrag.dragState.dragData?.id === element.id,
         'aigen-node--link-source': linkMode.source.value?.id === element.id,
         'aigen-node--link-target': linkMode.target.value?.id === element.id,

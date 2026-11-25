@@ -3,9 +3,22 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 
-import { useDesignerContext, useLinkMode } from '@aigen-designer/hooks';
-import { findSchemaById, findSchemaInfoById } from '@aigen-designer/utils';
+import {
+  useCanvasDrag,
+  useDesignerContext,
+  useLinkMode,
+  usePageManager,
+} from '@aigen-designer/hooks';
+import {
+  findSchemaById,
+  findSchemaInfoById,
+  isPointerOutsideElement,
+} from '@aigen-designer/utils';
 
+import {
+  commitCanvasDrop,
+  updateContainerFallbackDragOver,
+} from './dragDropHelper';
 import AigenEditScreenContainer from './editScreenContainer.vue';
 import AigenNodeItem from './nodeItem.vue';
 import AigenPreviewWidgets from './previewWidgets.vue';
@@ -16,7 +29,9 @@ const aigenPreviewWidgetsRef = ref<null | typeof AigenPreviewWidgets>(null);
 
 const designer = useDesignerContext();
 const { pageSchema, props, setSelectedNode } = designer;
+const pageManager = usePageManager();
 const linkMode = useLinkMode();
+const canvasDrag = useCanvasDrag();
 const contextMenu = inject('contextMenu', {
   close: () => {},
   open: (_event: Event, _schema: ComponentSchema) => {},
@@ -44,12 +59,63 @@ function setSelectedNodeById(aigenId: string | undefined) {
 }
 
 /**
- * 关联模式激活期间禁止画布拖拽（防御守卫；拖拽本体已在 nodes.vue 通过
- * VueDraggable :disabled 禁用，此处兜底阻止 dragstart 冒泡）
+ * 关联模式激活期间禁止画布拖拽（防御守卫；拖拽本体已在 nodes.vue 禁用，此处兜底阻止 dragstart 冒泡）
  */
 function handleRangeDragStart(event: DragEvent) {
   if (linkMode.isActive.value) {
     event.preventDefault();
+  }
+}
+
+/**
+ * 画布外框兜底 dragover：当指针落在 .aigen-edit-range 内边距或底部空白外沿时
+ * 仍允许以根页面末尾子节点或根容器完成放置
+ */
+function handleRangeDragOver(event: DragEvent) {
+  if (
+    pageManager.isInteractiveMode?.value === true ||
+    linkMode.isActive.value ||
+    !canvasDrag.dragState.isDragging ||
+    !aigenEditRangeRef.value ||
+    !rootSchema.value
+  ) {
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect =
+      canvasDrag.dragState.dragType === 'new' ? 'copy' : 'move';
+  }
+  const rootDraggableRange = aigenEditRangeRef.value.querySelector(
+    '[data-container-id="root"]',
+  ) as HTMLElement | null;
+  updateContainerFallbackDragOver({
+    canvasDrag,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    containerEl: rootDraggableRange || aigenEditRangeRef.value,
+    containerSchema: rootSchema.value,
+    pageSchemas: pageSchema.schemas,
+  });
+}
+
+/**
+ * 画布外框兜底 drop：在根画布内边距或底部边缘释放时仍能正常提交放置
+ */
+function handleRangeDrop(event: DragEvent) {
+  if (!canvasDrag.dragState.isDragging) return;
+  event.preventDefault();
+  event.stopPropagation();
+  commitCanvasDrop(canvasDrag, designer);
+}
+
+/**
+ * 指针真正离开画布编辑区时清理落点指示线，防止移至侧栏后仍残留高亮线
+ */
+function handleRangeDragLeave(event: DragEvent) {
+  if (!canvasDrag.isDragging.value || !aigenEditRangeRef.value) return;
+  if (isPointerOutsideElement(aigenEditRangeRef.value, event)) {
+    canvasDrag.clearDragOver();
   }
 }
 
@@ -198,6 +264,9 @@ onUnmounted(() => {
         class="aigen-edit-range relative overflow-y-auto overflow-x-hidden rounded-md"
         :style="getEditRangestyle"
         @dragstart="handleRangeDragStart"
+        @dragover="handleRangeDragOver"
+        @drop="handleRangeDrop"
+        @dragleave="handleRangeDragLeave"
       >
         <AigenNodeItem :schema="rootSchema" />
         <AigenPreviewWidgets ref="aigenPreviewWidgetsRef" />
