@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import type { ComponentSchema, SlotConfigModel } from '@aigen-designer/types';
 
-import { computed, ref, watchEffect } from 'vue';
+import type { Ref } from 'vue';
+
+import { computed, inject, ref, watchEffect } from 'vue';
 
 import { AigenIcon, useBindModel } from '@aigen-designer/base-ui';
 import { useDesignerContext, useTableMeta } from '@aigen-designer/hooks';
@@ -15,6 +17,11 @@ import OtherAttrSection from './modules/OtherAttrSection.vue';
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
 const searchKeyword = ref('');
+const injectedExpanded = inject<null | Ref<boolean>>(
+  'aigen-attr-all-expanded',
+  null,
+);
+const allExpanded = injectedExpanded ?? ref(true);
 
 const { copied, copy } = useClipboard();
 watchEffect(() => {
@@ -199,6 +206,7 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
       :key="grp.title"
       :title="grp.title"
       :count="grp.items.length"
+      :default-expanded="allExpanded"
     >
       <AigenAttributeItem
         v-for="item in grp.items"
@@ -211,6 +219,7 @@ function handleCheckboxToggle(slotKey: string, event: Event) {
       v-if="hasSlotConfigs && !searchKeyword.trim()"
       title="插槽信息"
       :count="Object.keys(slotConfigs).length"
+      :default-expanded="allExpanded"
     >
       <div
         v-for="(slotConfig, slotKey) in slotConfigs"

@@ -9,8 +9,8 @@
     gap: 6px;
     margin: 6px 12px 8px;
     padding: 0 8px;
-    height: 28px;
-    border-radius: 6px;
+    height: 26px;
+    border-radius: 4px;
     border: 1px solid var(--aigen-border);
     background: var(--aigen-secondary, rgba(0, 0, 0, 0.03));
     transition: border-color 0.15s ease;
@@ -94,7 +94,9 @@
 
   .aigen-attr-item {
     display: flex;
-    margin-bottom: 10px;
+    align-items: center;
+    min-height: 26px;
+    margin-bottom: 8px;
     padding: 0 12px;
     gap: 6px;
 
@@ -114,8 +116,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: var(--aigen-text-md);
-      line-height: 32px;
+      font-size: 12px;
+      color: var(--aigen-text-secondary);
+      line-height: 26px;
 
       .aigen-attr-label-trigger {
         cursor: help;
@@ -127,13 +130,161 @@
     .aigen-attr-input {
       flex: 1;
       min-width: 0;
+      min-height: 26px;
       display: flex;
       align-items: center;
       gap: 4px;
 
+      // 紧凑开关样式：覆盖属性项、插槽开关及「其他 -> 隐藏组件」等所有 .aigen-attr-input 内的开关
+      .ant-switch {
+        min-width: 32px;
+        height: 18px;
+        line-height: 18px;
+        vertical-align: middle;
+
+        .ant-switch-handle {
+          width: 14px;
+          height: 14px;
+          top: 2px;
+          inset-inline-start: 2px;
+        }
+
+        &.ant-switch-checked .ant-switch-handle {
+          inset-inline-start: calc(100% - 16px);
+        }
+
+        .ant-switch-inner {
+          padding-inline-start: 18px;
+          padding-inline-end: 6px;
+          font-size: 11px;
+        }
+
+        &.ant-switch-checked .ant-switch-inner {
+          padding-inline-start: 6px;
+          padding-inline-end: 18px;
+        }
+      }
+
+      .el-switch {
+        --el-switch-height: 18px;
+        height: 18px;
+      }
+
+      .n-switch {
+        --n-rail-height: 18px;
+        --n-rail-width: 32px;
+        --n-button-width: 14px;
+        --n-button-height: 14px;
+      }
+
       .aigen-attr-control {
         flex: 1;
         min-width: 0;
+        min-height: 26px;
+        display: flex;
+        align-items: center;
+
+        // 统一属性面板内部各类填写控件尺寸，与样式面板（26px 高 / 12px 字号 / 4px 圆角）保持一致
+        .ant-input:not(textarea),
+        .ant-input-affix-wrapper,
+        .ant-input-number,
+        .ant-picker,
+        .ant-btn {
+          height: 26px;
+          min-height: 26px;
+          font-size: 12px;
+          border-radius: 4px;
+        }
+
+        .ant-input:not(textarea) {
+          padding-top: 0;
+          padding-bottom: 0;
+          line-height: 24px;
+        }
+
+        .ant-input-affix-wrapper {
+          padding-top: 0;
+          padding-bottom: 0;
+          align-items: center;
+
+          > input.ant-input {
+            height: 24px;
+            line-height: 24px;
+            font-size: 12px;
+          }
+        }
+
+        .ant-input-number {
+          width: 100%;
+
+          .ant-input-number-input {
+            height: 24px;
+            line-height: 24px;
+            font-size: 12px;
+          }
+        }
+
+        .ant-select {
+          width: 100%;
+          font-size: 12px;
+
+          &.ant-select-single .ant-select-selector {
+            height: 26px;
+            min-height: 26px;
+            border-radius: 4px;
+            font-size: 12px;
+            align-items: center;
+
+            .ant-select-selection-search-input {
+              height: 24px;
+            }
+
+            .ant-select-selection-item,
+            .ant-select-selection-placeholder {
+              line-height: 24px;
+              font-size: 12px;
+            }
+          }
+        }
+
+        .ant-radio-button-wrapper {
+          height: 26px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 8px;
+        }
+
+        textarea.ant-input {
+          font-size: 12px;
+          border-radius: 4px;
+        }
+
+        // Element Plus 适配
+        .el-input__wrapper,
+        .el-select__wrapper,
+        .el-button {
+          min-height: 26px;
+          height: 26px;
+          font-size: 12px;
+          border-radius: 4px;
+        }
+
+        // Naive UI 适配
+        .n-input:not(.n-input--textarea),
+        .n-base-selection,
+        .n-button {
+          min-height: 26px;
+          height: 26px;
+          font-size: 12px;
+          border-radius: 4px;
+        }
+
+        .n-input:not(.n-input--textarea) .n-input__input-el,
+        .n-base-selection-label {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+        }
       }
     }
 
@@ -166,7 +317,7 @@
     .aigen-attr-bound-pill {
       flex: 1;
       min-width: 0;
-      height: 28px;
+      height: 26px;
       display: inline-flex;
       align-items: center;
       justify-content: space-between;

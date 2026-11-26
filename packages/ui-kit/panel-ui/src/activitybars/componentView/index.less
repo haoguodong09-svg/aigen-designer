@@ -27,11 +27,18 @@
   }
 
   .aigen-search-box {
+    height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
     border-bottom: 1px solid var(--aigen-border);
 
-    // element 搜素框样式
-    // .el-input__wrapper {
-    //   background-color: #f7f7f7;
-    // }
+    > :deep(.ant-input-affix-wrapper),
+    > :deep(.el-input),
+    > :deep(.n-input),
+    > input,
+    > div {
+      width: 100%;
+    }
   }
 }

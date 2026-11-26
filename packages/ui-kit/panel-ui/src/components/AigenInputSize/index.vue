@@ -1,82 +1,147 @@
 <script lang="ts" setup>
-import { nextTick, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 
-import { useBindModel } from '@aigen-designer/base-ui';
-import { pluginManager } from '@aigen-designer/manager';
+import StyleSelect from '../../rightSidebars/style/modules/StyleSelect.vue';
+import { parseSizeValue } from '../../rightSidebars/style/utils/cssCodec';
 
-const props = defineProps<{
-  modelValue?: number | string;
+const props = withDefaults(
+  defineProps<{
+    modelValue?: number | string;
+    placeholder?: string;
+  }>(),
+  {
+    modelValue: undefined,
+    placeholder: '自动',
+  },
+);
+
+const emit = defineEmits<{
+  (e: 'change', value: string | undefined): void;
+  (e: 'update:modelValue', value: string | undefined): void;
 }>();
-const emit = defineEmits(['update:modelValue']);
-const Input = pluginManager.component.get('input');
-const Select = pluginManager.component.get('select');
-// 统一 v-model 属性解析：input 与 select 分别读取注册的 bindModel 声明
-const inputBindModel = useBindModel('input').bindModel;
-const selectBindModel = useBindModel('select').bindModel;
-const size = ref<null | string>(null);
+
+const UNITS = ['px', '%', 'vw', 'vh', 'em', 'rem', 'pt', 'auto'];
+
+const num = ref('');
 const unit = ref('px');
-const unitArray = [
-  { label: 'px', value: 'px' },
-  { label: '%', value: '%' },
-  { label: 'vw', value: 'vw' },
-  { label: 'vh', value: 'vh' },
-  { label: 'rem', value: 'rem' },
-  { label: 'em', value: 'em' },
-  { label: 'pt', value: 'pt' },
-];
+
 watch(
   () => props.modelValue,
-  (e) => {
-    if (!e) return;
-    // 默认传入数值时 单位默认为px
-    if (typeof e === 'number') {
-      size.value = String(e);
-      unit.value = 'px';
-      return;
+  (val) => {
+    const parsed = parseSizeValue(val, 'px');
+    num.value = parsed.num;
+    if (val !== undefined && val !== null && val !== '') {
+      unit.value = parsed.unit;
     }
-    const num = Number.parseFloat(e);
-    // 传入值为空或不正常时
-    if (Number.isNaN(num)) {
-      size.value = null;
-      return false;
-    }
-    const regex = /^(\d+(\.\d+)?)(px|%|vw|vh|rem|em|pt)$/;
-    const match = e.trim().match(regex);
-    size.value = match?.[1] ?? null;
-    unit.value = match?.[3] ?? '';
   },
-  {
-    immediate: true,
-  },
+  { immediate: true },
 );
 
-watch(
-  () => unit.value + size.value,
-  () => {
-    handleUpdate();
-  },
-);
+function emitValue(next: string | undefined) {
+  emit('update:modelValue', next);
+  emit('change', next);
+}
 
-function handleUpdate() {
-  nextTick(() =>
-    emit('update:modelValue', size.value ? size.value + unit.value : undefined),
-  );
+function handleInput(e: Event) {
+  const raw = (e.target as HTMLInputElement).value;
+  const clean = raw.trim();
+  num.value = raw;
+
+  if (!clean) {
+    emitValue(undefined);
+    return;
+  }
+  if (clean === 'auto') {
+    unit.value = 'auto';
+    emitValue('auto');
+    return;
+  }
+  const effectiveUnit = unit.value === 'auto' ? 'px' : unit.value;
+  unit.value = effectiveUnit;
+  emitValue(`${clean}${effectiveUnit}`);
+}
+
+function handleUnitChange(nextUnit: string) {
+  unit.value = nextUnit;
+  if (nextUnit === 'auto') {
+    num.value = 'auto';
+    emitValue('auto');
+    return;
+  }
+  const clean = num.value.trim();
+  if (!clean || clean === 'auto') {
+    if (clean === 'auto') {
+      num.value = '';
+    }
+    if (props.modelValue === 'auto') {
+      emitValue(undefined);
+    }
+    return;
+  }
+  emitValue(`${clean}${nextUnit}`);
 }
 </script>
+
 <template>
-  <Input
-    v-model:[inputBindModel]="size"
-    class="aigen-input-size"
-    type="number"
-    min="0"
-    placeholder="请输入"
-  >
-    <template #suffix>
-      <Select
-        v-model:[selectBindModel]="unit"
-        style="width: 60px"
-        :options="unitArray"
-      />
-    </template>
-  </Input>
+  <div class="aigen-input-size aigen-style-unit-box">
+    <input
+      type="text"
+      :value="unit === 'auto' ? 'auto' : num"
+      :placeholder="props.placeholder"
+      @input="handleInput"
+    />
+    <StyleSelect
+      variant="unit"
+      :model-value="unit"
+      :options="UNITS"
+      @change="handleUnitChange"
+    />
+  </div>
 </template>
+
+<style lang="less" scoped>
+.aigen-input-size.aigen-style-unit-box {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--aigen-border);
+  border-radius: 4px;
+  background: var(--aigen-designer-background);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+
+  &:focus-within {
+    border-color: var(--aigen-primary);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 24px;
+    line-height: 24px;
+    padding: 0 4px 0 6px;
+    margin: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: var(--aigen-text-main);
+    box-sizing: border-box;
+
+    &::placeholder {
+      color: var(--aigen-text-helper);
+    }
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+}
+</style>

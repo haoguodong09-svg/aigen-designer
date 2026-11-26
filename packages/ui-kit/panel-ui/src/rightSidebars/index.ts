@@ -9,6 +9,7 @@ import type { PluginManager } from '@aigen-designer/manager';
 export function setupRightSidebar(pluginManager: PluginManager): void {
   pluginManager.panel.registerRightSidebar({
     component: async () => await import('./attribute/attribute.vue'),
+    icon: 'icon--aigen--sliders',
     id: 'attribute_view',
     sort: 100,
     title: '属性',
@@ -16,6 +17,7 @@ export function setupRightSidebar(pluginManager: PluginManager): void {
 
   pluginManager.panel.registerRightSidebar({
     component: async () => await import('./style/style.vue'),
+    icon: 'icon--aigen--palette-outline',
     id: 'style_view',
     sort: 200,
     title: '样式',
@@ -24,6 +26,7 @@ export function setupRightSidebar(pluginManager: PluginManager): void {
   // 内部页签（event.vue），计算字段由 E2 迁往元素属性面板；右侧页签仅剩 属性 / 样式 / 行为。
   pluginManager.panel.registerRightSidebar({
     component: async () => await import('./event/event.vue'),
+    icon: 'icon--aigen--code',
     id: 'event_view',
     sort: 300,
     title: '行为',

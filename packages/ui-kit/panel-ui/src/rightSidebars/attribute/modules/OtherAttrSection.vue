@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import type { Ref } from 'vue';
+
+import { computed, inject, ref, watch } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
@@ -9,6 +11,11 @@ import AttributeGroup from './AttributeGroup.vue';
 
 const designer = useDesignerContext();
 const pageSchema = designer.pageSchema;
+const injectedExpanded = inject<null | Ref<boolean>>(
+  'aigen-attr-all-expanded',
+  null,
+);
+const allExpanded = injectedExpanded ?? ref(true);
 
 const selectedNode = computed(() => designer.state.selectedNode);
 
@@ -88,9 +95,9 @@ function updateNodeProp(
 <template>
   <AttributeGroup
     v-if="selectedNode"
+    :default-expanded="allExpanded"
     title="其他"
     :count="3"
-    :default-expanded="true"
   >
     <div class="aigen-attr-item items-center">
       <div class="aigen-attr-label" title="元素 ID">元素 ID</div>
