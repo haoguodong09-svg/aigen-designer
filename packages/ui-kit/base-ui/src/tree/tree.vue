@@ -98,7 +98,7 @@ provide(TREE_CONTEXT_KEY, {
 <template>
   <div class="aigen-tree flex h-full flex-col">
     <!-- 搜素框 start -->
-    <div class="aigen-search-box px-10px py-6px">
+    <div class="aigen-search-box px-10px">
       <Input
         v-model:[bindModel]="keyword"
         placeholder="搜索节点"

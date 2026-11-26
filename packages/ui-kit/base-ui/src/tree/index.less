@@ -1,4 +1,20 @@
 .aigen-tree {
+  .aigen-search-box {
+    height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--aigen-border);
+
+    > :deep(.ant-input-affix-wrapper),
+    > :deep(.el-input),
+    > :deep(.n-input),
+    > input,
+    > div {
+      width: 100%;
+    }
+  }
+
   .aigen-tree-main {
     padding-right: 10px;
   }
@@ -37,10 +53,10 @@
         &.hidden {
           color: var(--aigen-text-helper);
         }
-        .aigen-copy-id-btn{
+        .aigen-copy-id-btn {
           display: none;
         }
-        &:hover .aigen-copy-id-btn{
+        &:hover .aigen-copy-id-btn {
           display: block;
         }
       }
@@ -63,10 +79,9 @@
       padding-left: 10px;
     }
 
-    .is-locked>a>span,
-    .is-locked>a>span>div {
-
-      >.aigen-text-padding {
+    .is-locked > a > span,
+    .is-locked > a > span > div {
+      > .aigen-text-padding {
         color: var(--aigen-disabled);
         cursor: not-allowed;
       }
@@ -74,7 +89,6 @@
       .aigen-tree-action {
         display: none !important;
       }
-
     }
 
     .icon-expanded {
@@ -103,7 +117,7 @@
 
       &::after,
       &::before {
-        content: "";
+        content: '';
         position: absolute;
         background: var(--aigen-border);
         z-index: 99;
