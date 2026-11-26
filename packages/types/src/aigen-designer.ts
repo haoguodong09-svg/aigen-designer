@@ -297,6 +297,8 @@ export interface PageSchema {
     mode?: 'desktop' | 'mobile' | 'pad' | 'pc' | 'tablet'; // 支持新旧模式  'pad' | 'pc' 为旧数据
     width?: string;
   };
+  /** 页面级全局 CSS 文本（用于全局类名与伪类样式规则） */
+  css?: string;
   /** 响应式联动规则（新一代声明式属性联动模型） */
   reactiveRules?: ReactiveRule[];
   schemas: ComponentSchema[];

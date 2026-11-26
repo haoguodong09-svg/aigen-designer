@@ -15,6 +15,7 @@ export interface ActivitybarModel {
 
 export interface RightSidebarModel {
   component: ComponentType;
+  icon?: string;
   id: string;
   sort?: number;
   title: string;

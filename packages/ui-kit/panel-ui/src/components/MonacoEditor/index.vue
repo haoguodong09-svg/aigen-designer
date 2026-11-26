@@ -48,9 +48,13 @@ const isFullScreen = ref(false);
 const jsonError = ref('');
 const fontSize = ref(props.config?.fontSize ?? DEFAULT_FONT_SIZE);
 
-const fullScreenStyle = `position: fixed;
-  inset: 0;
-  z-index: 2999;`;
+const fullScreenStyle = `position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  z-index: 2999 !important;`;
 
 const editContainer = ref<HTMLElement | null>(null);
 
@@ -328,8 +332,16 @@ defineExpose({
 }
 
 .aigen-code-editor--fullscreen {
-  background: var(--aigen-background);
-  border: 1px solid var(--aigen-border);
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2999 !important;
+  background: var(
+    --aigen-designer-background,
+    var(--aigen-background, #ffffff)
+  );
+  border: none;
 }
 
 .aigen-code-editor-error {

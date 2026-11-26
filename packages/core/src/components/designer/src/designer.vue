@@ -190,7 +190,29 @@ function handleWheel(event: WheelEvent) {
   }
 }
 
+let pageStyleEl: HTMLStyleElement | null = null;
+watchEffect(() => {
+  if (typeof document === 'undefined') return;
+  const cssText = pageSchema.css ?? '';
+  if (!cssText.trim()) {
+    if (pageStyleEl) {
+      pageStyleEl.textContent = '';
+    }
+    return;
+  }
+  if (!pageStyleEl) {
+    pageStyleEl = document.createElement('style');
+    pageStyleEl.dataset.aigenPageCss = 'designer';
+    document.head.append(pageStyleEl);
+  }
+  pageStyleEl.textContent = cssText;
+});
+
 onUnmounted(() => {
+  if (pageStyleEl) {
+    pageStyleEl.remove();
+    pageStyleEl = null;
+  }
   designerRef.value?.removeEventListener('wheel', handleWheel);
   // 释放撤销链资源：取消挂起的防抖提交（W6-6.4）并销毁 Schema Worker（W6 隐藏问题）
   revoke.dispose();

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { ComponentSchema, PageSchema } from '@aigen-designer/types';
 
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watchEffect } from 'vue';
 
 import { useDesignerContext } from '@aigen-designer/hooks';
 import { pluginManager } from '@aigen-designer/manager';
@@ -101,6 +101,32 @@ const getCanvasPadding = computed(() => {
   return typeof designerProps.canvasPadding === 'number'
     ? `${designerProps.canvasPadding}px`
     : designerProps.canvasPadding;
+});
+
+let previewStyleEl: HTMLStyleElement | null = null;
+watchEffect(() => {
+  if (typeof document === 'undefined') return;
+  const cssText = visible.value ? (previewSchema.value?.css ?? '') : '';
+  if (!cssText.trim()) {
+    if (previewStyleEl) {
+      previewStyleEl.remove();
+      previewStyleEl = null;
+    }
+    return;
+  }
+  if (!previewStyleEl) {
+    previewStyleEl = document.createElement('style');
+    previewStyleEl.dataset.aigenPageCss = 'preview';
+    document.head.append(previewStyleEl);
+  }
+  previewStyleEl.textContent = cssText;
+});
+
+onUnmounted(() => {
+  if (previewStyleEl) {
+    previewStyleEl.remove();
+    previewStyleEl = null;
+  }
 });
 
 defineExpose({

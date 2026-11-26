@@ -53,7 +53,7 @@ export default defineConfig(async () => {
       }),
       UnoCSS(),
       (monacoEditorPlugin as any).default({
-        languageWorkers: ['editorWorkerService', 'json', 'typescript'],
+        languageWorkers: ['editorWorkerService', 'json', 'typescript', 'css'],
       }),
     ].filter(Boolean),
     resolve: {
