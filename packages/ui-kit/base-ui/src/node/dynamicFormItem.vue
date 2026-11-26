@@ -39,34 +39,15 @@ const addFormItemInstance = (vNode: VNode) => {
 </script>
 
 <template>
-  <!-- 根节点必须是元素（display: contents 不产生盒子、不影响布局）：
-       设计器节点链上可能存在运行时指令（如父级 v-show / 组件库内部指令），
-       若根是非元素（组件/slot），Vue 会告警 "Runtime directive used on
-       component with non-element root node" 且指令无法生效。 -->
-  <div
+  <FormItem
     v-if="props.hasFormItem"
-    class="aigen-form-item-wrap"
+    :check-payload="props.checkPayload"
     :data-aigen-id="props.formItemProps?.id"
-    style="display: contents"
-  >
-    <FormItem
-      :check-payload="props.checkPayload"
-      :data-aigen-id="props.formItemProps?.id"
-      v-bind="props.formItemProps"
-      :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
-      @vue:mounted="addFormItemInstance"
-    >
-      <slot></slot>
-    </FormItem>
-  </div>
-  <!-- 无FormItem start -->
-  <div
-    v-else
-    class="aigen-form-item-wrap"
-    :data-aigen-id="props.formItemProps?.id"
-    style="display: contents"
+    v-bind="props.formItemProps"
+    :class="{ 'aigen-hidden': props.formItemProps.props?.hidden }"
+    @vue:mounted="addFormItemInstance"
   >
     <slot></slot>
-  </div>
-  <!-- 无FormItem end -->
+  </FormItem>
+  <slot v-else></slot>
 </template>

@@ -15,6 +15,7 @@ import {
   isPointerOutsideElement,
 } from '@aigen-designer/utils';
 
+import AigenCanvasNodeOverlay from './CanvasNodeOverlay.vue';
 import {
   commitCanvasDrop,
   updateContainerFallbackDragOver,
@@ -268,8 +269,9 @@ onUnmounted(() => {
         @drop="handleRangeDrop"
         @dragleave="handleRangeDragLeave"
       >
-        <AigenNodeItem :schema="rootSchema" />
+        <AigenNodeItem :schema="rootSchema" :draggable="false" />
         <AigenPreviewWidgets ref="aigenPreviewWidgetsRef" />
+        <AigenCanvasNodeOverlay :container-ref="aigenEditRangeRef" />
       </div>
     </AigenEditScreenContainer>
     <!-- 快速关联气泡：Teleport 到 body，锚定目标元素（随模式退出自动隐藏） -->

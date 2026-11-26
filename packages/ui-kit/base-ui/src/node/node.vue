@@ -53,7 +53,9 @@ interface AigenNodeProps {
   ruleField?: string[];
   showHiddenItems?: boolean;
 }
+
 defineOptions({
+  inheritAttrs: false,
   name: 'AigenNode',
 });
 
@@ -365,16 +367,26 @@ const getFormItemProps = computed<ComponentSchema>(() => {
     model.push(innerSchema.field);
   }
 
+  const rawClassName = innerSchema.props?.className;
+  const resolvedClassName = isJSExpressionBinding(rawClassName)
+    ? evaluatePropExpression(rawClassName.value)
+    : rawClassName;
+  const formItemClasses: unknown[] = [];
+  if (attrs.class) formItemClasses.push(attrs.class);
+  if (typeof resolvedClassName === 'string' && resolvedClassName.trim()) {
+    formItemClasses.push(resolvedClassName.trim());
+  }
+
   const style = innerSchema.props?.style ?? {};
   const formItemProps = {
     ...innerSchema,
     ...attrs,
+    ...(formItemClasses.length > 0 ? { class: formItemClasses } : {}),
     field: model,
     rule: rules,
     rules,
     style: {
       ...style,
-      width: undefined,
     },
   } as ComponentSchema;
 
@@ -463,10 +475,12 @@ const getProps = computed(() => {
     }
   }
 
+  const useFormItemWrapper =
+    hasFormItem.value && innerSchema.noFormItem !== true;
   const style = resolvedProps.style ?? {};
-  const finalStyle = hasFormItem.value
+  const finalStyle = useFormItemWrapper
     ? Object.fromEntries(
-        (['height', 'width'] as const)
+        (['height'] as const)
           .filter((k) => style[k] !== undefined && style[k] !== null)
           .map((k) => [k, style[k]]),
       )
@@ -480,14 +494,15 @@ const getProps = computed(() => {
       : derivedState.value.readonly);
 
   const extraClasses: unknown[] = [];
-  if (attrs.class) extraClasses.push(attrs.class);
-  if (customClassName) extraClasses.push(customClassName);
+  if (!useFormItemWrapper && attrs.class) extraClasses.push(attrs.class);
+  if (!useFormItemWrapper && customClassName)
+    extraClasses.push(customClassName);
   if (innerSchema.props?.hidden) extraClasses.push('aigen-hidden');
   if (resolvedReadonly) extraClasses.push('aigen-readonly');
 
   return {
     ...props,
-    ...attrs,
+    ...(useFormItemWrapper ? {} : attrs),
     ...resolvedProps,
     ...(extraClasses.length > 0 ? { class: extraClasses } : {}),
     bindModel,
@@ -714,7 +729,11 @@ onBeforeUnmount(handleVnodeUnmounted);
   >
     <component
       :is="componentRef"
-      :data-aigen-id="props.componentSchema?.id"
+      :data-aigen-id="
+        hasFormItem && innerSchema.noFormItem !== true
+          ? undefined
+          : props.componentSchema?.id
+      "
       v-bind="getProps"
       v-model:[getProps.bindModel]="innerValue"
       :model="formData"

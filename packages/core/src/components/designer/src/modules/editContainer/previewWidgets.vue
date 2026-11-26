@@ -96,10 +96,20 @@ const getComponentElement = (node: ComponentSchema) => {
 
   const componentInstance = pageManager.findInstance(id);
   const dom = componentInstance?.vnode.el;
-  if (!dom || !dom.getBoundingClientRect) {
-    return null;
+  if (dom && typeof dom.getBoundingClientRect === 'function') {
+    return dom as HTMLElement;
   }
-  return dom as HTMLElement;
+  if (
+    dom?.nextElementSibling &&
+    typeof dom.nextElementSibling.getBoundingClientRect === 'function'
+  ) {
+    return dom.nextElementSibling as HTMLElement;
+  }
+  return (
+    (aigenEditRange?.querySelector(
+      `[data-aigen-id="${id}"]`,
+    ) as HTMLElement | null) ?? null
+  );
 };
 
 /**

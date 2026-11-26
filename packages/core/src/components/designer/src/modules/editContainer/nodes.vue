@@ -3,7 +3,6 @@ import type { ComponentSchema } from '@aigen-designer/types';
 
 import { computed, inject, onMounted, onUnmounted } from 'vue';
 
-import { AigenIcon } from '@aigen-designer/base-ui';
 import {
   useCanvasDrag,
   useDesignerContext,
@@ -15,10 +14,10 @@ import { findSchemaById } from '@aigen-designer/utils';
 
 import {
   commitCanvasDrop,
+  findDirectChildNodeElFromTarget,
   isSchemaInline,
   updateContainerFallbackDragOver,
 } from './dragDropHelper';
-import EventBadge from './EventBadge.vue';
 import AigenNodeItem from './nodeItem.vue';
 
 defineOptions({
@@ -112,15 +111,18 @@ function handleDragOver(event: DragEvent) {
   // 当前监听此事件的容器元素 (.aigen-draggable-range)
   const currentContainerEl = event.currentTarget as HTMLElement | null;
 
-  // 1. 优先命中当前容器内部的直接子节点元素 (.aigen-node-item)
-  // 注意：必须严格确保命中的子节点是当前容器 currentContainerEl 的后代元素！
-  // 绝对不能跨出当前容器，向上查找到外部祖先节点的 .aigen-node-item（否则会导致子容器落点被提升到父容器）
+  // 1. 优先命中当前容器内部的直接子节点真实 DOM（[data-aigen-id]）
+  // 严格限定在当前容器 direct children 集合内，避免跨容器误命中祖先节点
   let childItemEl: HTMLElement | null = null;
   if (currentContainerEl && target !== currentContainerEl) {
-    const candidate = target.closest('.aigen-node-item') as HTMLElement | null;
-    if (candidate && currentContainerEl.contains(candidate)) {
-      childItemEl = candidate;
-    }
+    const childIds = new Set(
+      modelSchemas.value.map((item) => item.id).filter(Boolean),
+    );
+    childItemEl = findDirectChildNodeElFromTarget(
+      target,
+      currentContainerEl,
+      childIds,
+    );
   }
 
   if (childItemEl && childItemEl.dataset.aigenId) {
@@ -211,6 +213,14 @@ function handleDrop(event: DragEvent) {
 function getNodeSchema(target: HTMLElement | null) {
   if (!target?.closest) return null;
 
+  // 若鼠标直接落在空容器占位区 (.aigen-draggable-range) 上，通过 data-container-id 解析宿主容器
+  if (
+    target.classList.contains('aigen-draggable-range') &&
+    target.dataset?.containerId
+  ) {
+    return getSchemaByAigenId(target.dataset.containerId);
+  }
+
   // 优先检查当前元素
   if (target.dataset?.aigenId) {
     return getSchemaByAigenId(target.dataset.aigenId);
@@ -298,167 +308,52 @@ onUnmounted(() => {
     class="aigen-draggable-range"
     :class="{
       'aigen-interactive-mode': interactiveMode,
+      'is-contents':
+        modelSchemas.length > 0 &&
+        props.containerSchema?.id !== designer.pageSchema.schemas[0]?.id,
       'is-empty': modelSchemas.length === 0,
     }"
     :data-container-id="props.containerSchema?.id"
-    :data-aigen-id="props.containerSchema?.id"
     :data-slot-name="props.slotName || undefined"
     @mouseover.stop="setHoverNode"
     @dragover="handleDragOver"
     @drop="handleDrop"
   >
-    <div
+    <AigenNodeItem
       v-for="element in modelSchemas"
       :key="element.id"
-      class="aigen-node-item"
+      :schema="element"
+      :draggable="isElementDraggable(element)"
       :class="{
         'aigen-inline': isSchemaInline(element),
         'is-dragging-source': canvasDrag.dragState.dragData?.id === element.id,
-        'aigen-node--link-source': linkMode.source.value?.id === element.id,
-        'aigen-node--link-target': linkMode.target.value?.id === element.id,
         'aigen-node--link-active': linkMode.isActive.value,
         'aigen-node--link-phase-target':
           linkMode.state.value === 'select-target',
       }"
-      :data-aigen-id="element.id"
-      :draggable="isElementDraggable(element)"
       @dragstart="handleNodeDragStart(element, $event)"
       @dragend="handleNodeDragEnd"
       @contextmenu.stop="contextMenu.open($event, element)"
-    >
-      <div class="aigen-node-badge-wrap">
-        <!-- 关联模式：源与目标语义标签 -->
-        <div
-          v-if="linkMode.source.value?.id === element.id"
-          class="aigen-link-role-badge aigen-link-role-badge--source"
-        >
-          <AigenIcon
-            name="icon--behavior--thunderbolt"
-            class="mr-1 text-[11px]"
-          />
-          <span>触发源</span>
-        </div>
-        <div
-          v-if="linkMode.target.value?.id === element.id"
-          class="aigen-link-role-badge aigen-link-role-badge--target"
-        >
-          <AigenIcon
-            name="icon--behavior--experiment"
-            class="mr-1 text-[11px]"
-          />
-          <span>关联目标</span>
-        </div>
-
-        <AigenNodeItem :schema="element" />
-        <EventBadge :schema="element" />
-      </div>
-    </div>
+    />
   </div>
 </template>
 
 <style scoped>
-/* 角标叠加层定位容器：仅提供相对定位，不影响节点自身布局 */
-.aigen-node-badge-wrap {
-  position: relative;
-}
-
-/* 内联组件（如按钮）保持行内布局 */
-.aigen-node-item.aigen-inline > .aigen-node-badge-wrap {
-  display: inline-block;
-}
-
-/* 关联模式：源组件高亮样式 */
-.aigen-node-item.aigen-node--link-source {
-  position: relative;
-  border-radius: 6px;
-  outline: 2px solid #1677ff;
-  outline-offset: -1px;
-  box-shadow:
-    inset 0 0 0 1px rgba(22, 119, 255, 0.2),
-    0 2px 8px rgba(22, 119, 255, 0.12);
-  background-color: rgba(22, 119, 255, 0.035);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 关联模式：目标组件高亮样式 */
-.aigen-node-item.aigen-node--link-target {
-  position: relative;
-  border-radius: 6px;
-  outline: 2px solid #52c41a;
-  outline-offset: -1px;
-  box-shadow:
-    inset 0 0 0 1px rgba(82, 196, 26, 0.2),
-    0 2px 8px rgba(82, 196, 26, 0.12);
-  background-color: rgba(82, 196, 26, 0.035);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 关联模式：候选节点基础状态 */
-.aigen-node-item.aigen-node--link-active {
+/* 关联模式：候选节点悬停交互预览 */
+[data-aigen-id].aigen-node--link-active {
   outline: 1px dashed transparent;
   outline-offset: -1px;
 }
 
-/* 关联模式：候选节点悬停交互预览 */
-.aigen-node-item.aigen-node--link-active:not(.aigen-node--link-source):not(
-    .aigen-node--link-target
-  ):hover {
+[data-aigen-id].aigen-node--link-active:hover {
   border-radius: 6px;
   outline-color: rgba(22, 119, 255, 0.75);
-  background-color: rgba(22, 119, 255, 0.02);
   cursor: pointer;
 }
 
-.aigen-node-item.aigen-node--link-active.aigen-node--link-phase-target:not(
-    .aigen-node--link-source
-  ):not(.aigen-node--link-target):hover {
+[data-aigen-id].aigen-node--link-active.aigen-node--link-phase-target:hover {
   border-radius: 6px;
   outline-color: rgba(82, 196, 26, 0.85);
-  background-color: rgba(82, 196, 26, 0.02);
   cursor: pointer;
-}
-
-/* 浮动语义徽标：源 / 目标 */
-.aigen-link-role-badge {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-  z-index: 50;
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 7px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1;
-  pointer-events: none;
-  white-space: nowrap;
-  animation: aigen-badge-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.aigen-link-role-badge--source {
-  background: #e6f4ff;
-  border: 1px solid #91caff;
-  color: #0958d9;
-  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.12);
-}
-
-.aigen-link-role-badge--target {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  color: #389e0d;
-  box-shadow: 0 1px 3px rgba(82, 196, 26, 0.12);
-}
-
-@keyframes aigen-badge-pop {
-  0% {
-    transform: scale(0.7) translateY(4px);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
 }
 </style>

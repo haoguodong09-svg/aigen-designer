@@ -9,8 +9,88 @@ import {
 } from '@aigen-designer/utils';
 
 export function isSchemaInline(schema: ComponentSchema): boolean {
+  const display = schema.props?.style?.display;
+  if (
+    display === 'inline' ||
+    display === 'inline-block' ||
+    display === 'inline-flex' ||
+    display === 'inline-grid'
+  ) {
+    return true;
+  }
+  if (display === 'block' || display === 'flex' || display === 'grid') {
+    return false;
+  }
   const config = pluginManager.component.getComponentConfigByType(schema.type);
   return Boolean(config?.editConstraints?.inline);
+}
+
+/**
+ * 在容器 .aigen-draggable-range 内查找指定 id 的直接子组件真实 DOM 节点
+ */
+export function findDirectChildNodeEl(
+  containerEl: HTMLElement,
+  childId: string,
+): HTMLElement | null {
+  const direct = containerEl.querySelector(
+    `:scope > [data-aigen-id="${childId}"]`,
+  ) as HTMLElement | null;
+  if (direct) return direct;
+
+  const candidates = Array.from(
+    containerEl.querySelectorAll(`[data-aigen-id="${childId}"]`),
+  );
+  for (const el of candidates) {
+    if (el.closest('.aigen-draggable-range') === containerEl) {
+      return el as HTMLElement;
+    }
+  }
+  return (candidates[0] as HTMLElement | undefined) ?? null;
+}
+
+/**
+ * 从拖拽事件 target 向上回溯，查找属于当前容器直接子节点层级的组件 DOM
+ */
+export function findDirectChildNodeElFromTarget(
+  target: HTMLElement,
+  currentContainerEl: HTMLElement,
+  childIds: Set<string>,
+): HTMLElement | null {
+  let el = target.closest('[data-aigen-id]') as HTMLElement | null;
+  while (el && currentContainerEl.contains(el)) {
+    const id = el.dataset.aigenId;
+    if (el !== currentContainerEl && id && childIds.has(id)) {
+      return el;
+    }
+    el = el.parentElement?.closest('[data-aigen-id]') as HTMLElement | null;
+  }
+  return null;
+}
+
+/**
+ * 获取容器的可测量边界矩形：当 .aigen-draggable-range 使用 display: contents 透传布局时，
+ * 回退到真实宿主容器 [data-aigen-id] 或父元素进行几何测量。
+ */
+export function getContainerMeasureRect(
+  containerEl: HTMLElement,
+  containerId?: string,
+): DOMRect {
+  const style =
+    typeof getComputedStyle === 'function'
+      ? getComputedStyle(containerEl)
+      : null;
+  if (style?.display === 'contents') {
+    const hostEl =
+      (containerId
+        ? (containerEl.closest(
+            `[data-aigen-id="${containerId}"]`,
+          ) as HTMLElement | null)
+        : null) || containerEl.parentElement;
+    if (hostEl) {
+      return hostEl.getBoundingClientRect();
+    }
+  }
+  return containerEl.getBoundingClientRect();
 }
 
 /**
@@ -47,12 +127,7 @@ export function updateContainerFallbackDragOver(options: {
   if (children.length > 0) {
     const lastChild = children[children.length - 1];
     if (lastChild?.id && containerEl) {
-      const lastChildEl = (containerEl.querySelector(
-        `:scope > .aigen-node-item[data-aigen-id="${lastChild.id}"]`,
-      ) ||
-        containerEl.querySelector(
-          `.aigen-node-item[data-aigen-id="${lastChild.id}"]`,
-        )) as HTMLElement | null;
+      const lastChildEl = findDirectChildNodeEl(containerEl, lastChild.id);
       if (lastChildEl) {
         const lastRect = lastChildEl.getBoundingClientRect();
         const lastConfig = pluginManager.component.getConfigByType(
@@ -86,7 +161,7 @@ export function updateContainerFallbackDragOver(options: {
   }
 
   if (!containerEl) return;
-  const rect = containerEl.getBoundingClientRect();
+  const rect = getContainerMeasureRect(containerEl, containerId);
   canvasDrag.updateDragOver(
     containerId,
     {

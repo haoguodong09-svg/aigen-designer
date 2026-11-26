@@ -1,9 +1,8 @@
 import { mount } from '@vue/test-utils';
-import { defineComponent, h, ref, vShow, withDirectives } from 'vue';
+import { defineComponent, h } from 'vue';
 
-import { describe, expect, it, vi, beforeAll } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-// 依赖 mock：DynamicFormItem 需要 usePageManager 与 pluginManager
 vi.mock('@aigen-designer/hooks', () => ({
   usePageManager: () => ({
     addComponentInstance: () => {},
@@ -20,36 +19,60 @@ vi.mock('@aigen-designer/manager', () => ({
 
 import DynamicFormItem from '../node/dynamicFormItem.vue';
 
-describe('dynamicFormItem 根节点指令防御', () => {
-  it('hasFormItem=false 分支：父级在组件上使用运行时指令时不应触发 "Runtime directive" 告警', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    // 模拟设计器节点链：父组件对 DynamicFormItem 的 vnode 应用 v-show 运行时指令
-    const show = ref(true);
+describe('dynamicFormItem 无壳直出渲染', () => {
+  it('hasFormItem=false 分支：直接透出插槽真实 DOM，不包裹 .aigen-form-item-wrap', () => {
     const Host = defineComponent({
       setup() {
         return () =>
-          withDirectives(
-            h(DynamicFormItem, {
-              hasFormItem: false,
-              formItemProps: { id: 'x', type: 'input' },
-              checkPayload: null,
-            }),
-            [[vShow, show]],
-          );
+          h('div', { class: 'host-container' }, [
+            h(
+              DynamicFormItem,
+              {
+                checkPayload: null,
+                formItemProps: { id: 'btn_1', type: 'button' },
+                hasFormItem: false,
+              },
+              {
+                default: () =>
+                  h('button', { 'data-aigen-id': 'btn_1' }, '确定'),
+              },
+            ),
+          ]);
+      },
+    });
+    const wrapper = mount(Host);
+
+    expect(wrapper.find('.aigen-form-item-wrap').exists()).toBe(false);
+    const hostEl = wrapper.find('.host-container').element as HTMLElement;
+    expect(hostEl.children.length).toBe(1);
+    expect(hostEl.firstElementChild?.tagName).toBe('BUTTON');
+    expect(hostEl.firstElementChild?.getAttribute('data-aigen-id')).toBe(
+      'btn_1',
+    );
+  });
+
+  it('hasFormItem=true 分支：直接以 FormItem 作为根节点并保留自定义宽度与 display', () => {
+    const wrapper = mount(DynamicFormItem, {
+      props: {
+        checkPayload: null,
+        formItemProps: {
+          id: 'input_1',
+          props: {},
+          style: { display: 'inline-block', width: '200px' },
+          type: 'input',
+        } as any,
+        hasFormItem: true,
+      },
+      slots: {
+        default: () => h('input'),
       },
     });
 
-    const wrapper = mount(Host, { attachTo: document.body });
-    // 切换 v-show 触发更新
-    show.value = false;
-    show.value = true;
-    wrapper.unmount();
-
-    const directiveWarns = warnSpy.mock.calls.filter((args) =>
-      String(args[0]).includes('Runtime directive used on component'),
-    );
-    warnSpy.mockRestore();
-    expect(directiveWarns).toEqual([]);
+    expect(wrapper.find('.aigen-form-item-wrap').exists()).toBe(false);
+    const rootEl = wrapper.find('[data-aigen-id="input_1"]')
+      .element as HTMLElement;
+    expect(wrapper.element).toBe(rootEl);
+    expect(rootEl.style.width).toBe('200px');
+    expect(rootEl.style.display).toBe('inline-block');
   });
 });

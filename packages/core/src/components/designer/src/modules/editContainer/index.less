@@ -12,10 +12,8 @@
     cursor: pointer;
     background-color: var(--aigen-designer-background);
 
-    // 兼容 dynamicFormItem.vue 根节点的 .aigen-form-item-wrap (display: contents)，
-    // 确保根页面容器及根 .aigen-draggable-range 铺满画布并随内容自适应撑高
-    & > .aigen-form-item-wrap > :first-child,
-    & > :first-child:not(.aigen-form-item-wrap) {
+    // 根页面容器直出，确保根页面容器及根 .aigen-draggable-range 铺满画布并随内容自适应撑高
+    & > :first-child {
       min-height: 100%;
       display: flex;
       flex-direction: column;
@@ -42,6 +40,11 @@
       width: 100%;
       height: 100%;
       box-sizing: border-box;
+
+      // 非空嵌套子容器透传盒模型，使内部子组件直接参与父级 flex / grid / inline 布局
+      &.is-contents {
+        display: contents;
+      }
 
       &.is-empty {
         position: relative;
@@ -248,15 +251,6 @@
   }
 }
 
-.aigen-node-item {
-  border-bottom: 1px solid transparent;
-  margin-bottom: -1px;
-  &.aigen-inline {
-    display: inline-block;
-    vertical-align: top;
-  }
-}
-
 // 关联/事件徽标提示气泡弹层优化：提供舒适的内边距与阴影效果
 .aigen-tooltip-inner.aigen-event-badge-tooltip {
   padding: 10px 14px;
@@ -412,7 +406,7 @@
 }
 
 // 拖拽中的源节点半透明样式
-.aigen-node-item.is-dragging-source {
+[data-aigen-id].is-dragging-source {
   opacity: 0.35;
   filter: grayscale(0.5);
   transition: opacity 0.15s ease;

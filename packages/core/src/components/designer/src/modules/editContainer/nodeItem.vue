@@ -63,6 +63,7 @@ function isDraggable() {
 <template>
   <AigenNode
     :component-schema="props.schema"
+    :draggable="props.draggable"
     class="edit-draggable-widget"
     :show-hidden-items="designerProps?.showHiddenItems"
     :class="[isDraggable(), isLeafNode ? 'aigen-node-leaf' : '']"
