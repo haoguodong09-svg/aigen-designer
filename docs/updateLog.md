@@ -1,5 +1,11 @@
 ## 1.1.14（2026-11-25）
 
+### ✨ Feat（变量绑定完全体：双协议统一、页面变量面板与企业级绑定弹窗）
+
+- **统一表达式求值入口（`@aigen-designer/utils`）**：新增 [bindingContext.ts](file:///d:/workspace/Github/aigen-designer/packages/utils/src/expression/bindingContext.ts)（`resolveBoundValue` / `createPropBindingScope` / `previewJSExpression`），统一收敛 `JSExpression` 与 `__isExpression__` 双协议求值；`node.vue`、`reactiveRuleEngine.ts` 与 `actionExecutionEngine.ts` 全部接入同一入口，Props 绑定上下文新增注入页面变量 `vars`（形参表 `formData / vars / funcs / state`）。
+- **`vars` 生命周期与设计态热更**：`pageManager.setPageSchema` 切换或加载新 Schema 时自动重置 `vars.value = deepClone(schema.vars ?? {})`，设计态监听 `pageSchema.vars` 变更（含变量面板编辑与撤销/重做）实时刷新画布与联动引擎。
+- **企业级变量绑定弹窗与页面变量面板**：重构 [VariableBindModal.vue](file:///d:/workspace/Github/aigen-designer/packages/ui-kit/panel-ui/src/rightSidebars/attribute/modules/VariableBindModal.vue)（新增「页面变量 (`vars`)」Tab、分段 Tab 计数徽标、变量类型/初值预览、实时求值预览条及 `Ctrl+Enter` 快捷键）；在左侧活动栏新增「变量」管理面板（[variables.vue](file:///d:/workspace/Github/aigen-designer/packages/ui-kit/panel-ui/src/activitybars/variables/variables.vue)，支持变量增删改、JSON 初值预设、Monaco 编辑与撤销栈接入）。
+
 ### ✨ Feat（属性面板深度重构，对标 TinyEngine）
 
 - **手风琴分组与顶部快捷筛选**：新增 `AttributeGroup` 可折叠分组容器；`attribute.vue` 顶部新增紧凑关键词筛选框（支持按属性名/字段路径过滤并实时统计命中数）及「基础信息 / 外观与布局 / 校验与限制 / 插槽信息 / 其他」结构化分组。

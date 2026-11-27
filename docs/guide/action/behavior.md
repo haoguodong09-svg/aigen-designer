@@ -111,6 +111,23 @@ $formData.qty * $formData.price
 
 > 内置函数由 FormulaEngine 提供（jsep 解析），可在表达式中自由组合字段引用与函数。
 
+## 属性变量绑定与页面变量（`vars`）
+
+除了动作/规则中的公式表达式（`__isExpression__`），属性面板与样式面板右侧点击 `>_` 打开**变量与表达式绑定弹窗**时，会将结果以 `{ "type": "JSExpression", "value": "..." }` 写入组件属性。
+
+### 双协议绑定语法对照表
+
+| 场景 | 存储协议 | 表单数据 | 页面变量（`pageSchema.vars`） | 公共方法 / 内置函数 |
+| --- | --- | --- | --- | --- |
+| **属性 / 样式绑定** | `JSExpression` | `formData.xxx` | `vars.xxx` | `funcs.fnName()` |
+| **动作参数 / 联动规则** | `__isExpression__` | `$formData.xxx` | `$vars.xxx` | `SUM(...)` / `IF(...)` |
+
+> 兼容提示：属性绑定上下文中保留的旧形参 `state`（指向 `pageManager`）已标记为 **@deprecated**，仅作存量 schema 兼容，新表达式请统一使用 `vars.xxx`、`formData.xxx` 与 `funcs.xxx()`。
+
+### 页面变量管理
+
+通过设计器左侧活动栏「变量」面板可集中维护 `pageSchema.vars`（支持新建、JSON 初值编辑、重命名、删除、一键复制 `vars.xxx` 与撤销/重做热更新）；切换或加载新 `PageSchema` 时，`pageManager.setPageSchema` 会自动将 `vars` 重置为新页面的 `schema.vars ?? {}`，避免旧页面变量残留。
+
 ## 示例：开关控制输入框禁用
 
 目标：打开「开关」时禁用「输入框」，关闭时恢复可用。
