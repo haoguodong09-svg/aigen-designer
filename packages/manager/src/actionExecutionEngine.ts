@@ -5,7 +5,11 @@ import type {
   TraceContext,
 } from '@aigen-designer/types';
 
-import { evaluateCondition } from '@aigen-designer/utils';
+import {
+  evaluateCondition,
+  isFormulaExpressionModel,
+  resolveBoundValue,
+} from '@aigen-designer/utils';
 
 export interface ActionExecutionOptions {
   formulaEngine?: any;
@@ -470,23 +474,13 @@ export class ActionExecutionEngine {
     // 表达式求值
     const resolvedArgs = methodArgs.map((arg: any) => {
       if (
-        arg &&
-        typeof arg === 'object' &&
-        arg.__isExpression__ &&
+        isFormulaExpressionModel(arg) &&
         this.options.formulaEngine?.calculate
       ) {
-        try {
-          return this.options.formulaEngine.calculate(
-            arg.content,
-            formulaContext,
-          );
-        } catch (error) {
-          console.error(
-            `[Aigen Formula Error] 表达式计算失败: ${arg.content}`,
-            error,
-          );
-          return undefined;
-        }
+        return resolveBoundValue(arg, {
+          formulaContext,
+          formulaEngine: this.options.formulaEngine,
+        });
       }
       return arg;
     });

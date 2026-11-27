@@ -10,6 +10,8 @@ import {
   deepEqual,
   evaluateCondition,
   FormulaEngine,
+  isFormulaExpressionModel,
+  resolveBoundValue,
 } from '@aigen-designer/utils';
 
 export interface ReactiveEngineOptions {
@@ -64,24 +66,14 @@ export function createReactiveEngine(
   }
 
   function resolveValue(value: any, context: Record<string, unknown>): any {
-    if (value && typeof value === 'object' && value.__isExpression__) {
-      const engine =
-        options.formulaEngine ||
-        pageManager.formulaEngine ||
-        defaultFormulaEngine;
-      if (engine?.calculate) {
-        try {
-          return engine.calculate(value.content, context);
-        } catch (error) {
-          console.error(
-            `[Aigen Reactive Error] 规则表达式计算失败: ${value.content}`,
-            error,
-          );
-          return undefined;
-        }
-      }
-    }
-    return value;
+    const engine =
+      options.formulaEngine ||
+      pageManager.formulaEngine ||
+      defaultFormulaEngine;
+    return resolveBoundValue(value, {
+      formulaContext: context,
+      formulaEngine: engine,
+    });
   }
 
   function getFormDataSnapshot(): Record<string, unknown> {
@@ -119,11 +111,7 @@ export function createReactiveEngine(
   function isExpressionValue(
     value: unknown,
   ): value is { __isExpression__: true; content: string } {
-    return Boolean(
-      value &&
-        typeof value === 'object' &&
-        (value as Record<string, unknown>).__isExpression__,
-    );
+    return isFormulaExpressionModel(value);
   }
 
   /**

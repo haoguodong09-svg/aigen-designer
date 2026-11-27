@@ -100,6 +100,26 @@ export interface PipelineContext {
   vars: Record<string, unknown>;
 }
 
+export interface JSExpressionValue {
+  type: 'JSExpression';
+  value: string;
+}
+
+export interface JSFunctionValue {
+  type: 'JSFunction';
+  value: string;
+}
+
+export interface StateAccessor {
+  getter?: JSFunctionValue;
+  setter?: JSFunctionValue;
+}
+
+export interface StateAccessorVariable {
+  accessor: StateAccessor;
+  defaultValue: unknown;
+}
+
 export interface PipelineResult {
   error?: unknown;
   failedActionId?: string;

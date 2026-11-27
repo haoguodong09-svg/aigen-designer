@@ -5,7 +5,17 @@ import type {
   PageSchema,
 } from '@aigen-designer/types';
 
-import { reactive, ref, shallowRef, watch } from 'vue';
+import type { WatchStopHandle } from 'vue';
+
+import {
+  getCurrentScope,
+  onScopeDispose,
+  reactive,
+  ref,
+  shallowRef,
+  watch,
+  watchEffect,
+} from 'vue';
 
 import {
   createEventBus,
@@ -15,10 +25,16 @@ import {
 } from '@aigen-designer/hooks';
 import {
   adaptLegacySchema,
+  compileAccessorFunction,
+  deepClone,
   findSchemas,
   FormulaEngine,
   getValueByPath,
+  isJSExpressionVar,
+  isStateAccessorVar,
+  resolveBoundValue,
   setValueByPath,
+  unwrapVarDefaultValue,
 } from '@aigen-designer/utils';
 
 import { ActionExecutionEngine } from './actionExecutionEngine';
@@ -105,7 +121,18 @@ export function createPageManager() {
   // P3 页面事件总线（页面级通道）：元素之间解耦通信（B4.4）。
   const pageEventBus = createEventBus('page');
   // P3 全局变量：公式 $vars 上下文与 setVar/getVar 的存储，初值取 pageSchema.vars
-  const vars = ref<Record<string, unknown>>(pageSchema.vars ?? {});
+  const vars = ref<Record<string, unknown>>({});
+  // 状态变量访问器句柄与 setter 拦截映射，页面切换或变量更新时先清理旧监听
+  const stateAccessorMap = new Map<string, WatchStopHandle>();
+  const stateSetterMap = new Map<string, (value: unknown) => void>();
+  const activeGetterKeys = new Set<string>();
+
+  function clearStateAccessors(): void {
+    stateAccessorMap.forEach((stop) => stop());
+    stateAccessorMap.clear();
+    stateSetterMap.clear();
+    activeGetterKeys.clear();
+  }
 
   // 新一代响应式规则引擎（首屏即计算 + 条件反转自愈 + computed 脏检查）
   // 显式注入数据源：引擎创建早于 pageManagerApi 组装，若从 pageManager 读取属性会拿到 undefined，
@@ -123,6 +150,7 @@ export function createPageManager() {
   function setPageSchema(schema: PageSchema) {
     adaptLegacySchema(schema);
     rawSetPageSchema(schema);
+    applyVarsSchema(schema.vars);
     reactiveEngine.evaluateAllRules();
   }
 
@@ -550,11 +578,16 @@ export function createPageManager() {
   }
 
   /**
-   * 设置全局变量（P3）：写入 vars，公式 $vars.xxx 与 getVar 可读取。
+   * 设置全局变量（P3）：写入 vars，若变量定义了 setter 访问器则走 setter 拦截。
    * @param key 变量名
    * @param value 变量值
    */
   function setVar(key: string, value: unknown): void {
+    const setterFn = stateSetterMap.get(key);
+    if (setterFn) {
+      setterFn(value);
+      return;
+    }
     vars.value[key] = value;
   }
 
@@ -565,6 +598,82 @@ export function createPageManager() {
    */
   function getVar(key: string): unknown {
     return vars.value[key];
+  }
+
+  function createAccessorContext() {
+    return {
+      formData: getFormData(),
+      funcs: funcs.value,
+      getVar,
+      setVar,
+      vars: vars.value,
+    };
+  }
+
+  /**
+   * 解析页面变量 Schema（含普通初值、JSExpression 初值与 getter/setter 访问器）
+   * 并重建响应式 watchEffect 依赖链。
+   */
+  function applyVarsSchema(rawVars?: Record<string, unknown>): void {
+    clearStateAccessors();
+    const entries = Object.entries(rawVars ?? {});
+
+    // 第一轮：解析所有变量初值，确保跨变量引用的 JSExpression 与后续 getter 初值就绪
+    const nextVars: Record<string, unknown> = {};
+    for (const [key, rawDef] of entries) {
+      const rawDefault = unwrapVarDefaultValue(rawDef);
+      nextVars[key] = isJSExpressionVar(rawDefault)
+        ? resolveBoundValue(rawDefault, {
+            formData: getFormData(),
+            funcs: funcs.value,
+            vars: nextVars,
+          })
+        : deepClone(rawDefault);
+    }
+    vars.value = nextVars;
+
+    // 第二轮：注册每个 accessor 的 setter 拦截器与纯返回值型 watchEffect getter
+    for (const [key, rawDef] of entries) {
+      if (!isStateAccessorVar(rawDef)) continue;
+      const { accessor } = rawDef;
+
+      if (accessor.setter?.value) {
+        const setterRunner = compileAccessorFunction(accessor.setter.value);
+        if (setterRunner) {
+          stateSetterMap.set(key, (nextValue: unknown) => {
+            try {
+              setterRunner(createAccessorContext(), nextValue);
+            } catch (error) {
+              console.warn(`[Aigen: 变量 ${key} setter 执行报错]`, error);
+            }
+          });
+        }
+      }
+
+      if (accessor.getter?.value) {
+        const getterRunner = compileAccessorFunction(accessor.getter.value);
+        if (getterRunner) {
+          const stopHandle = watchEffect(
+            () => {
+              if (activeGetterKeys.has(key)) return;
+              activeGetterKeys.add(key);
+              try {
+                const nextValue = getterRunner(createAccessorContext());
+                if (!Object.is(vars.value[key], nextValue)) {
+                  vars.value[key] = nextValue;
+                }
+              } catch (error) {
+                console.warn(`[Aigen: 变量 ${key} getter 执行报错]`, error);
+              } finally {
+                activeGetterKeys.delete(key);
+              }
+            },
+            { flush: 'sync' },
+          );
+          stateAccessorMap.set(key, stopHandle);
+        }
+      }
+    }
   }
 
   // P3：把页面事件与全局变量方法注册为公共方法（methodsMap），
@@ -611,11 +720,30 @@ export function createPageManager() {
     { immediate: true },
   );
 
+  // 初始化时解析首屏 pageSchema.vars
+  applyVarsSchema(pageSchema.vars);
+
+  if (getCurrentScope()) {
+    onScopeDispose(clearStateAccessors);
+  }
+
+  // 设计态监听 pageSchema.vars 变更（变量面板增删改 / 撤销重做恢复快照），同步刷新页面变量上下文
+  watch(
+    () => pageSchema.vars,
+    (nextVars) => {
+      if (isDesignMode.value) {
+        applyVarsSchema(nextVars);
+      }
+    },
+    { deep: true },
+  );
+
   Object.assign(pageManagerApi, {
     __DEBUG_PIPELINE__,
     __DUMP_DEPENDENCY_GRAPH__,
     actionExecutionEngine,
     addComponentInstance,
+    applyVarsSchema,
     componentInstances,
     defaultComponentIds,
     doActions,
