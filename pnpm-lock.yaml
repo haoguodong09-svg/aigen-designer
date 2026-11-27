@@ -607,6 +607,9 @@ importers:
 
   packages/ui-kit/base-ui:
     dependencies:
+      '@aigen-designer/utils':
+        specifier: workspace:*
+        version: link:../../utils
       '@vueuse/core':
         specifier: 'catalog:'
         version: 12.8.2(typescript@5.9.3)
@@ -622,6 +625,9 @@ importers:
       '@vueuse/core':
         specifier: 'catalog:'
         version: 12.8.2(typescript@5.9.3)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
       vue-draggable-plus:
         specifier: 'catalog:'
         version: 0.6.1

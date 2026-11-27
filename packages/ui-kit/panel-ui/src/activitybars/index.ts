@@ -30,4 +30,12 @@ export function setupActivitybar(pluginManager: PluginManager): void {
     sort: 300,
     title: '大纲',
   });
+
+  pluginManager.panel.registerActivitybar({
+    component: async () => await import('./variables/variables.vue'),
+    icon: 'icon--aigen--code-blocks-outline-rounded',
+    id: 'variables_view',
+    sort: 400,
+    title: '变量',
+  });
 }

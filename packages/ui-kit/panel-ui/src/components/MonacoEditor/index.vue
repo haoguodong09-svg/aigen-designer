@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import type { editor } from 'monaco-editor';
 
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 
 import { AigenIcon } from '@aigen-designer/base-ui';
 import { useTheme } from '@aigen-designer/hooks';
@@ -17,6 +24,7 @@ const props = withDefaults(
     lineNumbers?: 'off' | 'on';
     modelValue?: string;
     readOnly?: boolean;
+    showFormatBtn?: boolean;
     theme?: 'hc-black' | 'vs-dark' | 'vs-light';
     valueFormat?: string;
   }>(),
@@ -32,6 +40,7 @@ const props = withDefaults(
     lineNumbers: 'on',
     modelValue: '',
     readOnly: false,
+    showFormatBtn: true,
     theme: 'vs-light',
     valueFormat: 'string',
   },
@@ -124,7 +133,7 @@ function handleFullscreenKeydown(event: KeyboardEvent) {
   if (
     target &&
     target !== document.body &&
-    !editContainer.value?.contains(target)
+    !editContainer.value?.parentElement?.contains(target)
   ) {
     return;
   }
@@ -132,6 +141,115 @@ function handleFullscreenKeydown(event: KeyboardEvent) {
   event.stopPropagation();
   isFullScreen.value = false;
   syncEditorLayout();
+}
+
+const FORMATTABLE_LANGUAGES = new Set([
+  'css',
+  'html',
+  'javascript',
+  'json',
+  'typescript',
+]);
+
+const showFormatButton = computed(
+  () =>
+    props.showFormatBtn &&
+    !props.readOnly &&
+    FORMATTABLE_LANGUAGES.has(props.language),
+);
+
+function applyFormattedText(formatted: string) {
+  if (!monacoEditor) return;
+  const raw = monacoEditor.getValue();
+  const clean = formatted.replace(/\n$/, '');
+  if (clean === raw) return;
+  const model = monacoEditor.getModel();
+  if (model) {
+    monacoEditor.pushUndoStop();
+    monacoEditor.executeEdits('format', [
+      { range: model.getFullModelRange(), text: clean },
+    ]);
+    monacoEditor.pushUndoStop();
+  } else {
+    monacoEditor.setValue(clean);
+  }
+}
+
+async function formatWithPrettier(
+  code: string,
+  language: string,
+): Promise<null | string> {
+  try {
+    const prettierMod = await import('prettier/standalone');
+    const prettier = prettierMod.default ?? prettierMod;
+    if (language === 'json') {
+      const [babelMod, estreeMod] = await Promise.all([
+        import('prettier/plugins/babel'),
+        import('prettier/plugins/estree'),
+      ]);
+      return await prettier.format(code, {
+        parser: 'json',
+        plugins: [babelMod.default ?? babelMod, estreeMod.default ?? estreeMod],
+        tabWidth: 2,
+      });
+    }
+    if (language === 'javascript' || language === 'typescript') {
+      const [babelMod, estreeMod] = await Promise.all([
+        import('prettier/plugins/babel'),
+        import('prettier/plugins/estree'),
+      ]);
+      return await prettier.format(code, {
+        parser: language === 'typescript' ? 'typescript' : 'babel',
+        plugins: [babelMod.default ?? babelMod, estreeMod.default ?? estreeMod],
+        semi: true,
+        singleQuote: true,
+        tabWidth: 2,
+      });
+    }
+    if (language === 'css') {
+      const postcssMod = await import('prettier/plugins/postcss');
+      return await prettier.format(code, {
+        parser: 'css',
+        plugins: [postcssMod.default ?? postcssMod],
+        tabWidth: 2,
+      });
+    }
+    if (language === 'html') {
+      const htmlMod = await import('prettier/plugins/html');
+      return await prettier.format(code, {
+        parser: 'html',
+        plugins: [htmlMod.default ?? htmlMod],
+        tabWidth: 2,
+      });
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function formatCode() {
+  if (!monacoEditor) return;
+  const raw = monacoEditor.getValue();
+
+  // JSON 优先使用 JSON.stringify(parsed, null, 2)，避免 Prettier 默认 printWidth=80 将短 JSON 折叠成单行
+  if (props.language === 'json') {
+    try {
+      const parsed = JSON.parse(raw);
+      applyFormattedText(JSON.stringify(parsed, null, 2));
+      return;
+    } catch {
+      // JSON 解析失败时继续尝试 Prettier / Monaco 内置格式化
+    }
+  }
+
+  const prettierResult = await formatWithPrettier(raw, props.language);
+  if (prettierResult !== null) {
+    applyFormattedText(prettierResult);
+    return;
+  }
+
+  await monacoEditor.getAction('editor.action.formatDocument')?.run();
 }
 
 /**
@@ -183,8 +301,7 @@ onMounted(() => {
     language: props.language,
     lineNumbers: props.lineNumbers,
     mouseWheelZoom: props.config?.mouseWheelZoom ?? true,
-    // 预留右上角工具栏高度，避免首行代码被缩放/全屏按钮遮挡
-    padding: { top: 30, ...props.config?.padding },
+    padding: { top: 8, ...props.config?.padding },
     readOnly: props.readOnly,
     scrollBeyondLastLine: false,
     theme: props.theme,
@@ -202,6 +319,17 @@ onMounted(() => {
       },
     );
   }
+
+  // 动态响应 language 切换（如变量初值在 json 与 javascript 间切换）
+  watch(
+    () => props.language,
+    (nextLang) => {
+      const model = monacoEditor?.getModel();
+      if (model && nextLang) {
+        monaco.editor.setModelLanguage(model, nextLang);
+      }
+    },
+  );
 
   // 获取值
   function getValue() {
@@ -242,6 +370,7 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
+  formatCode,
   getEditor: () => monacoEditor,
   getFontSize: () => fontSize.value,
   insertText,
@@ -255,7 +384,6 @@ defineExpose({
 </script>
 <template>
   <div
-    ref="editContainer"
     :class="{
       bordered: props.bordered,
       'has-error': !!jsonError,
@@ -264,38 +392,66 @@ defineExpose({
     :style="isFullScreen ? fullScreenStyle : ''"
     class="aigen-code-editor"
   >
-    <!-- 缩放 / 全屏工具栏：放在编辑器右上角 -->
-    <div class="aigen-code-editor-toolbar" @click.stop @mousedown.stop>
-      <button
-        type="button"
-        title="缩小字号"
-        aria-label="缩小字号"
-        @click="zoomOut"
-      >
-        <AigenIcon name="icon--aigen--minus-rounded" />
-      </button>
-      <button
-        type="button"
-        class="aigen-code-editor-fontsize"
-        title="点击恢复默认字号"
-        @click="resetFontSize"
-      >
-        {{ fontSize }}px
-      </button>
-      <button
-        type="button"
-        title="放大字号"
-        aria-label="放大字号"
-        @click="zoomIn"
-      >
-        <AigenIcon name="icon--aigen--add-rounded" />
-      </button>
-      <template v-if="props.allowFullscreen">
-        <span class="aigen-code-editor-divider"></span>
+    <!-- 顶部操作栏：参考 TinyEngine 扁平化图标栏，不遮挡代码首行 -->
+    <div
+      v-if="
+        showFormatButton ||
+        props.allowFullscreen ||
+        $slots.toolbarStart ||
+        $slots.buttons
+      "
+      class="aigen-code-editor-toolbar"
+      @click.stop
+      @mousedown.stop
+    >
+      <div class="aigen-code-editor-toolbar-start">
+        <slot name="toolbarStart"></slot>
+      </div>
+      <div class="aigen-code-editor-buttons">
+        <slot name="buttons"></slot>
         <button
+          v-if="showFormatButton"
           type="button"
-          :title="isFullScreen ? '退出全屏（Esc）' : '全屏编辑'"
-          :aria-label="isFullScreen ? '退出全屏' : '全屏编辑'"
+          class="aigen-code-editor-action-btn"
+          title="格式化"
+          aria-label="格式化"
+          @click="formatCode"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            width="14"
+            height="14"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M5.5 2.5C4.4 2.5 3.75 3.1 3.75 4.2V6.3C3.75 7.15 3.2 7.65 2.4 7.85V8.15C3.2 8.35 3.75 8.85 3.75 9.7V11.8C3.75 12.9 4.4 13.5 5.5 13.5"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M10.5 2.5C11.6 2.5 12.25 3.1 12.25 4.2V6.3C12.25 7.15 12.8 7.65 13.6 7.85V8.15C12.8 8.35 12.25 8.85 12.25 9.7V11.8C12.25 12.9 11.6 13.5 10.5 13.5"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M6.4 8H9.6"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <button
+          v-if="props.allowFullscreen"
+          type="button"
+          class="aigen-code-editor-action-btn"
+          :title="isFullScreen ? '退出全屏' : '全屏'"
+          :aria-label="isFullScreen ? '退出全屏' : '全屏'"
           @click="toggleFullscreen"
         >
           <AigenIcon
@@ -306,7 +462,14 @@ defineExpose({
             "
           />
         </button>
-      </template>
+      </div>
+    </div>
+    <div ref="editContainer" class="aigen-code-editor-canvas"></div>
+    <div
+      v-if="isFullScreen && $slots.fullscreenFooter"
+      class="aigen-code-editor-fullscreen-footer"
+    >
+      <slot name="fullscreenFooter"></slot>
     </div>
     <div v-if="jsonError" class="aigen-code-editor-error">
       {{ jsonError }}
@@ -316,19 +479,36 @@ defineExpose({
 <style lang="less" scoped>
 .aigen-code-editor {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
   min-height: 150px;
+
   :deep(.monaco-editor) {
     height: 100%;
   }
 
   &.bordered {
     border: 1px solid var(--aigen-border);
+    border-radius: 4px;
+    overflow: hidden;
+
+    .aigen-code-editor-toolbar {
+      border-bottom: 1px solid var(--aigen-border-light, #f0f0f0);
+    }
   }
 
   &.has-error {
     border: 1px solid #f56c6c;
   }
+}
+
+.aigen-code-editor-canvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .aigen-code-editor--fullscreen {
@@ -337,11 +517,28 @@ defineExpose({
   width: 100vw !important;
   height: 100vh !important;
   z-index: 2999 !important;
+  padding: 10px 16px 16px;
+  box-sizing: border-box;
   background: var(
     --aigen-designer-background,
     var(--aigen-background, #ffffff)
   );
   border: none;
+
+  .aigen-code-editor-toolbar {
+    padding: 0 2px 6px;
+    border-bottom: none;
+  }
+
+  .aigen-code-editor-canvas {
+    border: 1px solid var(--aigen-border, #e5e7eb);
+    border-radius: 6px;
+  }
+}
+
+.aigen-code-editor-fullscreen-footer {
+  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .aigen-code-editor-error {
@@ -355,52 +552,48 @@ defineExpose({
 }
 
 .aigen-code-editor-toolbar {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 20;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
-  background: color-mix(in oklab, var(--aigen-background) 92%, transparent);
-  border: 1px solid var(--aigen-border);
-  border-radius: calc(var(--aigen-radius) - 2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(4px);
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
 }
 
-.aigen-code-editor-toolbar button {
+.aigen-code-editor-toolbar-start {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aigen-code-editor-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aigen-code-editor-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
+  width: 22px;
   height: 22px;
-  padding: 0 3px;
+  padding: 0;
   font-size: 14px;
-  color: var(--aigen-text-secondary);
+  color: var(--aigen-text-secondary, #595959);
   cursor: pointer;
   background: transparent;
   border: none;
-  border-radius: 3px;
-  transition: all 0.2s ease-out-quart;
+  border-radius: 4px;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
 }
 
-.aigen-code-editor-toolbar button:hover {
-  color: var(--aigen-primary);
-  background: var(--aigen-primary-faded);
-}
-
-.aigen-code-editor-toolbar .aigen-code-editor-fontsize {
-  min-width: 32px;
-  font-size: 10px;
-  color: var(--aigen-text-helper);
-}
-
-.aigen-code-editor-divider {
-  width: 1px;
-  height: 14px;
-  margin: 0 2px;
-  background: var(--aigen-border);
+.aigen-code-editor-action-btn:hover {
+  color: var(--aigen-text-primary, #191919);
+  background: var(--aigen-fill-secondary, rgba(0, 0, 0, 0.06));
 }
 </style>

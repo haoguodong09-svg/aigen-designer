@@ -8,6 +8,7 @@
   "main": "./src/index.ts",
   "dependencies": {
     "@vueuse/core": "catalog:",
+    "prettier": "catalog:",
     "vue-draggable-plus": "catalog:"
   },
   "devDependencies": {
