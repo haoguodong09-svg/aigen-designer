@@ -115,9 +115,10 @@ function handleDragOver(event: DragEvent) {
   // 严格限定在当前容器 direct children 集合内，避免跨容器误命中祖先节点
   let childItemEl: HTMLElement | null = null;
   if (currentContainerEl && target !== currentContainerEl) {
-    const childIds = new Set(
-      modelSchemas.value.map((item) => item.id).filter(Boolean),
-    );
+    const childIds = new Set<string>();
+    for (const item of modelSchemas.value) {
+      if (item.id) childIds.add(item.id);
+    }
     childItemEl = findDirectChildNodeElFromTarget(
       target,
       currentContainerEl,

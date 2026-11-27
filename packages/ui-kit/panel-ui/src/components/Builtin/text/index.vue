@@ -6,20 +6,24 @@ import type { CSSProperties } from 'vue';
 import { computed } from 'vue';
 
 const props = defineProps<{
+  color?: string;
   componentSchema?: ComponentSchema;
+  fontSize?: string;
+  fontWeight?: string;
+  text?: unknown;
 }>();
 
 const textStyle = computed<CSSProperties>(() => {
   const componentProps = props.componentSchema?.props ?? {};
   return {
-    color: componentProps.color || undefined,
-    fontSize: componentProps.fontSize || '14px',
-    fontWeight: componentProps.fontWeight || '400',
+    color: props.color ?? componentProps.color ?? undefined,
+    fontSize: props.fontSize ?? componentProps.fontSize ?? '14px',
+    fontWeight: props.fontWeight ?? componentProps.fontWeight ?? '400',
   };
 });
 </script>
 <template>
   <span class="aigen-builtin-text" :style="textStyle">{{
-    props.componentSchema?.props?.text
+    props.text ?? props.componentSchema?.props?.text
   }}</span>
 </template>

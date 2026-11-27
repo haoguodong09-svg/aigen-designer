@@ -101,6 +101,8 @@ watch(
     adaptLegacySchema(newSchema);
 
     deepCompareAndModify(pageManager.pageSchema, newSchema);
+    // 预览/运行态加载或切换 pageSchema 时同步重置页面变量初值
+    pageManager.vars.value = deepClone(newSchema.vars ?? {});
     // schema 应用完成后立即求值一次：首屏联动（数据回填）无需等待用户交互即可生效
     pageManager.reactiveEngine?.evaluateAllRules();
     // 依赖 Vue 响应式系统按变更局部更新，不再强制全量 Suspense 重挂载；

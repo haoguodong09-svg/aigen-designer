@@ -37,10 +37,13 @@ import {
 import { pluginManager } from '@aigen-designer/manager';
 import {
   capitalizeFirstLetter,
+  createPropBindingScope,
   deepClone,
   deepCompareAndModify,
   deepEqual,
   getValueByPath,
+  isJSExpressionBinding,
+  resolveBoundValue,
   setValueByPath,
 } from '@aigen-designer/utils';
 
@@ -55,8 +58,9 @@ interface AigenNodeProps {
 }
 
 defineOptions({
-  inheritAttrs: false,
   name: 'AigenNode',
+  // eslint-disable-next-line perfectionist/sort-objects
+  inheritAttrs: false,
 });
 
 const props = withDefaults(defineProps<AigenNodeProps>(), {
@@ -369,7 +373,7 @@ const getFormItemProps = computed<ComponentSchema>(() => {
 
   const rawClassName = innerSchema.props?.className;
   const resolvedClassName = isJSExpressionBinding(rawClassName)
-    ? evaluatePropExpression(rawClassName.value)
+    ? resolvePropBinding(rawClassName)
     : rawClassName;
   const formItemClasses: unknown[] = [];
   if (attrs.class) formItemClasses.push(attrs.class);
@@ -378,11 +382,15 @@ const getFormItemProps = computed<ComponentSchema>(() => {
   }
 
   const style = innerSchema.props?.style ?? {};
+  const resolvedLabel = isJSExpressionBinding(innerSchema.label)
+    ? resolvePropBinding(innerSchema.label)
+    : innerSchema.label;
   const formItemProps = {
     ...innerSchema,
     ...attrs,
     ...(formItemClasses.length > 0 ? { class: formItemClasses } : {}),
     field: model,
+    label: resolvedLabel,
     rule: rules,
     rules,
     style: {
@@ -413,31 +421,16 @@ const hasFormItem = computed(() => {
   );
 });
 
-function isJSExpressionBinding(
-  val: unknown,
-): val is { type: 'JSExpression'; value: string } {
-  return (
-    Boolean(val) &&
-    typeof val === 'object' &&
-    (val as Record<string, unknown>).type === 'JSExpression' &&
-    typeof (val as Record<string, unknown>).value === 'string'
+function resolvePropBinding(val: unknown): unknown {
+  return resolveBoundValue(
+    val,
+    createPropBindingScope({
+      formData,
+      funcs: pageManager.funcs.value,
+      state: pageManager,
+      vars: pageManager.vars.value,
+    }),
   );
-}
-
-function evaluatePropExpression(expr: string): unknown {
-  if (!expr.trim()) return undefined;
-  try {
-    // eslint-disable-next-line no-new-func
-    const fn = new Function(
-      'formData',
-      'state',
-      'funcs',
-      `"use strict"; return (${expr});`,
-    );
-    return fn(formData, pageManager, pageManager.funcs.value);
-  } catch {
-    return undefined;
-  }
 }
 
 // 获取组件props数据
@@ -461,11 +454,14 @@ const getProps = computed(() => {
   const rawProps = innerSchema.props ?? {};
   const resolvedProps: Record<string, any> = {};
   let customClassName: string | undefined;
+  let hasBoundProp = false;
   for (const key of Object.keys(rawProps)) {
     const val = rawProps[key];
-    const resolved = isJSExpressionBinding(val)
-      ? evaluatePropExpression(val.value)
-      : val;
+    const isBound = isJSExpressionBinding(val);
+    if (isBound) {
+      hasBoundProp = true;
+    }
+    const resolved = isBound ? resolvePropBinding(val) : val;
     if (key === 'className') {
       if (typeof resolved === 'string' && resolved.trim()) {
         customClassName = resolved.trim();
@@ -474,6 +470,18 @@ const getProps = computed(() => {
       resolvedProps[key] = resolved;
     }
   }
+
+  const resolvedComponentSchema = hasBoundProp
+    ? {
+        ...innerSchema,
+        props: {
+          ...resolvedProps,
+          ...(customClassName === undefined
+            ? {}
+            : { className: customClassName }),
+        },
+      }
+    : innerSchema;
 
   const useFormItemWrapper =
     hasFormItem.value && innerSchema.noFormItem !== true;
@@ -506,6 +514,7 @@ const getProps = computed(() => {
     ...resolvedProps,
     ...(extraClasses.length > 0 ? { class: extraClasses } : {}),
     bindModel,
+    componentSchema: resolvedComponentSchema,
     disabled:
       fieldStateType.value !== 'WRITE' &&
       (derivedState.value?.disabled === undefined
